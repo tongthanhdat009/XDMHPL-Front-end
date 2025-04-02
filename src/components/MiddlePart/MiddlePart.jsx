@@ -134,7 +134,7 @@ const MiddlePart = () => {
 
     <div className='flex-grow h-screen pb-44 pt-6 mr-4 xl:mr-40 overflow-y-auto scrollbar' style={{ scrollbarWidth: "none" }}>
       <div className='mx-auto max-w-md md:max-w-lg lg:max-w-2xl'>
-        <Stories />
+        {/* <Stories /> */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200  m-2">
           <div className="flex items-center p-3 space-x-3">
             <Avatar

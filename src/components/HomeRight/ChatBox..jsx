@@ -1,22 +1,30 @@
 import React, { useState } from 'react';
 const ChatBox = ({ contact, onClose }) => {
     const [message, setMessage] = useState('');
-    const [messages, setMessages] = useState([]);
+    const [messages, setMessages] = useState([{
+        text: 'Hello, how can I help you?fdfdfdf',
+        sender: 'userReceive',
+        timestamp: new Date().toLocaleTimeString()
+    },{
+        text: 'huh',
+        sender: 'userReceive',
+        timestamp: new Date().toLocaleTimeString()
+    }]);
 
     const handleSendMessage = () => {
         if (message.trim()) {
             setMessages([...messages, {
                 text: message,
-                sender: 'user',
+                sender: 'userSend',
                 timestamp: new Date().toLocaleTimeString()
             }]);
             setMessage('');
         }
+        console.log(messages);
     };
 
     return (
-        <div className="fixed bottom-0 right-4 w-80 h-[500px] bg-white shadow-lg rounded-t-lg border border-gray-200 flex flex-col z-50">
-
+        <div className="w-90 h-[500px] bg-white shadow-lg rounded-t-lg border border-gray-200 flex flex-col z-50">
             {/* Chat Header */}
             <div className="flex justify-between items-center p-3 bg-gray-100 rounded-t-lg">
                 <div className="flex items-center space-x-2">
@@ -51,9 +59,26 @@ const ChatBox = ({ contact, onClose }) => {
                 </div>
 
                 {messages.map((msg, index) => (
-                    <div key={index} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[70%] p-2 rounded-lg ${msg.sender === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black'}`}>
-                            {msg.text}
+                    <div key={index} className="relative group">
+                        {/* Timestamp that appears on hover */}
+                        {msg.sender === 'userSend' && (
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute left-0 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded whitespace-nowrap z-10">
+                                {msg.timestamp}
+                            </div>
+                        )}
+
+                        {/* Timestamp that appears on hover */}
+                        {msg.sender === 'userReceive' && (
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute right-0 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs py-1 px-2 rounded whitespace-nowrap z-10">
+                                {msg.timestamp}
+                            </div>
+                        )}
+
+                        {/* Message content */}
+                        <div className={`flex ${msg.sender === 'userSend' ? 'justify-end' : 'justify-start'}`}>
+                            <div className={`max-w-[70%] p-2 rounded-lg break-words whitespace-normal overflow-wrap-anywhere ${msg.sender === 'userSend' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black'}`}>
+                                {msg.text}
+                            </div>
                         </div>
                     </div>
                 ))}
@@ -70,9 +95,7 @@ const ChatBox = ({ contact, onClose }) => {
                     className="flex-grow bg-gray-100 rounded-full px-4 py-2 outline-none"
                 />
             </div>
-
         </div>
     );
 };
-
 export default ChatBox;
