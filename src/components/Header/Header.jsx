@@ -9,6 +9,7 @@ import NotificationsSharpIcon from '@mui/icons-material/NotificationsSharp';
 import KeyboardArrowDownSharpIcon from '@mui/icons-material/KeyboardArrowDownSharp';
 import CloseIcon from '@mui/icons-material/Close';
 import { useNavigate } from "react-router-dom";
+import authService from "../LoginPage/LoginProcess/ValidateLogin";
 const Header = () => {
   const navigate=useNavigate();
   const [search, setSearch] = React.useState("")
@@ -37,17 +38,23 @@ const Header = () => {
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
+  
   const handleClose = () => {
     setAnchorEl(null);
+    
   };
 
   const handleLogout = () => {
+    authService.logout();
 
-  }
+    setTimeout(() => {
+      navigate("/login");
+    }, 200);
+  };
 
   const handleSearchUser = (e) => {
     setSearch(e.target.value)
-
+    
   }
 
   const [searchTerm, setSearchTerm] = useState('');
