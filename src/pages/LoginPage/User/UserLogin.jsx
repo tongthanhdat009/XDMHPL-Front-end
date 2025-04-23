@@ -4,10 +4,7 @@ import authService from '../../../components/LoginPage/LoginProcess/ValidateLogi
 import FormLogin from '../../../components/LoginPage/FormLogin';
 const UserLogin = () => {
     const location = useLocation()
-    // Lấy ngay user từ storage, không cần useState/useEffect
     const user = authService.getCurrentUser()
-
-    // Nếu chưa login => chuyển hướng
     if (user) {
       return (
         <Navigate

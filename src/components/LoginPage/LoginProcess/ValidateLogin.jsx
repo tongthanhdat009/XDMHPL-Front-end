@@ -61,9 +61,14 @@ const authService = {
       return { success: true, data: response.data };
     } catch (error) {
       console.error("Login error:", error);
+
+      // Xử lý lỗi để trả về toàn bộ ErrorResponse
       return {
         success: false,
-        error: error.response?.data?.message || error.message || "Đăng nhập thất bại"
+        error: error.response?.data || {
+          message: error.message || "Đăng nhập thất bại",
+          status: error.response?.status || 500
+        }
       };
     }
   },
@@ -111,7 +116,6 @@ const authService = {
     sessionStorage.removeItem("sessionID");
     sessionStorage.removeItem("currentUser");
   },
-
 
   getRememberMe: () => localStorage.getItem("rememberMe") === "true"
 };
