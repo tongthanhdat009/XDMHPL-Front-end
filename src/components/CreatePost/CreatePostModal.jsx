@@ -3,6 +3,8 @@ import { useFormik } from 'formik';
 import React from 'react'
 import ImageIcon from '@mui/icons-material/Image';
 import VideoCallIcon from '@mui/icons-material/VideoCall';
+import authService from '../LoginPage/LoginProcess/ValidateLogin';
+import CloseIcon from '@mui/icons-material/Close';
 // import { uploadToCloudinary } from '../../utils/uploadToCloudinary';
 const style = {
   position: 'absolute',
@@ -16,24 +18,76 @@ const style = {
   borderRadius: ".6rem",
   outline: "none"
 };
+
 const CreatePostModal = ({ open, handleClose }) => {
-  const [selectedImage, setSelectedImage] = React.useState();
-  const [selectedVideo, setSelectedVideo] = React.useState();
+  const [mediaFiles, setMediaFiles] = React.useState([]);
   const [isLoading, setIsLoading] = React.useState(false);
-
-
+  
   const formik = useFormik({
     initialValues: {
       caption: "",
-      image: "",
-      video: ""
+      media: []
     },
     onSubmit: (values) => {
-      console.log("values", values);
+      // Bắt đầu loading
+      setIsLoading(true);
+      try {
+        // Gọi API tạo bài viết với media files
+        const result = authService.createPost(values.caption, "post", values.media);
+        
+        if (result.success) {
+          // Đóng modal và reset form nếu thành công
+          handleClose();
+          formik.resetForm();
+          setMediaFiles([]);
+        } else {
+          // Xử lý lỗi
+          console.error("Error creating post:", result.error);
+        }
+      } catch (error) {
+        console.error("Error in form submission:", error);
+      } finally {
+        // Kết thúc loading dù thành công hay thất bại
+        setIsLoading(false);
+      }
     }
-  })
+  });
 
+  // Hàm xử lý khi người dùng chọn file
+  const handleMediaChange = (event) => {
+    const files = Array.from(event.target.files);
+    if (files.length === 0) return;
+    
+    // Tạo các đối tượng media mới
+    const newMediaFiles = files.map(file => {
+      const isImage = file.type.startsWith('image/');
+      const isVideo = file.type.startsWith('video/');
+      
+      if (!isImage && !isVideo) return null;
+      
+      return {
+        file,
+        type: isImage ? 'image' : 'video',
+        url: URL.createObjectURL(file),
+        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      };
+    }).filter(Boolean); // Lọc bỏ các giá trị null
+    
+    // Cập nhật state
+    const updatedMediaFiles = [...mediaFiles, ...newMediaFiles];
+    setMediaFiles(updatedMediaFiles);
+    
+    // Cập nhật formik
+    formik.setFieldValue("media", updatedMediaFiles);
+  };
 
+  // Hàm xóa một media file
+  const removeMediaFile = (id) => {
+    const updatedMediaFiles = mediaFiles.filter(media => media.id !== id);
+    setMediaFiles(updatedMediaFiles);
+    formik.setFieldValue("media", updatedMediaFiles);
+  };
+  
   return (
     <Modal
       open={open}
@@ -59,39 +113,69 @@ const CreatePostModal = ({ open, handleClose }) => {
               value={formik.values.caption}
               rows={4}
             ></textarea>
-
+            
             <div className='flex space-x-5 items-center mt-5'>
               <div>
-                <input type="file" accept='image/*' style={{ display: "none" }} id='image-input' />
-                <label htmlFor="image-input">
+                <input 
+                  type="file" 
+                  accept='image/*,video/*' 
+                  style={{ display: "none" }} 
+                  id='media-input'
+                  onChange={handleMediaChange}
+                  multiple
+                />
+                <label htmlFor="media-input">
                   <IconButton color='primary' component="span">
                     <ImageIcon />
                   </IconButton>
                 </label>
-                <span>Image</span>
-              </div>
-
-              <div>
-                <input type="file" accept='video/*' style={{ display: "none" }} id='image-input' />
-                <label htmlFor="video-input">
-                  <IconButton color='primary'>
-                    <VideoCallIcon />
-                  </IconButton>
-                </label>
-                <span>Video</span>
+                <span>Thêm ảnh/video</span>
               </div>
             </div>
-
-            {selectedImage && (
-              <img className='h-[10rem]' src={selectedImage} alt="Selected" />
+            
+            {mediaFiles.length > 0 && (
+              <div className="mt-3">
+                <p className="text-sm mb-1">Xem trước media:</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {mediaFiles.map(media => (
+                    <div key={media.id} className="relative border rounded p-1">
+                      {media.type === 'image' ? (
+                        <img 
+                          className='h-32 w-full object-cover' 
+                          src={media.url} 
+                          alt="Preview" 
+                        />
+                      ) : (
+                        <video 
+                          className='h-32 w-full object-cover' 
+                          src={media.url} 
+                          controls 
+                        />
+                      )}
+                      <IconButton 
+                        size="small" 
+                        color="error" 
+                        className="absolute top-0 right-0 bg-white opacity-80 hover:opacity-100"
+                        onClick={() => removeMediaFile(media.id)}
+                      >
+                        <CloseIcon fontSize="small" />
+                      </IconButton>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
-            {selectedVideo && (
-              <video src={selectedVideo} controls />
-            )}
-            <div className='flex w-full justify-end'>
-              <Button variant='contained' sx={{ borderRadius: "1.5rem" }} type='submit'>Post</Button>
+            
+            <div className='flex w-full justify-end mt-4'>
+              <Button 
+                variant='contained' 
+                sx={{ borderRadius: "1.5rem" }} 
+                type='submit'
+                disabled={isLoading}
+              >
+                {isLoading ? 'Đang đăng...' : 'Đăng bài'}
+              </Button>
             </div>
-
           </div>
         </form>
         <Backdrop
@@ -103,7 +187,7 @@ const CreatePostModal = ({ open, handleClose }) => {
         </Backdrop>
       </Box>
     </Modal>
-  )
-}
+  );
+};
 
-export default CreatePostModal
+export default CreatePostModal;

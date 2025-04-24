@@ -117,6 +117,48 @@ const authService = {
     sessionStorage.removeItem("currentUser");
   },
 
+
+  // Create a new post
+  createPost: async (content, type, mediaFiles = []) => {
+    try {
+      // Chuyển đổi mediaFiles thành định dạng mà API mong đợi
+      const media = mediaFiles.map(file => ({
+        type: file.type, // Lấy trực tiếp từ object mediaFiles đã được phân loại
+        mediaURL: file.url // URL xem trước
+      }));
+  
+      const postData = {
+        content,
+        type,
+        media
+      };
+  
+      console.log("Post data:", postData); // Debugging line
+      
+      // Khi bạn sẵn sàng gửi dữ liệu lên server, bỏ comment các dòng dưới đây
+      // const response = await api.post('/api/posts', postData);
+      // return {
+      //   success: true,
+      //   data: response.data
+      // };
+      
+      // Tạm thời trả về success = true cho mục đích testing
+      return {
+        success: true,
+        data: postData
+      };
+    } catch (error) {
+      console.error("Error creating post:", error);
+      return {
+        success: false,
+        error: error.response?.data || {
+          message: error.message || "Không thể tạo bài viết",
+          status: error.response?.status || 500
+        }
+      };
+    }
+  },
+
   getRememberMe: () => localStorage.getItem("rememberMe") === "true"
 };
 
