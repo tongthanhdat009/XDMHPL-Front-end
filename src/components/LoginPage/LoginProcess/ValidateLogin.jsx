@@ -3,10 +3,7 @@ const API_URL = "http://localhost:8080";
 
 // Tạo instance cho axios với cấu hình mặc định
 const api = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json'
-  }
+  baseURL: API_URL
 });
 
 // Thêm interceptor để tự động đính kèm SessionID vào mỗi request
@@ -24,7 +21,7 @@ api.interceptors.request.use(
 const authService = {
   login: async (userIdentifier, password, remember, role = "user") => {
     try {
-      const deviceInfo = navigator.userAgent; 
+      const deviceInfo = navigator.userAgent;
       // nếu muốn thêm platform, screen size:
       // const deviceInfo = `${navigator.userAgent} | ${navigator.platform} | ${window.screen.width}x${window.screen.height}`;
 
@@ -37,24 +34,24 @@ const authService = {
       });
 
       // 3. Xử lý lưu sessionID & user
-      const { sessionId, userId, username, role: userRole } = response.data;
+      const { sessionId, user } = response.data;
       localStorage.setItem("rememberMe", remember);
 
       if (remember) {
         localStorage.setItem("sessionID", sessionId);
-        localStorage.setItem("currentUser", JSON.stringify({ userId, username, userRole }));
+        localStorage.setItem("currentUser", JSON.stringify({ user }));
         sessionStorage.removeItem("sessionID");
         sessionStorage.removeItem("currentUser");
       } else {
         sessionStorage.setItem("sessionID", sessionId);
-        sessionStorage.setItem("currentUser", JSON.stringify({ userId, username, userRole }));
+        sessionStorage.setItem("currentUser", JSON.stringify({ user }));
         localStorage.removeItem("sessionID");
         localStorage.removeItem("currentUser");
       }
 
       // Luôn sử dụng localStorage (người dùng không bị đăng xuất khi đóng tab)
       localStorage.setItem("sessionID", sessionId);
-      localStorage.setItem("currentUser", JSON.stringify({ userId, username, userRole }));
+      localStorage.setItem("currentUser", JSON.stringify({ user }));
       sessionStorage.removeItem("sessionID");
       sessionStorage.removeItem("currentUser");
 
@@ -119,34 +116,41 @@ const authService = {
 
 
   // Create a new post
-  createPost: async (content, type, mediaFiles = []) => {
+  createPost: async (content, type, mediaFiles = [], userId) => {
     try {
-      // Chuyển đổi mediaFiles thành định dạng mà API mong đợi
       const media = mediaFiles.map(file => ({
         type: file.type, // Lấy trực tiếp từ object mediaFiles đã được phân loại
-        mediaURL: file.url // URL xem trước
+        fileMedia: file.file // URL xem trước
       }));
-  
+
+
       const postData = {
+        userId,
         content,
         type,
         media
       };
-  
-      console.log("Post data:", postData); // Debugging line
-      
-      // Khi bạn sẵn sàng gửi dữ liệu lên server, bỏ comment các dòng dưới đây
-      // const response = await api.post('/api/posts', postData);
-      // return {
-      //   success: true,
-      //   data: response.data
-      // };
-      
-      // Tạm thời trả về success = true cho mục đích testing
+
+      const formData = new FormData();
+      formData.append('userId', postData.userId);
+      formData.append('content', postData.content);
+      formData.append('type', postData.type);
+
+      postData.media.forEach((item) => {
+        formData.append('mediaTypes', item.type);
+        formData.append('mediaFiles', item.fileMedia);
+      });
+
+      console.log('FormData content:');
+      Array.from(formData.entries()).forEach(([key, value]) => {
+        console.log(`${key}:`, value);
+      });
+
+      const response = await api.post('/posts/create', formData);
       return {
-        success: true,
-        data: postData
+        success: true
       };
+
     } catch (error) {
       console.error("Error creating post:", error);
       return {

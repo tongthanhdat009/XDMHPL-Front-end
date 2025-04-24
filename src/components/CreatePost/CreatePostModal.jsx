@@ -2,7 +2,6 @@ import { Avatar, Backdrop, Box, Button, CircularProgress, IconButton, Modal } fr
 import { useFormik } from 'formik';
 import React from 'react'
 import ImageIcon from '@mui/icons-material/Image';
-import VideoCallIcon from '@mui/icons-material/VideoCall';
 import authService from '../LoginPage/LoginProcess/ValidateLogin';
 import CloseIcon from '@mui/icons-material/Close';
 // import { uploadToCloudinary } from '../../utils/uploadToCloudinary';
@@ -23,18 +22,20 @@ const CreatePostModal = ({ open, handleClose }) => {
   const [mediaFiles, setMediaFiles] = React.useState([]);
   const [isLoading, setIsLoading] = React.useState(false);
   
+  const user = authService.getCurrentUser()
   const formik = useFormik({
     initialValues: {
+      userId: user.userId,
       caption: "",
       media: []
     },
-    onSubmit: (values) => {
+    onSubmit: async (values) => {
       // Bắt đầu loading
       setIsLoading(true);
       try {
         // Gọi API tạo bài viết với media files
-        const result = authService.createPost(values.caption, "post", values.media);
-        
+        const result = await  authService.createPost(values.caption, "post", values.media, values.userId);
+        console.log(result)
         if (result.success) {
           // Đóng modal và reset form nếu thành công
           handleClose();

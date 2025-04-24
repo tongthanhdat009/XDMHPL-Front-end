@@ -11,6 +11,7 @@ const HomePage = () => {
 
   const user = authService.getCurrentUser()
 
+  console.log(user)
   if (!user) {
     return (
       <Navigate
