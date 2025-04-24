@@ -1,4 +1,4 @@
-import { Avatar, Menu, MenuItem } from "@mui/material";
+import { Avatar, Badge, Divider, Menu, MenuItem } from "@mui/material";
 import React, { useEffect, useRef, useState } from "react";
 import fblogo from "../../assets/facebook-logo.jpg"
 import SearchIcon from '@mui/icons-material/Search';
@@ -11,7 +11,66 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useNavigate } from "react-router-dom";
 import authService from "../LoginPage/LoginProcess/ValidateLogin";
 const Header = () => {
-  const navigate=useNavigate();
+  const notifications = [
+    {
+      id: 1,
+      type: 'friend_request',
+      user: {
+        name: 'Huyền Ngọc Lê',
+        avatar: 'https://via.placeholder.com/40',
+        followersCount: null
+      },
+      time: '1 ngày',
+      isRead: false
+    },
+    {
+      id: 2,
+      type: 'friend_request',
+      user: {
+        name: 'Ne Ri',
+        avatar: 'https://via.placeholder.com/40',
+        followersCount: 739
+      },
+      time: '5 ngày',
+      isRead: false
+    },
+    {
+      id: 3,
+      type: 'mention',
+      user: {
+        name: 'Zeus De Prince',
+        avatar: 'https://via.placeholder.com/40',
+        followersCount: null
+      },
+      content: 'đã nhắc đến bạn và những người khác ở một bình luận trong Ổ Béo Phì.',
+      time: '3 ngày',
+      isRead: false
+    },
+    {
+      id: 4,
+      type: 'mention',
+      user: {
+        name: 'Zeus De Prince',
+        avatar: 'https://via.placeholder.com/40',
+        followersCount: null
+      },
+      content: 'đã nhắc đến bạn và những người khác ở một bình luận trong Ổ Béo Phì.',
+      time: '4 ngày',
+      isRead: false
+    },
+    {
+      id: 5,
+      type: 'friend_request',
+      user: {
+        name: 'No Muối Tám',
+        avatar: 'https://via.placeholder.com/40',
+        followersCount: 1400
+      },
+      time: '5 ngày',
+      isRead: false
+    }
+  ];
+  const navigate = useNavigate();
   const [search, setSearch] = React.useState("")
 
   const [anchorEl, setAnchorEl] = React.useState(null);
@@ -38,10 +97,10 @@ const Header = () => {
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
-  
+
   const handleClose = () => {
     setAnchorEl(null);
-    
+
   };
 
   const handleLogout = () => {
@@ -54,7 +113,7 @@ const Header = () => {
 
   const handleSearchUser = (e) => {
     setSearch(e.target.value)
-    
+
   }
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -66,85 +125,265 @@ const Header = () => {
     setRecentSearches(recentSearches.filter(search => search !== searchToRemove));
   };
 
+
+
+
+  //Thông báo
+  // Thêm state để theo dõi việc click
+  const [showNotifications, setShowNotifications] = useState(false);
+  const notificationRef = useRef(null);
+  const notificationPopupRef = useRef(null);
+
+  // Xử lý khi click vào biểu tượng thông báo
+  const handleNotificationClick = () => {
+    setShowNotifications(prevState => !prevState);
+  };
+
+  // Xử lý khi click ra ngoài
+  useEffect(() => {
+    function handleClickOutside(event) {
+      // Kiểm tra nếu click ngoài cả biểu tượng thông báo và dropdown
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target) &&
+        notificationPopupRef.current &&
+        !notificationPopupRef.current.contains(event.target)
+      ) {
+        setShowNotifications(false);
+      }
+    }
+
+    // Thêm event listener
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
   return (
     <div className="sticky top-0 z-50 bg-white flex items-center p-2 lg:px-5 shadow-md justify-between">
-  {/* Left */}
-  <div className="relative flex-grow max-w-xs" ref={searchRef}>
-    <div className="flex items-center space-x-2">
-      <div onClick={() => navigate("/")} className="cursor-pointer">
-        <Avatar src={fblogo} sx={{ width: 40, height: 40 }} className="mr-2" />
-      </div>
-      <div className="flex-grow flex items-center space-x-2 bg-gray-100 rounded-full p-2">
-        <button className="text-gray-600">
-          <SearchIcon />
-        </button>
-        <input
-          type="text"
-          placeholder="Tìm kiếm trên Facebook"
-          className="w-full bg-transparent outline-none"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          onFocus={() => setIsSearchActive(true)}
-          onKeyPress={(e) => {
-            if (e.key === 'Enter' && e.target.value.trim() !== '') {
-              handleEnterInput(e.target.value);
-              setIsSearchActive(false);
-            }
-          }}
-        />
-      </div>
-    </div>
+      {/* Left */}
+      <div className="relative flex-grow max-w-xs" ref={searchRef}>
+        <div className="flex items-center space-x-2">
+          <div onClick={() => navigate("/")} className="cursor-pointer">
+            <Avatar src={fblogo} sx={{ width: 40, height: 40 }} className="mr-2" />
+          </div>
+          <div className="flex-grow flex items-center space-x-2 bg-gray-100 rounded-full p-2">
+            <button className="text-gray-600">
+              <SearchIcon />
+            </button>
+            <input
+              type="text"
+              placeholder="Tìm kiếm trên Facebook"
+              className="w-full bg-transparent outline-none"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onFocus={() => setIsSearchActive(true)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter' && e.target.value.trim() !== '') {
+                  handleEnterInput(e.target.value);
+                  setIsSearchActive(false);
+                }
+              }}
+            />
+          </div>
+        </div>
 
-    {isSearchActive && (
-      <div className="absolute top-full left-0 w-full bg-white shadow-lg rounded-lg mt-2 border">
-        <div className="p-4">
-          {/* <div className="flex justify-between items-center mb-4">
+        {isSearchActive && (
+          <div className="absolute top-full left-0 w-full bg-white shadow-lg rounded-lg mt-2 border">
+            <div className="p-4">
+              {/* <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-semibold">Mới đây</h3>
             <button className="text-blue-500">Chỉnh sửa</button>
           </div> */}
-          {recentSearches.map((search) => (
-            <div
-              key={search}
-              className="flex items-center justify-between hover:bg-gray-100 p-2 rounded-md cursor-pointer"
-            >
-              <div className="flex items-center space-x-3">
-                <AccessTimeIcon className="text-gray-500 w-5 h-5" />
-                <span>{search}</span>
-              </div>
-              <button onClick={() => handleRemoveSearch(search)}>
-                <CloseIcon className="text-gray-500 w-5 h-5 cursor-pointer" />
-              </button>
+              {recentSearches.map((search) => (
+                <div
+                  key={search}
+                  className="flex items-center justify-between hover:bg-gray-100 p-2 rounded-md cursor-pointer"
+                >
+                  <div className="flex items-center space-x-3">
+                    <AccessTimeIcon className="text-gray-500 w-5 h-5" />
+                    <span>{search}</span>
+                  </div>
+                  <button onClick={() => handleRemoveSearch(search)}>
+                    <CloseIcon className="text-gray-500 w-5 h-5 cursor-pointer" />
+                  </button>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
+        )}
       </div>
-    )}
-  </div>
 
-  {/* Right */}
-  <div className="flex items-center space-x-4">
-    <HomeIcon sx={{ width: 40, height: 40 }} className="icon" />
-    <ChatBubbleIcon sx={{ width: 40, height: 40 }} className="icon" onClick={() => navigate("/messages")} />
-    <NotificationsSharpIcon sx={{ width: 40, height: 40 }} className="icon" />
-    <div className="flex items-center space-x-1 cursor-pointer bg-gray-200 rounded-full p-1" onClick={handleClick}>
-      <Avatar sx={{ width: 40, height: 40 }} />
-      <KeyboardArrowDownSharpIcon sx={{ width: 20, height: 20, color: "gray" }} />
+      {/* Right */}
+      <div className="flex items-center space-x-4">
+        <HomeIcon sx={{ width: 40, height: 40 }} className="icon cursor-pointer p-2 hover:bg-gray-200 rounded-full" />
+        <ChatBubbleIcon
+          sx={{ width: 40, height: 40 }}
+          className="icon cursor-pointer p-2 hover:bg-gray-200 rounded-full"
+          onClick={() => navigate("/message")}
+        />
+        <div
+          ref={notificationRef}
+          className="relative"
+        >
+          <Badge badgeContent={5} color="error">
+            <NotificationsSharpIcon
+              sx={{ width: 40, height: 40 }}
+              className="icon cursor-pointer p-2 hover:bg-gray-200 rounded-full"
+              onClick={handleNotificationClick}
+            />
+          </Badge>
+
+          {/* Notification Popup */}
+          {showNotifications && (
+            <div
+              ref={notificationPopupRef}
+              className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl z-50"
+              style={{ maxHeight: '80vh', overflowY: 'auto' }}
+            >
+              <div className="flex justify-between items-center p-4">
+                <h2 className="text-2xl font-bold">Thông báo</h2>
+                <div className="text-gray-600 cursor-pointer">...</div>
+              </div>
+
+              <div className="flex space-x-2 px-4 pb-2">
+                <button className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium">
+                  Tất cả
+                </button>
+                <button className="hover:bg-gray-100 px-3 py-1 rounded-full text-sm font-medium">
+                  Chưa đọc
+                </button>
+              </div>
+
+              {/* Lời mời kết bạn */}
+              <div className="px-4 py-2">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="font-medium">Lời mời kết bạn</h3>
+                  <a href="#" className="text-blue-500 text-sm">Xem tất cả</a>
+                </div>
+
+                {notifications.filter(n => n.type === 'friend_request').slice(0, 3).map(notification => (
+                  <div key={notification.id} className="flex items-start space-x-2 mb-3 relative">
+                    <div className="relative">
+                      <Avatar src={notification.user.avatar} className="w-10 h-10" />
+                      <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                        <i className="fas fa-user-plus"></i>
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm">
+                        <span className="font-semibold">{notification.user.name}</span> đã gửi cho bạn lời mời kết bạn.
+                      </p>
+                      <p className="text-xs text-gray-500">{notification.time}</p>
+                      {notification.user.followersCount && (
+                        <p className="text-xs text-gray-500">Có {notification.user.followersCount} người theo dõi</p>
+                      )}
+                      <div className="flex space-x-2 mt-2">
+                        <button className="bg-blue-500 text-white px-4 py-1 rounded text-sm font-medium">
+                          Xác nhận
+                        </button>
+                        <button className="bg-gray-200 text-black px-4 py-1 rounded text-sm font-medium">
+                          Xóa
+                        </button>
+                      </div>
+                    </div>
+                    {!notification.isRead && (
+                      <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-3 h-3 bg-blue-500 rounded-full"></div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <Divider />
+
+              {/* Trước đó */}
+              <div className="px-4 py-2">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="font-medium">Trước đó</h3>
+                  <a href="#" className="text-blue-500 text-sm">Xem tất cả</a>
+                </div>
+
+                {notifications.filter(n => n.type === 'mention').map(notification => (
+                  <div key={notification.id} className="flex items-start space-x-2 mb-3 relative">
+                    <div className="relative">
+                      <Avatar src={notification.user.avatar} className="w-10 h-10" />
+                      <div className="absolute -bottom-1 -right-1 bg-green-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                        <i className="fas fa-comment"></i>
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm">
+                        <span className="font-semibold">{notification.user.name}</span> {notification.content}
+                      </p>
+                      <p className="text-xs text-gray-500">{notification.time}</p>
+                    </div>
+                    {!notification.isRead && (
+                      <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-3 h-3 bg-blue-500 rounded-full"></div>
+                    )}
+                  </div>
+                ))}
+
+                {/* Thêm lời mời kết bạn vào phần "Trước đó" */}
+                {notifications.filter(n => n.type === 'friend_request').slice(3).map(notification => (
+                  <div key={notification.id} className="flex items-start space-x-2 mb-3 relative">
+                    <div className="relative">
+                      <Avatar src={notification.user.avatar} className="w-10 h-10" />
+                      <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                        <i className="fas fa-user-plus"></i>
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm">
+                        <span className="font-semibold">{notification.user.name}</span> đã gửi cho bạn lời mời kết bạn.
+                      </p>
+                      <p className="text-xs text-gray-500">{notification.time}</p>
+                      {notification.user.followersCount && (
+                        <p className="text-xs text-gray-500">Có {notification.user.followersCount} người theo dõi</p>
+                      )}
+                      <div className="flex space-x-2 mt-2">
+                        <button className="bg-blue-500 text-white px-4 py-1 rounded text-sm font-medium">
+                          Xác nhận
+                        </button>
+                        <button className="bg-gray-200 text-black px-4 py-1 rounded text-sm font-medium">
+                          Xóa
+                        </button>
+                      </div>
+                    </div>
+                    {!notification.isRead && (
+                      <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-3 h-3 bg-blue-500 rounded-full"></div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div className="p-3">
+                <button className="w-full bg-gray-200 hover:bg-gray-300 py-2 rounded text-sm font-medium">
+                  Xem thông báo trước đó
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center space-x-1 cursor-pointer bg-gray-200 rounded-full p-1" onClick={handleClick}>
+          <Avatar sx={{ width: 40, height: 40 }} />
+          <KeyboardArrowDownSharpIcon sx={{ width: 20, height: 20, color: "gray" }} />
+        </div>
+        <Menu
+          id="basic-menu"
+          anchorEl={anchorEl}
+          open={open}
+          onClose={handleClose}
+          MenuListProps={{
+            'aria-labelledby': 'basic-button',
+          }}
+        >
+          <MenuItem onClick={handleClose}>Profile</MenuItem>
+          <MenuItem onClick={handleClose}>My account</MenuItem>
+          <MenuItem onClick={handleLogout}>Logout</MenuItem>
+        </Menu>
+      </div>
     </div>
-    <Menu
-      id="basic-menu"
-      anchorEl={anchorEl}
-      open={open}
-      onClose={handleClose}
-      MenuListProps={{
-        'aria-labelledby': 'basic-button',
-      }}
-    >
-      <MenuItem onClick={handleClose}>Profile</MenuItem>
-      <MenuItem onClick={handleClose}>My account</MenuItem>
-      <MenuItem onClick={handleLogout}>Logout</MenuItem>
-    </Menu>
-  </div>
-</div>
   )
 }
 export default Header;
