@@ -15,6 +15,8 @@ import 'dayjs/locale/vi';
 import authService from '../LoginPage/LoginProcess/ValidateLogin';
 import VideoThumbnail from './VideoThumbnail';
 import MediaModal from './MediaModal';
+import CreateSharePostModal from '../CreatePost/CreateSharePostModal';
+// import PostModal from './PostModal';
 const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updatePosts }) => {
     const currentUser = authService.getCurrentUser();
     console.log(currentUser);
@@ -24,6 +26,7 @@ const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updateP
     console.log(userOriginalPost);
     dayjs.extend(relativeTime);
     dayjs.locale('vi');
+    const totalShares = item.shareCount;
     const createdAt = item.creationDate;
     const totalComments = item.commentCount;
     const totalLikes = item.likeCount;
@@ -46,8 +49,20 @@ const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updateP
         setShowPostModal(false);
     };
 
-    const handleLikePost = () => {
-        // dispatch(likePostAction(item.id));
+    const handleLikePost = async () => {
+        try {
+            const result = await authService.likePost(item.postID, currentUser.user.userID);
+            console.log(result)
+            if (result.success) {
+                // Gọi callback để cập nhật danh sách bài viết
+                await updatePosts();
+            } else {
+                // Xử lý lỗi
+                console.error("Error liking post:", result.error);
+            }
+        } catch (error) {
+            console.error("Error in form submission:", error);
+        }
     };
 
     const handleProfileMouseEnter = (e) => {
@@ -105,6 +120,35 @@ const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updateP
         (friend) => friend.userID === item.userID && friend.status === "ACCEPTED"
     );
 
+    //Open/Close CreateShare
+
+    // Close shareModal when clicking outside
+    const shareModalRef = React.useRef(null);
+
+    const [showShareModal, setShowShareModal] = React.useState(false);
+    React.useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (shareModalRef.current && !shareModalRef.current.contains(event.target)) {
+                setShowShareModal(false);
+            }
+        };
+
+        if (showShareModal) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showShareModal]);
+    const openSharePost = () => {
+        setShowShareModal(true);
+    };
+
+    const closeSharePost = () => {
+        setShowShareModal(false);
+    }
+
     const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
     const [showMediaModal, setShowMediaModal] = useState(false);
     // Hàm để mở modal với ảnh/video được chọn
@@ -112,6 +156,10 @@ const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updateP
         setCurrentMediaIndex(index);
         setShowMediaModal(true);
     };
+
+    const isLikedByCurrentUser = item.likes.some(
+        (like) => like.userId === currentUser.user.userID
+    );
     return (
         <div className="bg-white rounded-lg shadow-sm">
             {/* Header của người share post */}
@@ -356,7 +404,7 @@ const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updateP
             <div className="flex justify-between p-3 text-sm text-gray-600 border-t">
                 <div className="flex items-center space-x-1 cursor-pointer hover:bg-gray-100 p-2 rounded-lg">
                     <IconButton onClick={handleLikePost}>
-                        {item.likedByCurrentUser ? <ThumbUpIcon className='text-blue-500' /> : <ThumbUpOutlinedIcon />}
+                        {isLikedByCurrentUser ? <ThumbUpIcon className='text-blue-500' /> : <ThumbUpOutlinedIcon />}
                     </IconButton>
                     <span>{totalLikes} thích</span>
                 </div>
@@ -366,12 +414,14 @@ const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updateP
                     </IconButton>
                     <span>{totalComments} bình luận</span>
                 </div>
-                <div className="flex items-center space-x-1 cursor-pointer hover:bg-gray-100 p-2 rounded-lg">
-                    <IconButton>
-                        <ShareIcon />
-                    </IconButton>
-                    <span>Chia sẻ</span>
-                </div>
+                {
+                    <div className="flex items-center space-x-1 cursor-pointer hover:bg-gray-100 p-2 rounded-lg">
+                        <IconButton onClick={openSharePost}>
+                            <ShareIcon />
+                        </IconButton>
+                        <span>{totalShares} Chia sẻ</span>
+                    </div>
+                }
             </div>
 
             {/* Post Modal */}
@@ -380,6 +430,11 @@ const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updateP
                 handleClose={handleClosePostModal}
                 post={item}
             /> */}
+
+            {/* Share Modal */}
+            <div>
+                <CreateSharePostModal open={showShareModal} handleClose={closeSharePost} shareModalRef={shareModalRef} item={item} userPost={userPost} updatePosts={updatePosts} />
+            </div>
         </div>
     );
 };

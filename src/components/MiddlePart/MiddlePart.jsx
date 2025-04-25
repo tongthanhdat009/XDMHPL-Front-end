@@ -100,7 +100,7 @@ const MiddlePart = () => {
               );
             } else {
               // Truyền item và userPost vào PostCard
-              return <PostCard key={item.postID} item={item} userPost={userPost} updatePosts={updatePosts} />;
+              return <PostCard key={item.postID} item={item} userPost={userPost} updatePosts={updatePosts} allUsers={allUsers} />;
             }
           })}
         </div>

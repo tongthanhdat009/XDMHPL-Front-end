@@ -180,7 +180,7 @@ const authService = {
         error: error.response?.data || {
           message: error.message || "Không thể tạo bài viết",
           status: error.response?.status || 500
-        } 
+        }
       };
     }
   },
@@ -199,6 +199,43 @@ const authService = {
         success: false,
         error: error.response?.data || {
           message: error.message || "Không thể lấy danh sách bài viết",
+          status: error.response?.status || 500
+        }
+      };
+    }
+  },
+
+  likePost: async (postId, userId) => {
+    try {
+      const response = await api.put(`/posts/like/${postId}/${userId}`);
+      return {
+        success: true,
+        data: response.data
+      };
+    } catch (error) {
+      console.error("Error liking post:", error);
+      return {
+        success: false,
+        error: error.response?.data || {
+          message: error.message || "Không thể lIKE bài viết",
+          status: error.response?.status || 500
+        }
+      };
+    }
+  },
+
+  commentPost: async (reqData) => {
+    try {
+      const response = await api.post(`/comments/post/${reqData.postId}/${reqData.userId}`, reqData.data);
+      return {
+        success: true
+      };
+    } catch (error) {
+      console.error("Error comment post:", error);
+      return {
+        success: false,
+        error: error.response?.data || {
+          message: error.message || "Không thể lIKE bài viết",
           status: error.response?.status || 500
         }
       };

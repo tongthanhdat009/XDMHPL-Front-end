@@ -16,16 +16,18 @@ import HomeIcon from '@mui/icons-material/Home';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import CreateSharePostModal from '../CreatePost/CreateSharePostModal';
-const PostCard = ({ item, userPost, updatePosts }) => {
+import PostModal from './PostModal';
+const PostCard = ({ item, userPost, updatePosts, allUsers }) => {
     const currentUser = authService.getCurrentUser();
-    console.log(currentUser);
-    console.log(item);
-    console.log(userPost);
+    // console.log(currentUser);
+    // console.log(item);
+    // console.log(userPost);
     dayjs.extend(relativeTime);
     dayjs.locale('vi');
     const createdAt = item.creationDate;
     const totalComments = item.commentCount;
     const totalLikes = item.likeCount;
+    const totalShares = item.shareCount;
     const formattedTime = dayjs(createdAt).format("DD [tháng] M [lúc] HH:mm");
     const [showPostModal, setShowPostModal] = React.useState(false);
     const [showProfileTooltip, setShowProfileTooltip] = React.useState(false);
@@ -47,8 +49,20 @@ const PostCard = ({ item, userPost, updatePosts }) => {
         setShowPostModal(false);
     };
 
-    const handleLikePost = () => {
-
+    const handleLikePost = async () => {
+        try {
+            const result = await  authService.likePost(item.postID, currentUser.user.userID);
+            console.log(result)
+            if (result.success) {
+               // Gọi callback để cập nhật danh sách bài viết
+               await updatePosts();
+            } else {
+              // Xử lý lỗi
+              console.error("Error liking post:", result.error);
+            }
+          } catch (error) {
+            console.error("Error in form submission:", error);
+          }
     };
 
     const handleProfileMouseEnter = (e) => {
@@ -173,6 +187,10 @@ const PostCard = ({ item, userPost, updatePosts }) => {
         setCurrentMediaIndex(index);
         setShowMediaModal(true);
     };
+
+    const isLikedByCurrentUser = item.likes.some(
+        (like) => like.userId === currentUser.user.userID
+    );
     return (
         <div className="bg-white rounded-lg shadow-sm">
             {/* Header */}
@@ -383,7 +401,7 @@ const PostCard = ({ item, userPost, updatePosts }) => {
             <div className="flex justify-between p-3 text-sm text-gray-600 border-t">
                 <div className="flex items-center space-x-1 cursor-pointer hover:bg-gray-100 p-2 rounded-lg">
                     <IconButton onClick={handleLikePost}>
-                        {item.likedByCurrentUser ? <ThumbUpIcon className='text-blue-500' /> : <ThumbUpOutlinedIcon />}
+                        {isLikedByCurrentUser ? <ThumbUpIcon className='text-blue-500' /> : <ThumbUpOutlinedIcon />}
                     </IconButton>
                     <span>{totalLikes} thích</span>
                 </div>
@@ -394,21 +412,24 @@ const PostCard = ({ item, userPost, updatePosts }) => {
                     <span>{totalComments} bình luận</span>
                 </div>
                 {
-                    item.userID != currentUser.userID && (<div className="flex items-center space-x-1 cursor-pointer hover:bg-gray-100 p-2 rounded-lg">
+                    <div className="flex items-center space-x-1 cursor-pointer hover:bg-gray-100 p-2 rounded-lg">
                         <IconButton onClick={openSharePost}>
                             <ShareIcon />
                         </IconButton>
-                        <span>Chia sẻ</span>
-                    </div>)
+                        <span>{totalShares} Chia sẻ</span>
+                    </div>
                 }
             </div>
 
             {/* Post Modal */}
-            {/* <PostModal
+            <PostModal
                 isOpen={showPostModal}
                 handleClose={handleClosePostModal}
                 post={item}
-            /> */}
+                userPost={userPost}
+                updatePosts={updatePosts}
+                allUsers={allUsers} // Truyền allUsers vào đây nếu cần thiết
+            />
 
             {/* Share Modal */}
             <div>
