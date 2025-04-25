@@ -7,6 +7,7 @@ import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
 import PostCard from '../Post/PostCard';
 import CreatePostModal from '../CreatePost/CreatePostModal';
 import authService from '../LoginPage/LoginProcess/ValidateLogin';
+import SharepostCard from '../Post/SharepostCard';
 const MiddlePart = () => {
   const [openCreatePostModal, setOpenCreatePostModal] = React.useState(false);
   const handleCloseCreatePostModal = () => setOpenCreatePostModal(false);
@@ -73,8 +74,25 @@ const MiddlePart = () => {
             // Tìm userPost trong allUsers dựa trên item.userID
             const userPost = allUsers.find((user) => user.userID === item.userID);
 
-            // Truyền cả item và userPost vào PostCard
-            return <PostCard key={item.postID} item={item} userPost={userPost} />;
+            if (item.originalPostID != null) {
+              // Tìm originalPost trong posts dựa trên originalPostID
+              const originalPost = posts.find((post) => post.postID === item.originalPostID);
+
+              const userOriginalPost = allUsers.find((user) => user.userID === originalPost.userID);
+              // Truyền cả item, userPost và originalPost vào SharepostCard
+              return (
+                <SharepostCard
+                  key={item.postID}
+                  item={item}
+                  userPost={userPost}
+                  originalPost={originalPost}
+                  userOriginalPost={userOriginalPost}
+                />
+              );
+            } else {
+              // Truyền item và userPost vào PostCard
+              return <PostCard key={item.postID} item={item} userPost={userPost} />;
+            }
           })}
         </div>
         <div>

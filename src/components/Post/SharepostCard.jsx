@@ -1,26 +1,27 @@
-import { Avatar, Divider, IconButton } from '@mui/material'
-import React, { useEffect, useState } from 'react'
+import { Avatar, Card, CardActions, CardContent, CardHeader, CardMedia, Divider, IconButton, Typography } from '@mui/material'
+import React, { use, useState } from 'react'
 import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import ShareIcon from '@mui/icons-material/Share';
 import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
-import { isLikedByReqUser } from '../../utils/isLikedByReqUser';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-import { useNavigate } from 'react-router-dom';
-import authService from '../LoginPage/LoginProcess/ValidateLogin';
-import MediaModal from './MediaModal';
-import VideoThumbnail from './VideoThumbnail';
 import PersonIcon from '@mui/icons-material/Person';
 import HomeIcon from '@mui/icons-material/Home';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
-import CreateSharePostModal from '../CreatePost/CreateSharePostModal';
-const PostCard = ({ item, userPost }) => {
+import dayjs from 'dayjs';
+import { useNavigate } from 'react-router-dom';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import 'dayjs/locale/vi';
+import authService from '../LoginPage/LoginProcess/ValidateLogin';
+import VideoThumbnail from './VideoThumbnail';
+import MediaModal from './MediaModal';
+const SharepostCard = ({ item, userPost, originalPost, userOriginalPost }) => {
     const currentUser = authService.getCurrentUser();
     console.log(currentUser);
     console.log(item);
     console.log(userPost);
+    console.log(originalPost);
+    console.log(userOriginalPost);
     dayjs.extend(relativeTime);
     dayjs.locale('vi');
     const createdAt = item.creationDate;
@@ -29,13 +30,11 @@ const PostCard = ({ item, userPost }) => {
     const formattedTime = dayjs(createdAt).format("DD [tháng] M [lúc] HH:mm");
     const [showPostModal, setShowPostModal] = React.useState(false);
     const [showProfileTooltip, setShowProfileTooltip] = React.useState(false);
-    const [showShareModal, setShowShareModal] = React.useState(false);
+
     const [tooltipPosition, setTooltipPosition] = React.useState({ top: 0, left: 0 });
     const profileRef = React.useRef(null);
     const tooltipRef = React.useRef(null);
-    const shareModalRef = React.useRef(null);
-    // const { post, auth } = useSelector(store => store);
-    // console.log('post', post);
+
     const timeoutRef = React.useRef(null);
     const navigate = useNavigate();
 
@@ -48,7 +47,7 @@ const PostCard = ({ item, userPost }) => {
     };
 
     const handleLikePost = () => {
-
+        // dispatch(likePostAction(item.id));
     };
 
     const handleProfileMouseEnter = (e) => {
@@ -66,9 +65,7 @@ const PostCard = ({ item, userPost }) => {
     };
 
     const handleProfileMouseLeave = () => {
-        // Sử dụng timeout để có thể di chuyển chuột từ profile tới tooltip
         timeoutRef.current = setTimeout(() => {
-            // Chỉ ẩn tooltip nếu chuột không di chuyển vào tooltip
             if (!tooltipRef.current || !tooltipRef.current.matches(':hover')) {
                 setShowProfileTooltip(false);
             }
@@ -76,7 +73,6 @@ const PostCard = ({ item, userPost }) => {
     };
 
     const handleTooltipMouseEnter = () => {
-        // Hủy timeout nếu có, để không ẩn tooltip
         if (timeoutRef.current) {
             clearTimeout(timeoutRef.current);
             timeoutRef.current = null;
@@ -84,11 +80,9 @@ const PostCard = ({ item, userPost }) => {
     };
 
     const handleTooltipMouseLeave = () => {
-        // Ẩn tooltip khi rời khỏi cả profile và tooltip
         setShowProfileTooltip(false);
     };
 
-    // Xóa timeout khi component unmount
     React.useEffect(() => {
         return () => {
             if (timeoutRef.current) {
@@ -96,61 +90,6 @@ const PostCard = ({ item, userPost }) => {
             }
         };
     }, []);
-
-
-    // Close shareModal when clicking outside
-    React.useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (shareModalRef.current && !shareModalRef.current.contains(event.target)) {
-                setShowShareModal(false);
-            }
-        };
-
-        if (showShareModal) {
-            document.addEventListener('mousedown', handleClickOutside);
-        }
-
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [showShareModal]);
-
-    const openSharePost = () => {
-        setShowShareModal(true);
-    };
-
-    const closeSharePost = () => {
-        setShowShareModal(false);
-    }
-
-
-    const sendFriendRequest = () => {
-        const reqData = {
-            senderId: auth.user.id,
-            receiverId: item.user.id
-        };
-
-
-    };
-
-    const deleteFriend = () => {
-        const reqData = {
-            senderId: auth.user.id,
-            receiverId: item.user.id
-        };
-
-
-    };
-
-    const acceptFriend = () => {
-        const friendRequest = auth.user.receivedFriendRequests.find(req => req.userId === item.user.id);
-        const reqData = {
-            friendshipId: friendRequest ? friendRequest.id : null
-        };
-
-
-    };
-
 
     const isSent = currentUser.user.friends.some(
         (friend) => friend.userID === item.userID && friend.status === "PENDING"
@@ -175,14 +114,14 @@ const PostCard = ({ item, userPost }) => {
     };
     return (
         <div className="bg-white rounded-lg shadow-sm">
-            {/* Header */}
+            {/* Header của người share post */}
             <div className="flex items-center justify-between p-3">
                 <div className="flex items-center space-x-3">
                     <div
                         ref={profileRef}
                         onMouseEnter={handleProfileMouseEnter}
                         onMouseLeave={handleProfileMouseLeave}
-                        onClick={() => navigate(`/profile/${userPost.userID}`)}
+                        onClick={() => navigate(`/profile/${item.userID}`)}
                     >
                         <Avatar
                             className="w-10 h-10 rounded-full cursor-pointer"
@@ -193,7 +132,7 @@ const PostCard = ({ item, userPost }) => {
                             className="font-semibold text-sm cursor-pointer hover:underline"
                             onMouseEnter={handleProfileMouseEnter}
                             onMouseLeave={handleProfileMouseLeave}
-                            onClick={() => navigate(`/profile/${userPost.userID}`)}
+                            onClick={() => navigate(`/profile/${item.userID}`)}
                         >
                             {userPost.fullName}
                         </div>
@@ -201,6 +140,97 @@ const PostCard = ({ item, userPost }) => {
                     </div>
                 </div>
                 <div className="text-gray-500">...</div>
+            </div>
+
+            {/* Nội dung của người share */}
+            {item.content && (
+                <div className="px-3 pb-3 text-sm">
+                    {item.content}
+                </div>
+            )}
+
+            {/* Original Post Card - Bài viết gốc được share */}
+            <div className="mx-3 mb-3 border rounded-lg overflow-hidden">
+                {/* Header của bài viết gốc */}
+                <div className="flex items-center p-3 bg-gray-50">
+                    <div className="flex items-center space-x-3">
+                        <div onClick={() => navigate(`/profile/${originalPost.userID}`)}>
+                            <Avatar
+                                className="w-8 h-8 rounded-full cursor-pointer"
+                            />
+                        </div>
+                        <div>
+                            <div
+                                className="font-semibold text-sm cursor-pointer hover:underline"
+                                onClick={() => navigate(`/profile/${originalPost.userID}`)}
+                            >
+                                {userOriginalPost.fullName}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                                {originalPost ? dayjs(originalPost.creationDate).format("DD [tháng] M [lúc] HH:mm") : ""}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Nội dung bài viết gốc */}
+                <div className="px-3 pb-3 text-sm">
+                    {originalPost ? originalPost.content : ""}
+                </div>
+
+                {/* Media bài viết gốc */}
+                {originalPost.mediaList && originalPost.mediaList.length > 0 && (
+                    <div className={`grid gap-1 ${originalPost.mediaList.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                        {originalPost.mediaList.map((media, index) => {
+                            const maxVisibleItems = 4;
+                            const showOverlay = originalPost.mediaList.length > maxVisibleItems && index === maxVisibleItems - 1;
+
+                            if (index >= maxVisibleItems) return null;
+
+                            return (
+                                <div
+                                    key={media.postMediaID}
+                                    className="relative overflow-hidden cursor-pointer"
+                                    onClick={() => openMediaModal(index)}
+                                >
+                                    {media.type === "image" ? (
+                                        <img
+                                            src={'http://localhost:8080' + media.mediaURL}
+                                            alt={`Post media ${index + 1}`}
+                                            className="w-full h-full object-cover"
+                                            style={{ aspectRatio: index === 0 && originalPost.mediaList.length === 1 ? 'auto' : '1/1' }}
+                                        />
+                                    ) : media.type === "video" ? (
+                                        <VideoThumbnail
+                                            videoUrl={media.mediaURL}
+                                            index={index}
+                                            totalMedia={originalPost.mediaList.length}
+                                        />
+                                    ) : null}
+
+                                    {/* Overlay cho "+X" indicator */}
+                                    {showOverlay && (
+                                        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                                            <span className="text-white text-2xl font-bold">
+                                                +{originalPost.mediaList.length - maxVisibleItems + 1}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+
+                {/* Media Modal */}
+                <MediaModal
+                    isOpen={showMediaModal}
+                    handleClose={() => setShowMediaModal(false)}
+                    mediaList={originalPost.mediaList || []}
+                    currentIndex={currentMediaIndex}
+                    setCurrentIndex={setCurrentMediaIndex}
+                />
+
             </div>
 
             {/* Profile Tooltip */}
@@ -322,63 +352,6 @@ const PostCard = ({ item, userPost }) => {
                 </div>
             )}
 
-            {/* Post Text */}
-            <div className="px-3 pb-3 text-sm">
-                {item.content}
-            </div>
-
-            {/* Post Media */}
-            {item.mediaList && item.mediaList.length > 0 && (
-                <div className={`grid gap-1 ${item.mediaList.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                    {item.mediaList.map((media, index) => {
-                        const maxVisibleItems = 4;
-                        const showOverlay = item.mediaList.length > maxVisibleItems && index === maxVisibleItems - 1;
-
-                        if (index >= maxVisibleItems) return null;
-
-                        return (
-                            <div
-                                key={media.postMediaID}
-                                className="relative overflow-hidden cursor-pointer"
-                                onClick={() => openMediaModal(index)}
-                            >
-                                {media.type === "image" ? (
-                                    <img
-                                        src={'http://localhost:8080' + media.mediaURL}
-                                        alt={`Post media ${index + 1}`}
-                                        className="w-full h-full object-cover"
-                                        style={{ aspectRatio: index === 0 && item.mediaList.length === 1 ? 'auto' : '1/1' }}
-                                    />
-                                ) : media.type === "video" ? (
-                                    <VideoThumbnail
-                                        videoUrl={media.mediaURL}
-                                        index={index}
-                                        totalMedia={item.mediaList.length}
-                                    />
-                                ) : null}
-
-                                {/* Overlay cho "+X" indicator */}
-                                {showOverlay && (
-                                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                                        <span className="text-white text-2xl font-bold">
-                                            +{item.mediaList.length - maxVisibleItems + 1}
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
-
-            {/* Media Modal */}
-            <MediaModal
-                isOpen={showMediaModal}
-                handleClose={() => setShowMediaModal(false)}
-                mediaList={item.mediaList || []}
-                currentIndex={currentMediaIndex}
-                setCurrentIndex={setCurrentMediaIndex}
-            />
             {/* Interactions */}
             <div className="flex justify-between p-3 text-sm text-gray-600 border-t">
                 <div className="flex items-center space-x-1 cursor-pointer hover:bg-gray-100 p-2 rounded-lg">
@@ -393,14 +366,12 @@ const PostCard = ({ item, userPost }) => {
                     </IconButton>
                     <span>{totalComments} bình luận</span>
                 </div>
-                {
-                    item.userID != currentUser.userID && (<div className="flex items-center space-x-1 cursor-pointer hover:bg-gray-100 p-2 rounded-lg">
-                        <IconButton onClick={openSharePost}>
-                            <ShareIcon />
-                        </IconButton>
-                        <span>Chia sẻ</span>
-                    </div>)
-                }
+                <div className="flex items-center space-x-1 cursor-pointer hover:bg-gray-100 p-2 rounded-lg">
+                    <IconButton>
+                        <ShareIcon />
+                    </IconButton>
+                    <span>Chia sẻ</span>
+                </div>
             </div>
 
             {/* Post Modal */}
@@ -409,12 +380,7 @@ const PostCard = ({ item, userPost }) => {
                 handleClose={handleClosePostModal}
                 post={item}
             /> */}
-
-            {/* Share Modal */}
-            <div>
-                <CreateSharePostModal open={showShareModal} handleClose={closeSharePost} shareModalRef={shareModalRef} item={item} userPost={userPost} />
-            </div>
         </div>
     );
 };
-export default PostCard
+export default SharepostCard

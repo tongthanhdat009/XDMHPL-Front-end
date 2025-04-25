@@ -165,6 +165,26 @@ const authService = {
     }
   },
 
+  createShareAction: async (values) => {
+    try {
+      console.log("Create share action called", values);
+      const response = await api.post('/postshare/create', values);
+      return {
+        success: true,
+        data: response.data
+      };
+    } catch (error) {
+      console.error("Error creating share action:", error);
+      return {
+        success: false,
+        error: error.response?.data || {
+          message: error.message || "Không thể tạo bài viết",
+          status: error.response?.status || 500
+        } 
+      };
+    }
+  },
+
   getAllPostsFormDB: async () => {
     try {
       const response = await api.get(`/posts`);
