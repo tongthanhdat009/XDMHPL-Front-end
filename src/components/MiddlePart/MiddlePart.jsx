@@ -1,131 +1,34 @@
 import { Avatar } from '@mui/material'
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import Stories from './Stories';
 import MoodIcon from '@mui/icons-material/Mood';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
 import PostCard from '../Post/PostCard';
 import CreatePostModal from '../CreatePost/CreatePostModal';
+import authService from '../LoginPage/LoginProcess/ValidateLogin';
 const MiddlePart = () => {
   const [openCreatePostModal, setOpenCreatePostModal] = React.useState(false);
   const handleCloseCreatePostModal = () => setOpenCreatePostModal(false);
   const handleOpenCreatePostModal = () => {
     setOpenCreatePostModal(true);
   }
-  const post  =
-  {
-    newComment: null,
-    posts: [
-      {
-        id: 1,
-        caption: "Nothing",
-        image: "https://www.breakflip.com/uploads2/Sting/Vignettes/Zeri-LoL-Nouveau-Champion.jpg",
-        video: "",
-        user: {
-          id: 3,
-          firstName: "Huỳnh",
-          lastName: "Tuấn",
-          email: "huynhsmash2468@gmail.com",
-          password: "$2a$10$g14Mk8oDER389dSd17c6quz2vF4aroCFagAMsIzvkyKyFtEtnvnT.",
-          gender: "male",
-          followers: [],
-          following: [],
-          savedPosts: []
-        },
-        likedBy: [
-          {
-            id: 3,
-            firstName: "Huỳnh",
-            lastName: "Tuấn",
-            email: "huynhsmash2468@gmail.com",
-            password: "$2a$10$g14Mk8oDER389dSd17c6quz2vF4aroCFagAMsIzvkyKyFtEtnvnT.",
-            gender: "male",
-            followers: [],
-            following: [],
-            savedPosts: []
-          }
-        ],
-        createdAt: "2025-03-18T09:53:58.889681",
-        comments: [
-          {
-            id: 5,
-            content: "wtf?",
-            user: {
-              id: 3,
-              firstName: "Huỳnh",
-              lastName: "Tuấn",
-              email: "huynhsmash2468@gmail.com",
-              password: "$2a$10$g14Mk8oDER389dSd17c6quz2vF4aroCFagAMsIzvkyKyFtEtnvnT.",
-              gender: "male",
-              followers: [],
-              following: [],
-              savedPosts: []
-            },
-            likedBy: [],
-            createdAt: "2025-03-18T18:10:17.320092"
-          },
-          {
-            id: 6,
-            content: "bủh??",
-            user: {
-              id: 3,
-              firstName: "Huỳnh",
-              lastName: "Tuấn",
-              email: "huynhsmash2468@gmail.com",
-              password: "$2a$10$g14Mk8oDER389dSd17c6quz2vF4aroCFagAMsIzvkyKyFtEtnvnT.",
-              gender: "male",
-              followers: [],
-              following: [],
-              savedPosts: []
-            },
-            likedBy: [],
-            createdAt: "2025-03-18T18:47:13.86635"
-          },
-          {
-            id: 7,
-            content: "lmao",
-            user: {
-              id: 3,
-              firstName: "Huỳnh",
-              lastName: "Tuấn",
-              email: "huynhsmash2468@gmail.com",
-              password: "$2a$10$g14Mk8oDER389dSd17c6quz2vF4aroCFagAMsIzvkyKyFtEtnvnT.",
-              gender: "male",
-              followers: [],
-              following: [],
-              savedPosts: []
-            },
-            likedBy: [],
-            createdAt: "2025-03-26T20:43:44.334882"
-          }
-        ]
-      },
-      {
-        id: 2,
-        caption: "Hello",
-        image: "https://www.breakflip.com/uploads2/Sting/Vignettes/Zeri-LoL-Nouveau-Champion.jpg",
-        video: "",
-        user: {
-          id: 3,
-          firstName: "Huỳnh",
-          lastName: "Tuấn",
-          email: "huynhsmash2468@gmail.com",
-          password: "$2a$10$g14Mk8oDER389dSd17c6quz2vF4aroCFagAMsIzvkyKyFtEtnvnT.",
-          gender: "male",
-          followers: [],
-          following: [],
-          savedPosts: []
-        },
-        likedBy: [
-
-        ],
-        createdAt: "2025-03-18T09:53:58.889681",
-        comments: [
-
-        ]
+  const [posts, setPosts] = useState([]); // Khai báo state cho posts
+  const [allUsers, setAllUsers] = useState([]);
+  useEffect(() => {
+    const fetchDatas = async () => {
+      try {
+        const fetchedPosts = await authService.getAllPosts();
+        const users = await authService.getAllUsers();
+        setAllUsers(users);
+        setPosts(fetchedPosts); // Cập nhật state với dữ liệu bài viết
+      } catch (error) {
+        console.error("Error fetching posts:", error);
       }
-    ]
-  };
+    };
+
+    fetchDatas();
+  }, []);
   // console.log('post', post);
   // useEffect(() => {
 
@@ -166,7 +69,13 @@ const MiddlePart = () => {
 
 
         <div className='mt-5 space-y-5'>
-          {post.posts.map((item) => <PostCard key={item.id} item={item} />)}
+          {posts.map((item) => {
+            // Tìm userPost trong allUsers dựa trên item.userID
+            const userPost = allUsers.find((user) => user.userID === item.userID);
+
+            // Truyền cả item và userPost vào PostCard
+            return <PostCard key={item.postID} item={item} userPost={userPost} />;
+          })}
         </div>
         <div>
           <CreatePostModal handleClose={handleCloseCreatePostModal} open={openCreatePostModal} />

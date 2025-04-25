@@ -1,72 +1,392 @@
-import { Avatar,  Divider, IconButton } from '@mui/material'
-import React from 'react'
+import { Avatar, Divider, IconButton } from '@mui/material'
+import React, { useEffect, useState } from 'react'
 import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import ShareIcon from '@mui/icons-material/Share';
 import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
-// import { createCommentAction, likePostAction } from '../../redux/Post/post.action';
 import { isLikedByReqUser } from '../../utils/isLikedByReqUser';
 import dayjs from 'dayjs';
-const PostCard = ({ item }) => {
-    const createdAt = item.createdAt;
-    const totalComments = item.comments.length
-    const totalLikes = item.likedBy.length
+import relativeTime from 'dayjs/plugin/relativeTime';
+import { useNavigate } from 'react-router-dom';
+import authService from '../LoginPage/LoginProcess/ValidateLogin';
+import MediaModal from './MediaModal';
+import VideoThumbnail from './VideoThumbnail';
+import PersonIcon from '@mui/icons-material/Person';
+import HomeIcon from '@mui/icons-material/Home';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
+const PostCard = ({ item, userPost }) => {
+    const currentUser = authService.getCurrentUser();
+    console.log(currentUser);
+    console.log(item);
+    console.log(userPost);
+    dayjs.extend(relativeTime);
+    dayjs.locale('vi');
+    const createdAt = item.creationDate;
+    const totalComments = item.commentCount;
+    const totalLikes = item.likeCount;
     const formattedTime = dayjs(createdAt).format("DD [tháng] M [lúc] HH:mm");
-    const [showComments, setShowComments] = React.useState(false)
+    const [showPostModal, setShowPostModal] = React.useState(false);
+    const [showProfileTooltip, setShowProfileTooltip] = React.useState(false);
+    const [showShareModal, setShowShareModal] = React.useState(false);
+    const [tooltipPosition, setTooltipPosition] = React.useState({ top: 0, left: 0 });
+    const profileRef = React.useRef(null);
+    const tooltipRef = React.useRef(null);
+    const shareModalRef = React.useRef(null);
+    // const { post, auth } = useSelector(store => store);
+    // console.log('post', post);
+    const timeoutRef = React.useRef(null);
+    const navigate = useNavigate();
+
     const handleShowComments = () => {
-        setShowComments(!showComments)
-    }
+        setShowPostModal(true);
+    };
 
-    const handleCreateComment = (content) => {
-        const reqData = {
-            postId: item.id,
-            data: {
-                content
-            }
-        }
-
-    }
+    const handleClosePostModal = () => {
+        setShowPostModal(false);
+    };
 
     const handleLikePost = () => {
 
+    };
+
+    const handleProfileMouseEnter = (e) => {
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+            timeoutRef.current = null;
+        }
+
+        const rect = e.currentTarget.getBoundingClientRect();
+        setTooltipPosition({
+            top: rect.bottom + window.scrollY,
+            left: rect.left + window.scrollX
+        });
+        setShowProfileTooltip(true);
+    };
+
+    const handleProfileMouseLeave = () => {
+        // Sử dụng timeout để có thể di chuyển chuột từ profile tới tooltip
+        timeoutRef.current = setTimeout(() => {
+            // Chỉ ẩn tooltip nếu chuột không di chuyển vào tooltip
+            if (!tooltipRef.current || !tooltipRef.current.matches(':hover')) {
+                setShowProfileTooltip(false);
+            }
+        }, 300);
+    };
+
+    const handleTooltipMouseEnter = () => {
+        // Hủy timeout nếu có, để không ẩn tooltip
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+            timeoutRef.current = null;
+        }
+    };
+
+    const handleTooltipMouseLeave = () => {
+        // Ẩn tooltip khi rời khỏi cả profile và tooltip
+        setShowProfileTooltip(false);
+    };
+
+    // Xóa timeout khi component unmount
+    React.useEffect(() => {
+        return () => {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+            }
+        };
+    }, []);
+
+
+    // Close shareModal when clicking outside
+    React.useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (shareModalRef.current && !shareModalRef.current.contains(event.target)) {
+                setShowShareModal(false);
+            }
+        };
+
+        if (showShareModal) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showShareModal]);
+
+    const openSharePost = () => {
+        setShowShareModal(true);
+    };
+
+    const closeSharePost = () => {
+        setShowShareModal(false);
     }
+
+
+    const sendFriendRequest = () => {
+        const reqData = {
+            senderId: auth.user.id,
+            receiverId: item.user.id
+        };
+
+
+    };
+
+    const deleteFriend = () => {
+        const reqData = {
+            senderId: auth.user.id,
+            receiverId: item.user.id
+        };
+
+
+    };
+
+    const acceptFriend = () => {
+        const friendRequest = auth.user.receivedFriendRequests.find(req => req.userId === item.user.id);
+        const reqData = {
+            friendshipId: friendRequest ? friendRequest.id : null
+        };
+
+
+    };
+
+
+    const isSent = currentUser.user.friends.some(
+        (friend) => friend.userID === item.userID && friend.status === "PENDING"
+    );
+
+    const isReceived = currentUser.user.friendOf.some(
+        (friend) => friend.userID === item.userID && friend.status === "PENDING"
+    );
+
+    const isFriend = currentUser.user.friends.some(
+        (friend) => friend.userID === item.userID && friend.status === "ACCEPTED"
+    ) || currentUser.user.friendOf.some(
+        (friend) => friend.userID === item.userID && friend.status === "ACCEPTED"
+    );
+
+    const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+    const [showMediaModal, setShowMediaModal] = useState(false);
+    // Hàm để mở modal với ảnh/video được chọn
+    const openMediaModal = (index) => {
+        setCurrentMediaIndex(index);
+        setShowMediaModal(true);
+    };
     return (
         <div className="bg-white rounded-lg shadow-sm">
             {/* Header */}
             <div className="flex items-center justify-between p-3">
                 <div className="flex items-center space-x-3">
-                    <Avatar
-                        className="w-10 h-10 rounded-full"
-                    />
+                    <div
+                        ref={profileRef}
+                        onMouseEnter={handleProfileMouseEnter}
+                        onMouseLeave={handleProfileMouseLeave}
+                        onClick={() => navigate(`/profile/${userPost.userID}`)}
+                    >
+                        <Avatar
+                            className="w-10 h-10 rounded-full cursor-pointer"
+                        />
+                    </div>
                     <div>
-                        <div className="font-semibold text-sm">{item.user.firstName + " " + item.user.lastName}</div>
+                        <div
+                            className="font-semibold text-sm cursor-pointer hover:underline"
+                            onMouseEnter={handleProfileMouseEnter}
+                            onMouseLeave={handleProfileMouseLeave}
+                            onClick={() => navigate(`/profile/${userPost.userID}`)}
+                        >
+                            {userPost.fullName}
+                        </div>
                         <div className="text-xs text-gray-500">{formattedTime}</div>
                     </div>
                 </div>
                 <div className="text-gray-500">...</div>
             </div>
 
+            {/* Profile Tooltip */}
+            {showProfileTooltip && (
+                <div
+                    ref={tooltipRef}
+                    className="absolute bg-white rounded-lg shadow-md z-50 w-100"
+                    style={{
+                        top: tooltipPosition.top + 'px',
+                        left: tooltipPosition.left + 'px'
+                    }}
+                    onMouseEnter={handleTooltipMouseEnter}
+                    onMouseLeave={handleTooltipMouseLeave}
+                >
+                    <div className="relative">
+                        <button
+                            className="absolute top-2 right-2 bg-gray-200 rounded-full p-1"
+                            onClick={() => setShowProfileTooltip(false)}
+                        >
+                            <span className="text-gray-600 text-sm">×</span>
+                        </button>
+
+                        <div className="p-4">
+                            <div className="flex items-center space-x-3 mb-2">
+                                <Avatar
+                                    className="w-12 h-12 rounded-full"
+                                />
+                                <div>
+                                    <div className="font-semibold">
+                                        {userPost.fullName}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="text-sm text-gray-600 flex items-center mb-2">
+                                <span className="mr-2">
+                                    <PersonIcon fontSize="small" />
+                                </span>
+                                <span>
+                                    36 bạn chung bao gồm Song Anh và Phạm Thư
+                                </span>
+                            </div>
+
+                            <div className="text-sm text-gray-600 flex items-center mb-3">
+                                <span className="mr-2">
+                                    <HomeIcon fontSize="small" />
+                                </span>
+                                <span>
+                                    Sống tại Biên Hòa
+                                </span>
+                            </div>
+
+                            <div className="flex space-x-2">
+                                {
+                                    currentUser.userID === item.userID ? (
+                                        <>
+                                            <button className="flex-1 bg-gray-200 text-gray-800 py-1 px-2 rounded-md text-sm font-medium flex items-center justify-center">
+                                                <PersonAddIcon fontSize="small" className="mr-1" />
+                                                Thêm vào tin
+                                            </button>
+                                            <button className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-md text-sm font-medium flex items-center justify-center">
+                                                <ChatBubbleIcon fontSize="small" className="mr-1" />
+                                                Chỉnh sửa trang cá nhân
+                                            </button>
+                                        </>
+                                    ) : isSent ? (
+                                        <>
+                                            <button className="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-md text-sm font-medium flex items-center justify-center cursor-pointer hover:bg-gray-300" onClick={deleteFriend}>
+                                                <PersonAddIcon fontSize="small" className="mr-1" />
+                                                Hủy lời mời
+                                            </button>
+                                            <button className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-md text-sm font-medium flex items-center justify-center">
+                                                <ChatBubbleIcon fontSize="small" className="mr-1" />
+                                                Nhắn tin
+                                            </button>
+                                        </>
+                                    ) : isReceived ? (
+                                        <>
+                                            <button className="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-md text-sm font-medium flex items-center justify-center cursor-pointer hover:bg-gray-300" onClick={acceptFriend}>
+                                                <PersonAddIcon fontSize="small" className="mr-1" />
+                                                Chấp nhận lời mời
+                                            </button>
+                                            <button className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-md text-sm font-medium flex items-center justify-center">
+                                                <ChatBubbleIcon fontSize="small" className="mr-1" />
+                                                Nhắn tin
+                                            </button>
+                                        </>
+                                    ) : isFriend ? (
+                                        <>
+                                            <button className="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-md text-sm font-medium flex items-center justify-center cursor-pointer hover:bg-gray-300" onClick={deleteFriend}>
+                                                <PersonAddIcon fontSize="small" className="mr-1" />
+                                                Hủy kết bạn
+                                            </button>
+                                            <button className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-md text-sm font-medium flex items-center justify-center">
+                                                <ChatBubbleIcon fontSize="small" className="mr-1" />
+                                                Nhắn tin
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <button className="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-md text-sm font-medium flex items-center justify-center cursor-pointer hover:bg-gray-300" onClick={sendFriendRequest}>
+                                                <PersonAddIcon fontSize="small" className="mr-1" />
+                                                kết bạn
+                                            </button>
+                                            <button className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-md text-sm font-medium flex items-center justify-center">
+                                                <ChatBubbleIcon fontSize="small" className="mr-1" />
+                                                Nhắn tin
+                                            </button>
+                                        </>
+                                    )
+                                }
+
+                                <button className="bg-gray-200 text-gray-800 p-2 rounded-md">
+                                    <MoreHorizIcon fontSize="small" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Post Text */}
             <div className="px-3 pb-3 text-sm">
                 {item.caption}
             </div>
 
-            {/* Post Image */}
-            {
-                item.image && <img
-                    src={item.image}
-                    alt="Post"
-                    className="w-full max-h-[30rem] object-cover"
-                />
-            }
 
+            {/* Post Media */}
+            {/* Post Media */}
+            {item.mediaList && item.mediaList.length > 0 && (
+                <div className={`grid gap-1 ${item.mediaList.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                    {item.mediaList.map((media, index) => {
+                        const maxVisibleItems = 4;
+                        const showOverlay = item.mediaList.length > maxVisibleItems && index === maxVisibleItems - 1;
+
+                        if (index >= maxVisibleItems) return null;
+
+                        return (
+                            <div
+                                key={media.postMediaID}
+                                className="relative overflow-hidden cursor-pointer"
+                                onClick={() => openMediaModal(index)}
+                            >
+                                {media.type === "image" ? (
+                                    <img
+                                        src={'http://localhost:8080' + media.mediaURL}
+                                        alt={`Post media ${index + 1}`}
+                                        className="w-full h-full object-cover"
+                                        style={{ aspectRatio: index === 0 && item.mediaList.length === 1 ? 'auto' : '1/1' }}
+                                    />
+                                ) : media.type === "video" ? (
+                                    <VideoThumbnail
+                                        videoUrl={media.mediaURL}
+                                        index={index}
+                                        totalMedia={item.mediaList.length}
+                                    />
+                                ) : null}
+
+                                {/* Overlay cho "+X" indicator */}
+                                {showOverlay && (
+                                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                                        <span className="text-white text-2xl font-bold">
+                                            +{item.mediaList.length - maxVisibleItems + 1}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+
+            {/* Media Modal */}
+            <MediaModal
+                isOpen={showMediaModal}
+                handleClose={() => setShowMediaModal(false)}
+                mediaList={item.mediaList || []}
+                currentIndex={currentMediaIndex}
+                setCurrentIndex={setCurrentMediaIndex}
+            />
             {/* Interactions */}
             <div className="flex justify-between p-3 text-sm text-gray-600 border-t">
                 <div className="flex items-center space-x-1 cursor-pointer hover:bg-gray-100 p-2 rounded-lg">
                     <IconButton onClick={handleLikePost}>
-                        {isLikedByReqUser(3, item) ? <ThumbUpIcon className='text-blue-500' /> : <ThumbUpOutlinedIcon />}
+                        {item.likedByCurrentUser ? <ThumbUpIcon className='text-blue-500' /> : <ThumbUpOutlinedIcon />}
                     </IconButton>
-                    <span>{totalLikes} thích</span>
+                    <span>{totalLikes} thích</span>
                 </div>
                 <div className="flex items-center space-x-1 cursor-pointer hover:bg-gray-100 p-2 rounded-lg">
                     <IconButton onClick={handleShowComments}>
@@ -74,40 +394,28 @@ const PostCard = ({ item }) => {
                     </IconButton>
                     <span>{totalComments} bình luận</span>
                 </div>
-                <div className="flex items-center space-x-1 cursor-pointer hover:bg-gray-100 p-2 rounded-lg">
-                    <IconButton>
-                        <ShareIcon />
-                    </IconButton>
-                    <span>Chia sẻ</span>
-                </div>
+                {
+                    item.userID != currentUser.userID && (<div className="flex items-center space-x-1 cursor-pointer hover:bg-gray-100 p-2 rounded-lg">
+                        <IconButton onClick={openSharePost}>
+                            <ShareIcon />
+                        </IconButton>
+                        <span>Chia sẻ</span>
+                    </div>)
+                }
             </div>
 
+            {/* Post Modal */}
+            {/* <PostModal
+                isOpen={showPostModal}
+                handleClose={handleClosePostModal}
+                post={item}
+            /> */}
 
-
-            {showComments && <section>
-                <div className='flex items-center space-x-5 mx-3 my-5'>
-                    <Avatar />
-
-                    <input onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                            handleCreateComment(e.target.value);
-                            console.log(e.target.value);
-                        }
-                    }} type="text" className='w-full outline-none bg-transparent border border-[#3b4054] rounded-full px-5 py-2'
-                        placeholder='Write your comment....' />
-                </div>
-                <Divider />
-                <div className='mx-3 space-y-2 my-5 text-xs pb-3'>
-                    {item.comments.map((comment) => <div key={comment.id} className='flex items-center space-x-5'>
-                        <Avatar sx={{ height: "2rem", width: "2rem", fontSize: "8rem" }}>
-                            {comment.user.firstName[0]}
-                        </Avatar>
-                        <p>{comment.content}</p>
-                    </div>)}
-                </div>
-            </section>}
+            {/* Share Modal */}
+            {/* <div>
+                <CreateSharePostModal open={showShareModal} handleClose={closeSharePost} shareModalRef={shareModalRef} item={item} />
+            </div> */}
         </div>
-    )
-}
-
+    );
+};
 export default PostCard

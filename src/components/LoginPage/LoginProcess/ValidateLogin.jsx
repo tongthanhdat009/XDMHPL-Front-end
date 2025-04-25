@@ -37,6 +37,8 @@ const authService = {
       const { sessionId, user } = response.data;
       localStorage.setItem("rememberMe", remember);
 
+      await authService.getAllPostsFormDB();
+      await authService.getAllUsersFormDB();
       if (remember) {
         localStorage.setItem("sessionID", sessionId);
         localStorage.setItem("currentUser", JSON.stringify({ user }));
@@ -163,7 +165,7 @@ const authService = {
     }
   },
 
-  getAllPosts: async () => {
+  getAllPostsFormDB: async () => {
     try {
       const response = await api.get(`/posts`);
       localStorage.setItem("posts", JSON.stringify(response.data));
@@ -181,6 +183,36 @@ const authService = {
         }
       };
     }
+  },
+
+  getAllUsersFormDB: async () => {
+    try {
+      const response = await api.get(`/users`);
+      localStorage.setItem("users", JSON.stringify(response.data));
+      return {
+        success: true,
+        data: response.data
+      };
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      return {
+        success: false,
+        error: error.response?.data || {
+          message: error.message || "Không thể lấy danh sách bài viết",
+          status: error.response?.status || 500
+        }
+      };
+    }
+  },
+
+  getAllPosts: () => {
+    const posts = localStorage.getItem("posts");
+    return posts ? JSON.parse(posts) : null;
+  },
+
+  getAllUsers: () => {
+    const users = localStorage.getItem("users");
+    return users ? JSON.parse(users) : null;
   },
 
   getRememberMe: () => localStorage.getItem("rememberMe") === "true"

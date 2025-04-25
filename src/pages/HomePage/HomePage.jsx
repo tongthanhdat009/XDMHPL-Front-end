@@ -15,19 +15,17 @@ const HomePage = () => {
 //     }
 // }
 // console.log(`Dung lượng đã sử dụng: ${totalSize} bytes`);
-
-  // console.log(user)
   useEffect(() => {
-    const fetchPosts = async () => {
+    const fetchDatas = async () => {
       try {
-        const postsData = await authService.getAllPosts();
-        console.log(postsData);
+        await authService.getAllPostsFormDB();
+        await authService.getAllUsersFormDB();
       } catch (error) {
-        console.error("Error fetching posts:", error);
+        console.error("Error fetching:", error);
       }
     };
 
-    fetchPosts();
+    fetchDatas();
   }, []);
 
 
