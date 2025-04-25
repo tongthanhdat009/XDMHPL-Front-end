@@ -166,7 +166,7 @@ const MiddlePart = () => {
 
 
         <div className='mt-5 space-y-5'>
-          {post.posts.map((item) => <PostCard item={item} />)}
+          {post.posts.map((item) => <PostCard key={item.id} item={item} />)}
         </div>
         <div>
           <CreatePostModal handleClose={handleCloseCreatePostModal} open={openCreatePostModal} />

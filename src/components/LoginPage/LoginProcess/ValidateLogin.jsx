@@ -163,6 +163,26 @@ const authService = {
     }
   },
 
+  getAllPosts: async () => {
+    try {
+      const response = await api.get(`/posts`);
+      localStorage.setItem("posts", JSON.stringify(response.data));
+      return {
+        success: true,
+        data: response.data
+      };
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+      return {
+        success: false,
+        error: error.response?.data || {
+          message: error.message || "Không thể lấy danh sách bài viết",
+          status: error.response?.status || 500
+        }
+      };
+    }
+  },
+
   getRememberMe: () => localStorage.getItem("rememberMe") === "true"
 };
 
