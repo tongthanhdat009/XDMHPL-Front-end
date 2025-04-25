@@ -15,7 +15,7 @@ const style = {
     borderRadius: '8px',
 };
 
-const CreateSharePostModal = ({ open, handleClose, shareModalRef, item, userPost }) => {
+const CreateSharePostModal = ({ open, handleClose, shareModalRef, item, userPost, updatePosts }) => {
     const currentUser = authService.getCurrentUser();
     console.log('currentUser', currentUser.user.userID);
     const formik = useFormik({
@@ -27,6 +27,17 @@ const CreateSharePostModal = ({ open, handleClose, shareModalRef, item, userPost
         },
         onSubmit: async (values) => {
             const response = await authService.createShareAction(values); 
+            if (response.success) {
+                // Gọi callback để cập nhật danh sách bài viết
+                await updatePosts();
+     
+               // Đóng modal và reset form nếu thành công
+               handleClose();
+               formik.resetForm();
+             } else {
+               // Xử lý lỗi
+               console.error("Error creating post:", result.error);
+             }
         }
     })
     return (

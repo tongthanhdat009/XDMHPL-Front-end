@@ -95,11 +95,12 @@ const MiddlePart = () => {
                   userPost={userPost}
                   originalPost={originalPost}
                   userOriginalPost={userOriginalPost}
+                  updatePosts={updatePosts}
                 />
               );
             } else {
               // Truyền item và userPost vào PostCard
-              return <PostCard key={item.postID} item={item} userPost={userPost} />;
+              return <PostCard key={item.postID} item={item} userPost={userPost} updatePosts={updatePosts} />;
             }
           })}
         </div>

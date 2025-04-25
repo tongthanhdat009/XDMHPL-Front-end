@@ -171,8 +171,7 @@ const authService = {
       console.log("Create share action called", values);
       const response = await api.post('/postshare/create', values);
       return {
-        success: true,
-        data: response.data
+        success: true
       };
     } catch (error) {
       console.error("Error creating share action:", error);

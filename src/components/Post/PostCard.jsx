@@ -16,7 +16,7 @@ import HomeIcon from '@mui/icons-material/Home';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import CreateSharePostModal from '../CreatePost/CreateSharePostModal';
-const PostCard = ({ item, userPost }) => {
+const PostCard = ({ item, userPost, updatePosts }) => {
     const currentUser = authService.getCurrentUser();
     console.log(currentUser);
     console.log(item);
@@ -412,7 +412,7 @@ const PostCard = ({ item, userPost }) => {
 
             {/* Share Modal */}
             <div>
-                <CreateSharePostModal open={showShareModal} handleClose={closeSharePost} shareModalRef={shareModalRef} item={item} userPost={userPost} />
+                <CreateSharePostModal open={showShareModal} handleClose={closeSharePost} shareModalRef={shareModalRef} item={item} userPost={userPost} updatePosts={updatePosts} />
             </div>
         </div>
     );

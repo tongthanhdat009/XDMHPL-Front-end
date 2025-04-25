@@ -15,7 +15,7 @@ import 'dayjs/locale/vi';
 import authService from '../LoginPage/LoginProcess/ValidateLogin';
 import VideoThumbnail from './VideoThumbnail';
 import MediaModal from './MediaModal';
-const SharepostCard = ({ item, userPost, originalPost, userOriginalPost }) => {
+const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updatePosts }) => {
     const currentUser = authService.getCurrentUser();
     console.log(currentUser);
     console.log(item);
