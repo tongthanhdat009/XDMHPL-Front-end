@@ -133,6 +133,7 @@ const authService = {
         media
       };
 
+      console.log('Post data:', postData);
       const formData = new FormData();
       formData.append('userId', postData.userId);
       formData.append('content', postData.content);

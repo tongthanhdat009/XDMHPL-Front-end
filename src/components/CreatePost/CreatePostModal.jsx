@@ -18,14 +18,14 @@ const style = {
   outline: "none"
 };
 
-const CreatePostModal = ({ open, handleClose }) => {
+const CreatePostModal = ({ open, handleClose, updatePosts }) => {
   const [mediaFiles, setMediaFiles] = React.useState([]);
   const [isLoading, setIsLoading] = React.useState(false);
   
   const user = authService.getCurrentUser()
   const formik = useFormik({
     initialValues: {
-      userId: user.userId,
+      userId: user.user.userID,
       caption: "",
       media: []
     },
@@ -37,6 +37,9 @@ const CreatePostModal = ({ open, handleClose }) => {
         const result = await  authService.createPost(values.caption, "post", values.media, values.userId);
         console.log(result)
         if (result.success) {
+           // Gọi callback để cập nhật danh sách bài viết
+           await updatePosts();
+
           // Đóng modal và reset form nếu thành công
           handleClose();
           formik.resetForm();

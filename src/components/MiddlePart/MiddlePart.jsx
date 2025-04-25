@@ -30,6 +30,14 @@ const MiddlePart = () => {
 
     fetchDatas();
   }, []);
+
+
+  const updatePosts = async () => {
+    const result = await authService.getAllPostsFormDB();
+    if (result.success) {
+      setPosts(result.data); // Cập nhật state với danh sách bài viết mới
+    }
+  };
   // console.log('post', post);
   // useEffect(() => {
 
@@ -96,7 +104,7 @@ const MiddlePart = () => {
           })}
         </div>
         <div>
-          <CreatePostModal handleClose={handleCloseCreatePostModal} open={openCreatePostModal} />
+          <CreatePostModal handleClose={handleCloseCreatePostModal} open={openCreatePostModal} updatePosts={updatePosts} />
         </div>
       </div>
     </div>
