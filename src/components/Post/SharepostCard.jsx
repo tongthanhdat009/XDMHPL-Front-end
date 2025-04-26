@@ -106,6 +106,33 @@ const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updateP
         };
     }, []);
 
+
+    const sendFriendRequest = () => {
+        const reqData = {
+            senderId: auth.user.id,
+            receiverId: item.user.id
+        };
+
+
+    };
+
+    const deleteFriend = () => {
+        const reqData = {
+            senderId: auth.user.id,
+            receiverId: item.user.id
+        };
+
+
+    };
+
+    const acceptFriend = () => {
+        const friendRequest = auth.user.receivedFriendRequests.find(req => req.userId === item.user.id);
+        const reqData = {
+            friendshipId: friendRequest ? friendRequest.id : null
+        };
+
+    };
+
     const isSent = currentUser.user.friends.some(
         (friend) => friend.userID === item.userID && friend.status === "PENDING"
     );
@@ -333,7 +360,7 @@ const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updateP
 
                             <div className="flex space-x-2">
                                 {
-                                    currentUser.userID === item.userID ? (
+                                    currentUser.user.userID === item.userID ? (
                                         <>
                                             <button className="flex-1 bg-gray-200 text-gray-800 py-1 px-2 rounded-md text-sm font-medium flex items-center justify-center">
                                                 <PersonAddIcon fontSize="small" className="mr-1" />

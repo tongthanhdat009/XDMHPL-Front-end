@@ -4,7 +4,6 @@ import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import ShareIcon from '@mui/icons-material/Share';
 import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
-import { isLikedByReqUser } from '../../utils/isLikedByReqUser';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { useNavigate } from 'react-router-dom';
@@ -273,7 +272,7 @@ const PostCard = ({ item, userPost, updatePosts, allUsers }) => {
 
                             <div className="flex space-x-2">
                                 {
-                                    currentUser.userID === item.userID ? (
+                                    currentUser.user.userID === item.userID ? (
                                         <>
                                             <button className="flex-1 bg-gray-200 text-gray-800 py-1 px-2 rounded-md text-sm font-medium flex items-center justify-center">
                                                 <PersonAddIcon fontSize="small" className="mr-1" />
