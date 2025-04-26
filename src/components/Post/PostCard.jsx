@@ -544,6 +544,8 @@ const PostCard = ({ item, userPost, updatePosts, allUsers }) => {
                 userPost={userPost}
                 updatePosts={updatePosts}
                 allUsers={allUsers} // Truyền allUsers vào đây nếu cần thiết
+
+                handleOpenCreatePostModal={openSharePost}
             />
 
             {/* Edit Post Modal */}

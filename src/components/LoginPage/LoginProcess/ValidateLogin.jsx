@@ -176,23 +176,25 @@ const authService = {
     formData.append('content', content);
     formData.append('type', type);
 
-    // Xử lý media files
-    const existingMedia = mediaFiles.filter(item => item.file === null);
-    const newMedia = mediaFiles.filter(item => item.file !== null);
+    // Xử lý media files nếu type không phải là "share"
+    if (type !== "share") {
+      const existingMedia = mediaFiles.filter(item => item.file === null);
+      const newMedia = mediaFiles.filter(item => item.file !== null);
 
-    // Thêm ID của các media cần giữ lại
-    if (existingMedia.length > 0) {
-      existingMedia.forEach(item => {
-        formData.append('keepMediaIds', item.id);
-      });
-    }
+      // Thêm ID của các media cần giữ lại
+      if (existingMedia.length > 0) {
+        existingMedia.forEach(item => {
+          formData.append('keepMediaIds', item.id);
+        });
+      }
 
-    // Thêm các file mới
-    if (newMedia.length > 0) {
-      newMedia.forEach(item => {
-        formData.append('mediaTypes', item.type);
-        formData.append('mediaFiles', item.file);
-      });
+      // Thêm các file mới
+      if (newMedia.length > 0) {
+        newMedia.forEach(item => {
+          formData.append('mediaTypes', item.type);
+          formData.append('mediaFiles', item.file);
+        });
+      }
     }
 
     console.log('FormData content:');

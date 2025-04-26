@@ -1,91 +1,108 @@
-import { Avatar, Box, Button, IconButton, Modal, Typography } from '@mui/material'
+import { Avatar, Backdrop, Box, Button, CircularProgress, IconButton, Modal } from '@mui/material'
 import { useFormik } from 'formik';
-import React from 'react'
+import React, { useEffect } from 'react'
+import ImageIcon from '@mui/icons-material/Image';
 import authService from '../LoginPage/LoginProcess/ValidateLogin';
-
+import CloseIcon from '@mui/icons-material/Close';
+// import { uploadToCloudinary } from '../../utils/uploadToCloudinary';
 const style = {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    width: 400,
-    bgcolor: 'background.paper',
-    boxShadow: 24,
-    p: 4,
-    borderRadius: '8px',
+  position: 'absolute',
+  top: '50%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
+  width: 500,
+  bgcolor: 'background.paper',
+  boxShadow: 24,
+  p: 4,
+  borderRadius: ".6rem",
+  outline: "none"
 };
 
-const CreateSharePostModal = ({ open, handleClose, shareModalRef, item, userPost, updatePosts }) => {
-    const currentUser = authService.getCurrentUser();
-    const formik = useFormik({
-        initialValues: {
-            userID: currentUser.user.userID,
-            parentShareID: item.originalPostID==null ? null : item.postID,
-            originalPostID : item.originalPostID!=null ? item.originalPostID : item.postID,
-            caption: ""
-        },
-        onSubmit: async (values) => {
-            const response = await authService.createShareAction(values); 
-            if (response.success) {
-                // Gọi callback để cập nhật danh sách bài viết
-                await updatePosts();
-     
-               // Đóng modal và reset form nếu thành công
-               handleClose();
-               formik.resetForm();
-             } else {
-               // Xử lý lỗi
-               console.error("Error creating post:", result.error);
-             }
+const EditSharePostModal = ({ open, handleClose, updatePosts, item }) => {
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  const user = authService.getCurrentUser()
+  const formik = useFormik({
+    initialValues: {
+      postID: item.postID,
+      userId: user.user.userID,
+      caption: item.content,
+      media: []
+    },
+    onSubmit: async (values) => {
+      // Bắt đầu loading
+      setIsLoading(true);
+      try {
+        // Gọi API tạo bài viết với media files
+        const result = await  authService.updatePost(values.caption, "share", values.media, values.userId, values.postID);
+        console.log(result)
+        if (result.success) {
+           // Gọi callback để cập nhật danh sách bài viết
+           await updatePosts();
+
+          // Đóng modal và reset form nếu thành công
+          handleClose();
+          formik.resetForm();
+        } else {
+          // Xử lý lỗi
+          console.error("Error creating post:", result.error);
         }
-    })
-    return (
-        <Modal
-            open={open}
-            onClose={handleClose}
-            aria-labelledby="modal-modal-title"
-            aria-describedby="modal-modal-description"
+      } catch (error) {
+        console.error("Error in form submission:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  });
+  
+  return (
+    <Modal
+      open={open}
+      onClose={handleClose}
+      aria-labelledby="modal-modal-title"
+      aria-describedby="modal-modal-description"
+    >
+      <Box sx={style}>
+        <form onSubmit={formik.handleSubmit}>
+          <div>
+            <div className='flex space-x-4 items-center'>
+              <Avatar />
+              <div>
+                <p className='font-bold text-lg'>{"Huỳnh Tuấn"}</p>
+              </div>
+            </div>
+            <textarea
+              className='outline-none w-full mt-5 p-2 bg-transparent border border-[#3b4054] rounded-sm'
+              placeholder="Write Caption..."
+              id="caption"
+              name="caption"
+              onChange={formik.handleChange}
+              value={formik.values.caption}
+              rows={4}
+            ></textarea>
+            
+            <div className='flex w-full justify-end mt-4'>
+              <Button 
+                variant='contained' 
+                sx={{ borderRadius: "1.5rem" }} 
+                type='submit'
+                disabled={isLoading}
+              >
+                {isLoading ? 'Đang đăng...' : 'Đăng bài'}
+              </Button>
+            </div>
+          </div>
+        </form>
+        <Backdrop
+          sx={(theme) => ({ color: '#fff', zIndex: theme.zIndex.drawer + 1 })}
+          open={isLoading}
+          onClick={handleClose}
         >
-            <Box sx={style} ref={shareModalRef}>
-                <form onSubmit={formik.handleSubmit}>
-                    <div className="flex justify-between items-center mb-4">
-                        <Typography id="modal-modal-title" variant="h6" component="h2">
-                            Chia sẻ
-                        </Typography>
-                        <Button onClick={handleClose}>✖</Button>
-                    </div>
-
-                    <div className="flex items-center space-x-3 mb-4">
-                        <Avatar />
-                        <div>
-                            <Typography className="font-semibold">{userPost.fullName}</Typography>
-                        </div>
-                    </div>
-
-                    <textarea
-                        className="w-full p-2 mb-4 border-none outline-none resize-none bg-transparent placeholder-gray-500"
-                        placeholder="Hãy nói gì đó về nội dung này (Không bắt buộc)"
-                        rows={3}
-                        id="caption"
-                        name="caption"
-                        onChange={formik.handleChange}
-                        value={formik.values.caption}
-                    ></textarea>
-
-                    <div className="flex justify-end">
-                        <Button
-                            variant="contained"
-                            sx={{ borderRadius: '1.5rem', backgroundColor: '#1a73e8' }}
-                            type='submit'
-                        >
-                            Chia sẻ ngay
-                        </Button>
-                    </div>
-                </form>
-            </Box>
-        </Modal>
-    );
+          <CircularProgress color="inherit" />
+        </Backdrop>
+      </Box>
+    </Modal>
+  );
 };
 
-
-export default CreateSharePostModal
+export default EditSharePostModal;

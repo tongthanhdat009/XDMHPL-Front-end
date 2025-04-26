@@ -99,6 +99,7 @@ const MiddlePart = () => {
                   userPost={userPost}
                   originalPost={originalPost}
                   userOriginalPost={userOriginalPost}
+                  allUsers={allUsers}
                   updatePosts={updatePosts}
                 />
               );
@@ -109,7 +110,7 @@ const MiddlePart = () => {
           })}
         </div>
         <div>
-          <CreatePostModal handleClose={handleCloseCreatePostModal} open={openCreatePostModal} updatePosts={updatePosts} />
+          <CreatePostModal handleClose={handleCloseCreatePostModal} open={openCreatePostModal} updatePosts={updatePosts} allUsers={allUsers} />
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { Avatar, Card, CardActions, CardContent, CardHeader, CardMedia, Divider, IconButton, Typography } from '@mui/material'
-import React, { use, useState } from 'react'
+import React, { use, useEffect, useRef, useState } from 'react'
 import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import ShareIcon from '@mui/icons-material/Share';
@@ -16,14 +16,12 @@ import authService from '../LoginPage/LoginProcess/ValidateLogin';
 import VideoThumbnail from './VideoThumbnail';
 import MediaModal from './MediaModal';
 import CreateSharePostModal from '../CreatePost/CreateSharePostModal';
+import SharepostModal from './SharepostModal';
+import EditSharePostModal from '../EditPost/EditSharePostModal';
 // import PostModal from './PostModal';
-const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updatePosts }) => {
+const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updatePosts, allUsers }) => {
     const currentUser = authService.getCurrentUser();
-    // console.log(currentUser);
-    // console.log(item);
-    // console.log(userPost);
-    // console.log(originalPost);
-    // console.log(userOriginalPost);
+
     dayjs.extend(relativeTime);
     dayjs.locale('vi');
     const totalShares = item.shareCount;
@@ -187,6 +185,43 @@ const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updateP
     const isLikedByCurrentUser = item.likes.some(
         (like) => like.userId === currentUser.user.userID
     );
+
+
+
+
+
+    //Phần xử lý post setting
+    const [showPostMenu, setShowPostMenu] = useState(false);
+    const menuRef = useRef(null);
+
+    const handlePostSetting = () => {
+        setShowPostMenu((prev) => !prev); // Toggle trạng thái menu
+    };
+
+    // Đóng menu khi click ra ngoài
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (menuRef.current && !menuRef.current.contains(event.target)) {
+                setShowPostMenu(false);
+            }
+        };
+
+        if (showPostMenu) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showPostMenu]);
+
+
+    //EditPost
+    const [openEditPostModal, setOpenEditPostModal] = React.useState(false);
+    const handleCloseEditPostModal = () => setOpenEditPostModal(false);
+    const handleOpenEditPostModal = () => {
+        setOpenEditPostModal(true);
+    }
     return (
         <div className="bg-white rounded-lg shadow-sm">
             {/* Header của người share post */}
@@ -214,7 +249,38 @@ const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updateP
                         <div className="text-xs text-gray-500">{formattedTime}</div>
                     </div>
                 </div>
-                <div className="text-gray-500">...</div>
+                <div ref={menuRef} className="relative">
+                    <button
+                        onClick={handlePostSetting}
+                        className="p-1 rounded-full hover:bg-gray-100"
+                    >
+                        <MoreHorizIcon size={20} />
+                    </button>
+
+                    {showPostMenu && (
+                        <div className="absolute right-0 mt-2 w-64 bg-white rounded shadow-lg z-50 py-1 border border-gray-200">
+                            <div className="flex flex-col">
+
+                                <div className="border-t border-gray-200 my-1"></div>
+
+                                {/* Chỉnh sửa bài viết */}
+                                <button className="flex items-center px-4 py-2 hover:bg-gray-100 text-left" onClick={handleOpenEditPostModal}>
+                                    <span className="mr-3">✏️</span>
+                                    <span className="font-medium" >Chỉnh sửa bài viết</span>
+                                </button>
+
+                                <div className="border-t border-gray-200 my-1"></div>
+
+                                {/* Chuyển vào thùng rác */}
+                                <button className="flex items-center px-4 py-2 hover:bg-gray-100 text-left">
+                                    <span className="mr-3">🗑️</span>
+                                    <span className="font-medium">Chuyển vào thùng rác</span>
+                                    {/* <div className="text-xs text-gray-500 ml-8">Các trang trong thùng rác sẽ bị xóa sau 30 ngày.</div> */}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Nội dung của người share */}
@@ -223,6 +289,8 @@ const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updateP
                     {item.content}
                 </div>
             )}
+
+
 
             {/* Original Post Card - Bài viết gốc được share */}
             <div className="mx-3 mb-3 border rounded-lg overflow-hidden">
@@ -452,11 +520,23 @@ const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updateP
             </div>
 
             {/* Post Modal */}
-            {/* <PostModal
+            <SharepostModal
                 isOpen={showPostModal}
                 handleClose={handleClosePostModal}
                 post={item}
-            /> */}
+                userPost={userPost}
+                originalPost={originalPost}
+                userOriginalPost={userOriginalPost}
+                updatePosts={updatePosts}
+                allUsers={allUsers}
+
+                handleOpenCreatePostModal={openSharePost}
+            />
+
+            {/* Edit Post Modal */}
+            <div>
+                <EditSharePostModal handleClose={handleCloseEditPostModal} open={openEditPostModal} updatePosts={updatePosts} item={item} />
+            </div>
 
             {/* Share Modal */}
             <div>
