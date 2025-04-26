@@ -32,8 +32,8 @@ const AllResult = () => {
     const PostSearch = posts.filter((post) => post.content.toLowerCase().includes(queryValue.toLowerCase()));
     const UsersSearch = allUsers.filter(
         (user) =>
-            user.fullName.toLowerCase().includes(queryValue.toLowerCase()) &&
-            user.userID !== currentUser.user.userID 
+            user.fullName.toLowerCase().includes(queryValue.toLowerCase()) 
+        // && user.userID !== currentUser.user.userID 
     );
     const updatePosts = async () => {
         try {
@@ -112,6 +112,9 @@ const AllResult = () => {
                                                 </>
                                             ) : (
                                                 <>
+                                                    <button className="text-blue-600 font-semibold text-sm border border-blue-600 rounded-md px-3 py-1.5">
+                                                        Xem trang cá nhân
+                                                    </button>
                                                 </>
                                             )
                                         }                                      
@@ -254,6 +257,9 @@ const AllResult = () => {
                                                 </>
                                             ) : (
                                                 <>
+                                                    <button className="text-blue-600 font-semibold text-sm border border-blue-600 rounded-md px-3 py-1.5">
+                                                        Xem trang cá nhân
+                                                    </button>
                                                 </>
                                             )
                                         }                                      

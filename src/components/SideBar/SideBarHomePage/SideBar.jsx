@@ -9,8 +9,10 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import OndemandVideoIcon from '@mui/icons-material/OndemandVideo';
 import WatchLaterIcon from '@mui/icons-material/WatchLater';
+import authService from '../../LoginPage/LoginProcess/ValidateLogin';
 const SideBar = () => {
   const navigate = useNavigate();
+  const currentUser = authService.getCurrentUser();
   const handleNavigate = (item) => {
     if (item.title == "Profile") {
       navigate(`/profile/3`)
@@ -21,7 +23,7 @@ const SideBar = () => {
   }
   return (
     <div className='p-2 mt-5 max-w-[600px] xl:min-w-[300px]'>
-      <SideBarRow src='https://centraliamomuseum.org/wp-content/uploads/2022/02/blank_profile.png' title={"Huỳnh Tuấn"} onClick={() => handleNavigate({ title: "Profile" })}/>
+      <SideBarRow src='https://centraliamomuseum.org/wp-content/uploads/2022/02/blank_profile.png' title={currentUser.user.fullName} onClick={() => handleNavigate({ title: "Profile" })}/>
 
       <SideBarRow Icon={PeopleIcon} title="Friends" onClick={() => handleNavigate({title:"Friends"})}/>
       <SideBarRow Icon={GroupIcon} title="Groups" onClick={() => handleNavigate({title:"Groups"})}/>

@@ -77,6 +77,21 @@ const Header = () => {
   const open = Boolean(anchorEl);
   const searchRef = useRef(null); // Tham chiếu đến vùng chứa ô tìm kiếm và dropdown
 
+
+  const [allUsers, setAllUsers] = useState([]);
+  useEffect(() => {
+    const fetchDatas = async () => {
+      try {
+        const users = await authService.getAllUsers();
+        setAllUsers(users);
+      } catch (error) {
+        console.error("Error fetching posts:", error);
+      }
+    };
+
+    fetchDatas();
+  }, []);
+
   const handleEnterInput = (value) => {
     navigate(`/search/top?q=${value}`);
   }
@@ -113,17 +128,28 @@ const Header = () => {
 
   const handleSearchUser = (e) => {
     setSearch(e.target.value)
-
   }
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [recentSearches, setRecentSearches] = useState(['zeus']);
+  const [recentSearches, setRecentSearches] = useState([]);
   const [isSearchActive, setIsSearchActive] = useState(false);
 
   const handleRemoveSearch = (searchToRemove) => {
     console.log(searchToRemove);
     setRecentSearches(recentSearches.filter(search => search !== searchToRemove));
   };
+
+  const handleSearchTermChange = (value) => {
+    setSearchTerm(value);
+    const filteredUsers = allUsers.filter(user => user.fullName.toLowerCase().includes(value.toLowerCase()));
+
+    if (filteredUsers.length > 0) {
+        // Lấy danh sách fullName từ các user đã lọc
+        setRecentSearches(filteredUsers.map(user => user.fullName));
+    } else {
+        setRecentSearches([value]); // Đặt recentSearches thành mảng rỗng nếu không có kết quả
+    }
+  }
 
 
 
@@ -176,7 +202,7 @@ const Header = () => {
               placeholder="Tìm kiếm trên Facebook"
               className="w-full bg-transparent outline-none"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => { handleSearchTermChange(e.target.value) }}
               onFocus={() => setIsSearchActive(true)}
               onKeyPress={(e) => {
                 if (e.key === 'Enter' && e.target.value.trim() !== '') {
@@ -195,20 +221,28 @@ const Header = () => {
             <h3 className="text-lg font-semibold">Mới đây</h3>
             <button className="text-blue-500">Chỉnh sửa</button>
           </div> */}
-              {recentSearches.map((search) => (
-                <div
-                  key={search}
-                  className="flex items-center justify-between hover:bg-gray-100 p-2 rounded-md cursor-pointer"
-                >
-                  <div className="flex items-center space-x-3">
-                    <AccessTimeIcon className="text-gray-500 w-5 h-5" />
-                    <span>{search}</span>
+              {recentSearches.length === 0 ? (
+                <div className="text-gray-500">Xin mời nhập tìm kiếm</div>
+              ) : (
+                recentSearches.map((search) => (
+                  <div
+                    key={search}
+                    className="flex items-center justify-between hover:bg-gray-100 p-2 rounded-md cursor-pointer"
+                    onClick={() => {
+                      navigate(`/search/top?q=${search}`);
+                      setIsSearchActive(false);
+                    }}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <AccessTimeIcon className="text-gray-500 w-5 h-5" />
+                      <span>{search}</span>
+                    </div>
+                    <button onClick={() => handleRemoveSearch(search)}>
+                      <CloseIcon className="text-gray-500 w-5 h-5 cursor-pointer" />
+                    </button>
                   </div>
-                  <button onClick={() => handleRemoveSearch(search)}>
-                    <CloseIcon className="text-gray-500 w-5 h-5 cursor-pointer" />
-                  </button>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         )}

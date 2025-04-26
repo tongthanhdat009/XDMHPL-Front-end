@@ -15,7 +15,6 @@ import authService from '../LoginPage/LoginProcess/ValidateLogin';
 import { data } from 'react-router-dom';
 // PostModal component
 const PostModal = ({ isOpen, handleClose, post, userPost, updatePosts, allUsers, handleOpenCreatePostModal }) => {
-  console.log('post', post)
   const currentUser = authService.getCurrentUser();
   const [newComment, setNewComment] = React.useState('');
 
