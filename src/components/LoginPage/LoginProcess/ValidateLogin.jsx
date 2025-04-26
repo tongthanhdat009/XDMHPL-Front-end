@@ -39,6 +39,7 @@ const authService = {
 
       await authService.getAllPostsFormDB();
       await authService.getAllUsersFormDB();
+
       if (remember) {
         localStorage.setItem("sessionID", sessionId);
         localStorage.setItem("currentUser", JSON.stringify({ user }));
@@ -112,6 +113,9 @@ const authService = {
 
     localStorage.removeItem("sessionID");
     localStorage.removeItem("currentUser");
+    localStorage.removeItem("posts");
+    localStorage.removeItem("users");
+    
     sessionStorage.removeItem("sessionID");
     sessionStorage.removeItem("currentUser");
   },
