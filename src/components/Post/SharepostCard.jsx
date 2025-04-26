@@ -19,11 +19,11 @@ import CreateSharePostModal from '../CreatePost/CreateSharePostModal';
 // import PostModal from './PostModal';
 const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updatePosts }) => {
     const currentUser = authService.getCurrentUser();
-    console.log(currentUser);
-    console.log(item);
-    console.log(userPost);
-    console.log(originalPost);
-    console.log(userOriginalPost);
+    // console.log(currentUser);
+    // console.log(item);
+    // console.log(userPost);
+    // console.log(originalPost);
+    // console.log(userOriginalPost);
     dayjs.extend(relativeTime);
     dayjs.locale('vi');
     const totalShares = item.shareCount;

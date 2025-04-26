@@ -23,10 +23,13 @@ const VideoThumbnail = ({ videoUrl, index, totalMedia }) => {
       <div className="relative w-full h-full">
         <video 
           ref={videoRef}
-          src={'http://localhost:8080' + videoUrl}
+          src={`http://localhost:8080${videoUrl}?timestamp=${new Date().getTime()}`}
           className={`w-full h-full object-cover ${!thumbnailReady ? 'invisible' : ''}`}
           preload="metadata"
           style={{ aspectRatio: index === 0 && totalMedia === 1 ? 'auto' : '1/1' }}
+          onError={(e) => {
+            e.target.src = `http://localhost:8080${videoUrl}?timestamp=${new Date().getTime()}`;
+          }}
         />
         
         {!thumbnailReady && (

@@ -33,9 +33,13 @@ const MiddlePart = () => {
 
 
   const updatePosts = async () => {
-    const result = await authService.getAllPostsFormDB();
-    if (result.success) {
-      setPosts(result.data); // Cập nhật state với danh sách bài viết mới
+    try {
+      const result = await authService.getAllPostsFormDB();
+      if (result.success) {
+        setPosts(result.data); // Cập nhật danh sách bài viết
+      }
+    } catch (error) {
+      console.error("Error updating posts:", error);
     }
   };
   // console.log('post', post);

@@ -166,6 +166,58 @@ const authService = {
     }
   },
 
+  updatePost: async (content, type, mediaFiles = [], userId, postID) => {
+    try {
+      console.log("Update post called", content, type, mediaFiles, userId, postID);
+
+    const formData = new FormData();
+    formData.append('userId', userId);
+    formData.append('postId', postID);
+    formData.append('content', content);
+    formData.append('type', type);
+
+    // Xử lý media files
+    const existingMedia = mediaFiles.filter(item => item.file === null);
+    const newMedia = mediaFiles.filter(item => item.file !== null);
+
+    // Thêm ID của các media cần giữ lại
+    if (existingMedia.length > 0) {
+      existingMedia.forEach(item => {
+        formData.append('keepMediaIds', item.id);
+      });
+    }
+
+    // Thêm các file mới
+    if (newMedia.length > 0) {
+      newMedia.forEach(item => {
+        formData.append('mediaTypes', item.type);
+        formData.append('mediaFiles', item.file);
+      });
+    }
+
+    console.log('FormData content:');
+    Array.from(formData.entries()).forEach(([key, value]) => {
+      console.log(`${key}:`, value);
+    });
+
+    const response = await api.put('/posts/update', formData);
+      return {
+        success: true,
+        // data: response.data
+      };
+  
+    } catch (error) {
+      console.error("Error updating post:", error);
+      return {
+        success: false,
+        error: error.response?.data || {
+          message: error.message || "Không thể cập nhật bài viết",
+          status: error.response?.status || 500
+        }
+      };
+    }
+  },
+
   createShareAction: async (values) => {
     try {
       console.log("Create share action called", values);

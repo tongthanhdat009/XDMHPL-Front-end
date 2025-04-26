@@ -1,5 +1,5 @@
-import { Avatar, Divider, IconButton } from '@mui/material'
-import React, { useEffect, useState } from 'react'
+import { Avatar, Divider, IconButton, MenuItem } from '@mui/material'
+import React, { useEffect, useRef, useState } from 'react'
 import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import ShareIcon from '@mui/icons-material/Share';
@@ -16,7 +16,9 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import CreateSharePostModal from '../CreatePost/CreateSharePostModal';
 import PostModal from './PostModal';
+import EditPostModal from '../EditPost/EditPostModal';
 const PostCard = ({ item, userPost, updatePosts, allUsers }) => {
+
     const currentUser = authService.getCurrentUser();
     // console.log(currentUser);
     // console.log(item);
@@ -50,18 +52,18 @@ const PostCard = ({ item, userPost, updatePosts, allUsers }) => {
 
     const handleLikePost = async () => {
         try {
-            const result = await  authService.likePost(item.postID, currentUser.user.userID);
+            const result = await authService.likePost(item.postID, currentUser.user.userID);
             console.log(result)
             if (result.success) {
-               // Gọi callback để cập nhật danh sách bài viết
-               await updatePosts();
+                // Gọi callback để cập nhật danh sách bài viết
+                await updatePosts();
             } else {
-              // Xử lý lỗi
-              console.error("Error liking post:", result.error);
+                // Xử lý lỗi
+                console.error("Error liking post:", result.error);
             }
-          } catch (error) {
+        } catch (error) {
             console.error("Error in form submission:", error);
-          }
+        }
     };
 
     const handleProfileMouseEnter = (e) => {
@@ -186,10 +188,44 @@ const PostCard = ({ item, userPost, updatePosts, allUsers }) => {
         setCurrentMediaIndex(index);
         setShowMediaModal(true);
     };
-
     const isLikedByCurrentUser = item.likes.some(
         (like) => like.userId === currentUser.user.userID
     );
+
+
+
+    //Phần xử lý post setting
+    const [showPostMenu, setShowPostMenu] = useState(false);
+    const menuRef = useRef(null);
+
+    const handlePostSetting = () => {
+        setShowPostMenu((prev) => !prev); // Toggle trạng thái menu
+    };
+
+    // Đóng menu khi click ra ngoài
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (menuRef.current && !menuRef.current.contains(event.target)) {
+                setShowPostMenu(false);
+            }
+        };
+
+        if (showPostMenu) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showPostMenu]);
+
+
+    //EditPost
+    const [openEditPostModal, setOpenEditPostModal] = React.useState(false);
+    const handleCloseEditPostModal = () => setOpenEditPostModal(false);
+    const handleOpenEditPostModal = () => {
+        setOpenEditPostModal(true);
+    }
     return (
         <div className="bg-white rounded-lg shadow-sm">
             {/* Header */}
@@ -217,7 +253,82 @@ const PostCard = ({ item, userPost, updatePosts, allUsers }) => {
                         <div className="text-xs text-gray-500">{formattedTime}</div>
                     </div>
                 </div>
-                <div className="text-gray-500">...</div>
+
+
+                <div ref={menuRef} className="relative">
+                    <button
+                        onClick={handlePostSetting}
+                        className="p-1 rounded-full hover:bg-gray-100"
+                    >
+                        <MoreHorizIcon size={20} />
+                    </button>
+
+                    {showPostMenu && (
+                        <div className="absolute right-0 mt-2 w-64 bg-white rounded shadow-lg z-50 py-1 border border-gray-200">
+                            <div className="flex flex-col">
+                                {/* Ghim bài viết */}
+                                {/* <button className="flex items-center px-4 py-2 hover:bg-gray-100 text-left">
+                                    <span className="mr-3">📌</span>
+                                    <span className="font-medium">Ghim bài viết</span>
+                                </button> */}
+
+                                {/* Lưu bài viết */}
+                                {/* <button className="flex items-center px-4 py-2 hover:bg-gray-100 text-left">
+                                    <span className="mr-3">🔖</span>
+                                    <span className="font-medium">Lưu bài viết</span>
+                                    <div className="text-xs text-gray-500 ml-8">Thêm vào danh sách mục đã lưu</div>
+                                </button> */}
+
+                                <div className="border-t border-gray-200 my-1"></div>
+
+                                {/* Chỉnh sửa bài viết */}
+                                <button className="flex items-center px-4 py-2 hover:bg-gray-100 text-left" onClick={handleOpenEditPostModal}>
+                                    <span className="mr-3">✏️</span>
+                                    <span className="font-medium" >Chỉnh sửa bài viết</span>
+                                </button>
+
+                                {/* Chỉnh sửa đối tượng */}
+                                {/* <button className="flex items-center px-4 py-2 hover:bg-gray-100 text-left">
+                                    <span className="mr-3">⚙️</span>
+                                    <span className="font-medium">Chỉnh sửa đối tượng</span>
+                                </button> */}
+
+                                {/* Tắt thông báo về bài viết này */}
+                                {/* <button className="flex items-center px-4 py-2 hover:bg-gray-100 text-left">
+                                    <span className="mr-3">🔕</span>
+                                    <span className="font-medium">Tắt thông báo về bài viết này</span>
+                                </button> */}
+
+                                {/* Tắt bản dịch */}
+                                {/* <button className="flex items-center px-4 py-2 hover:bg-gray-100 text-left">
+                                    <span className="mr-3">🌐</span>
+                                    <span className="font-medium">Tắt bản dịch</span>
+                                </button> */}
+
+                                {/* Chỉnh sửa ngày */}
+                                {/* <button className="flex items-center px-4 py-2 hover:bg-gray-100 text-left">
+                                    <span className="mr-3">📅</span>
+                                    <span className="font-medium">Chỉnh sửa ngày</span>
+                                </button> */}
+
+                                <div className="border-t border-gray-200 my-1"></div>
+
+                                {/* Chuyển vào kho lưu trữ */}
+                                {/* <button className="flex items-center px-4 py-2 hover:bg-gray-100 text-left">
+                                    <span className="mr-3">📦</span>
+                                    <span className="font-medium">Chuyển vào kho lưu trữ</span>
+                                </button> */}
+
+                                {/* Chuyển vào thùng rác */}
+                                <button className="flex items-center px-4 py-2 hover:bg-gray-100 text-left">
+                                    <span className="mr-3">🗑️</span>
+                                    <span className="font-medium">Chuyển vào thùng rác</span>
+                                    {/* <div className="text-xs text-gray-500 ml-8">Các trang trong thùng rác sẽ bị xóa sau 30 ngày.</div> */}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Profile Tooltip */}
@@ -361,11 +472,16 @@ const PostCard = ({ item, userPost, updatePosts, allUsers }) => {
                             >
                                 {media.type === "image" ? (
                                     <img
-                                        src={'http://localhost:8080' + media.mediaURL}
+                                        src={`http://localhost:8080${media.mediaURL}?timestamp=${new Date().getTime()}`}
                                         alt={`Post media ${index + 1}`}
                                         className="w-full h-full object-cover"
                                         style={{ aspectRatio: index === 0 && item.mediaList.length === 1 ? 'auto' : '1/1' }}
+                                        onLoad={() => console.log('Image loaded successfully')}
+                                        onError={(e) => {
+                                            e.target.src = `http://localhost:8080${media.mediaURL}?timestamp=${new Date().getTime()}`;
+                                        }}
                                     />
+
                                 ) : media.type === "video" ? (
                                     <VideoThumbnail
                                         videoUrl={media.mediaURL}
@@ -429,6 +545,11 @@ const PostCard = ({ item, userPost, updatePosts, allUsers }) => {
                 updatePosts={updatePosts}
                 allUsers={allUsers} // Truyền allUsers vào đây nếu cần thiết
             />
+
+            {/* Edit Post Modal */}
+            <div>
+                <EditPostModal handleClose={handleCloseEditPostModal} open={openEditPostModal} updatePosts={updatePosts} item={item} />
+            </div>
 
             {/* Share Modal */}
             <div>
