@@ -198,7 +198,7 @@ const SharepostModal = ({ isOpen, handleClose, post, userPost, originalPost, use
                     )}
 
                     {/* Shared Content Card */}
-                    {originalPost && (
+                    {originalPost ? (
                         <Box
                             sx={{
                                 mx: 2,
@@ -310,7 +310,18 @@ const SharepostModal = ({ isOpen, handleClose, post, userPost, originalPost, use
                                 </div>
                             )}
                         </Box>
-                    )}
+                    ) : (
+                        <div className="mx-3 mb-3 border rounded-lg overflow-hidden bg-gray-100 p-4 text-center">
+                            <Typography variant="body2" color="text.secondary">
+                                Nội dung này hiện không hiển thị
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                                Lỗi này thường do chủ sở hữu chỉ chia sẻ nội dung với một nhóm nhỏ, thay đổi người được xem hoặc đã xóa nội dung.
+                            </Typography>
+                        </div>
+                    )
+                
+                }
 
                     {/* Media Modal for viewing images/videos */}
                     <MediaModal

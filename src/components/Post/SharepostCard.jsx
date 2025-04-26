@@ -1,4 +1,4 @@
-import { Avatar, Card, CardActions, CardContent, CardHeader, CardMedia, Divider, IconButton, Typography } from '@mui/material'
+import { Avatar, Box, Button, Card, CardActions, CardContent, CardHeader, CardMedia, Divider, IconButton, Modal, Typography } from '@mui/material'
 import React, { use, useEffect, useRef, useState } from 'react'
 import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
@@ -188,7 +188,33 @@ const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updateP
 
 
 
+    //Confirm delete
+    const [showConfirmModal, setShowConfirmModal] = React.useState(false);
 
+    const handleDelete = () => {
+        setShowConfirmModal(true); // Hiển thị modal xác nhận
+    };
+
+    const handleConfirmDelete = async () => {
+        try {
+            // Gọi API xóa bài viết ở đây
+            const result = await authService.deletePost(item.postID);
+            if (result.success) {
+                await updatePosts();
+            }
+            else {
+                // Xử lý lỗi
+                console.error("Error deleting post:", result.error);
+            }
+            setShowConfirmModal(false);
+        } catch (error) {
+            console.error("Error deleting post:", error);
+        }
+    };
+
+    const handleCancelDelete = () => {
+        setShowConfirmModal(false);
+    };
 
     //Phần xử lý post setting
     const [showPostMenu, setShowPostMenu] = useState(false);
@@ -250,12 +276,18 @@ const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updateP
                     </div>
                 </div>
                 <div ref={menuRef} className="relative">
-                    <button
-                        onClick={handlePostSetting}
-                        className="p-1 rounded-full hover:bg-gray-100"
-                    >
-                        <MoreHorizIcon size={20} />
-                    </button>
+                    {
+                        currentUser.user.userID === item.userID && (
+                            <>
+                                <button
+                                    onClick={handlePostSetting}
+                                    className="p-1 rounded-full hover:bg-gray-100"
+                                >
+                                    <MoreHorizIcon size={20} />
+                                </button>
+                            </>
+                        )
+                    }
 
                     {showPostMenu && (
                         <div className="absolute right-0 mt-2 w-64 bg-white rounded shadow-lg z-50 py-1 border border-gray-200">
@@ -272,7 +304,7 @@ const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updateP
                                 <div className="border-t border-gray-200 my-1"></div>
 
                                 {/* Chuyển vào thùng rác */}
-                                <button className="flex items-center px-4 py-2 hover:bg-gray-100 text-left">
+                                <button className="flex items-center px-4 py-2 hover:bg-gray-100 text-left" onClick={handleDelete}>
                                     <span className="mr-3">🗑️</span>
                                     <span className="font-medium">Chuyển vào thùng rác</span>
                                     {/* <div className="text-xs text-gray-500 ml-8">Các trang trong thùng rác sẽ bị xóa sau 30 ngày.</div> */}
@@ -293,88 +325,103 @@ const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updateP
 
 
             {/* Original Post Card - Bài viết gốc được share */}
-            <div className="mx-3 mb-3 border rounded-lg overflow-hidden">
-                {/* Header của bài viết gốc */}
-                <div className="flex items-center p-3 bg-gray-50">
-                    <div className="flex items-center space-x-3">
-                        <div onClick={() => navigate(`/profile/${originalPost.userID}`)}>
-                            <Avatar
-                                className="w-8 h-8 rounded-full cursor-pointer"
-                            />
-                        </div>
-                        <div>
-                            <div
-                                className="font-semibold text-sm cursor-pointer hover:underline"
-                                onClick={() => navigate(`/profile/${originalPost.userID}`)}
-                            >
-                                {userOriginalPost.fullName}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                                {originalPost ? dayjs(originalPost.creationDate).format("DD [tháng] M [lúc] HH:mm") : ""}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Nội dung bài viết gốc */}
-                <div className="px-3 pb-3 text-sm">
-                    {originalPost ? originalPost.content : ""}
-                </div>
-
-                {/* Media bài viết gốc */}
-                {originalPost.mediaList && originalPost.mediaList.length > 0 && (
-                    <div className={`grid gap-1 ${originalPost.mediaList.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                        {originalPost.mediaList.map((media, index) => {
-                            const maxVisibleItems = 4;
-                            const showOverlay = originalPost.mediaList.length > maxVisibleItems && index === maxVisibleItems - 1;
-
-                            if (index >= maxVisibleItems) return null;
-
-                            return (
-                                <div
-                                    key={media.postMediaID}
-                                    className="relative overflow-hidden cursor-pointer"
-                                    onClick={() => openMediaModal(index)}
-                                >
-                                    {media.type === "image" ? (
-                                        <img
-                                            src={'http://localhost:8080' + media.mediaURL}
-                                            alt={`Post media ${index + 1}`}
-                                            className="w-full h-full object-cover"
-                                            style={{ aspectRatio: index === 0 && originalPost.mediaList.length === 1 ? 'auto' : '1/1' }}
+            {
+                originalPost ? (
+                    <>
+                        <div className="mx-3 mb-3 border rounded-lg overflow-hidden">
+                            {/* Header của bài viết gốc */}
+                            <div className="flex items-center p-3 bg-gray-50">
+                                <div className="flex items-center space-x-3">
+                                    <div onClick={() => navigate(`/profile/${originalPost.userID}`)}>
+                                        <Avatar
+                                            className="w-8 h-8 rounded-full cursor-pointer"
                                         />
-                                    ) : media.type === "video" ? (
-                                        <VideoThumbnail
-                                            videoUrl={media.mediaURL}
-                                            index={index}
-                                            totalMedia={originalPost.mediaList.length}
-                                        />
-                                    ) : null}
-
-                                    {/* Overlay cho "+X" indicator */}
-                                    {showOverlay && (
-                                        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                                            <span className="text-white text-2xl font-bold">
-                                                +{originalPost.mediaList.length - maxVisibleItems + 1}
-                                            </span>
+                                    </div>
+                                    <div>
+                                        <div
+                                            className="font-semibold text-sm cursor-pointer hover:underline"
+                                            onClick={() => navigate(`/profile/${originalPost.userID}`)}
+                                        >
+                                            {userOriginalPost.fullName}
                                         </div>
-                                    )}
+                                        <div className="text-xs text-gray-500">
+                                            {originalPost ? dayjs(originalPost.creationDate).format("DD [tháng] M [lúc] HH:mm") : ""}
+                                        </div>
+                                    </div>
                                 </div>
-                            );
-                        })}
-                    </div>
-                )}
+                            </div>
 
-                {/* Media Modal */}
-                <MediaModal
-                    isOpen={showMediaModal}
-                    handleClose={() => setShowMediaModal(false)}
-                    mediaList={originalPost.mediaList || []}
-                    currentIndex={currentMediaIndex}
-                    setCurrentIndex={setCurrentMediaIndex}
-                />
+                            {/* Nội dung bài viết gốc */}
+                            <div className="px-3 pb-3 text-sm">
+                                {originalPost ? originalPost.content : ""}
+                            </div>
 
-            </div>
+                            {/* Media bài viết gốc */}
+                            {originalPost.mediaList && originalPost.mediaList.length > 0 && (
+                                <div className={`grid gap-1 ${originalPost.mediaList.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                                    {originalPost.mediaList.map((media, index) => {
+                                        const maxVisibleItems = 4;
+                                        const showOverlay = originalPost.mediaList.length > maxVisibleItems && index === maxVisibleItems - 1;
+
+                                        if (index >= maxVisibleItems) return null;
+
+                                        return (
+                                            <div
+                                                key={media.postMediaID}
+                                                className="relative overflow-hidden cursor-pointer"
+                                                onClick={() => openMediaModal(index)}
+                                            >
+                                                {media.type === "image" ? (
+                                                    <img
+                                                        src={'http://localhost:8080' + media.mediaURL}
+                                                        alt={`Post media ${index + 1}`}
+                                                        className="w-full h-full object-cover"
+                                                        style={{ aspectRatio: index === 0 && originalPost.mediaList.length === 1 ? 'auto' : '1/1' }}
+                                                    />
+                                                ) : media.type === "video" ? (
+                                                    <VideoThumbnail
+                                                        videoUrl={media.mediaURL}
+                                                        index={index}
+                                                        totalMedia={originalPost.mediaList.length}
+                                                    />
+                                                ) : null}
+
+                                                {/* Overlay cho "+X" indicator */}
+                                                {showOverlay && (
+                                                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                                                        <span className="text-white text-2xl font-bold">
+                                                            +{originalPost.mediaList.length - maxVisibleItems + 1}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+
+                            {/* Media Modal */}
+                            <MediaModal
+                                isOpen={showMediaModal}
+                                handleClose={() => setShowMediaModal(false)}
+                                mediaList={originalPost.mediaList || []}
+                                currentIndex={currentMediaIndex}
+                                setCurrentIndex={setCurrentMediaIndex}
+                            />
+
+                        </div>
+                    </>
+                ) : (
+                <div className="mx-3 mb-3 border rounded-lg overflow-hidden bg-gray-100 p-4 text-center">
+                    <Typography variant="body2" color="text.secondary">
+                        Nội dung này hiện không hiển thị
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                        Lỗi này thường do chủ sở hữu chỉ chia sẻ nội dung với một nhóm nhỏ, thay đổi người được xem hoặc đã xóa nội dung.
+                    </Typography>
+                </div>
+                )
+            }
 
             {/* Profile Tooltip */}
             {showProfileTooltip && (
@@ -542,6 +589,45 @@ const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updateP
             <div>
                 <CreateSharePostModal open={showShareModal} handleClose={closeSharePost} shareModalRef={shareModalRef} item={item} userPost={userPost} updatePosts={updatePosts} />
             </div>
+
+
+            {/* Modal xác nhận xóa */}
+            <Modal
+                open={showConfirmModal}
+                onClose={handleCancelDelete}
+                aria-labelledby="confirm-delete-title"
+                aria-describedby="confirm-delete-description"
+            >
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        bgcolor: 'background.paper',
+                        borderRadius: 2,
+                        boxShadow: 24,
+                        p: 4,
+                        width: '400px',
+                        textAlign: 'center',
+                    }}
+                >
+                    <Typography id="confirm-delete-title" variant="h6" component="h2">
+                        Xác nhận xóa
+                    </Typography>
+                    <Typography id="confirm-delete-description" sx={{ mt: 2 }}>
+                        Bạn có chắc chắn muốn xóa bài viết này không? Hành động này không thể hoàn tác.
+                    </Typography>
+                    <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between' }}>
+                        <Button variant="contained" color="error" onClick={handleConfirmDelete}>
+                            Xóa
+                        </Button>
+                        <Button variant="outlined" onClick={handleCancelDelete}>
+                            Hủy
+                        </Button>
+                    </Box>
+                </Box>
+            </Modal>
         </div>
     );
 };

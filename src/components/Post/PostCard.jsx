@@ -1,4 +1,4 @@
-import { Avatar, Divider, IconButton, MenuItem } from '@mui/material'
+import { Avatar, Box, Button, Divider, IconButton, MenuItem, Modal, Typography } from '@mui/material'
 import React, { useEffect, useRef, useState } from 'react'
 import ThumbUpOutlinedIcon from '@mui/icons-material/ThumbUpOutlined';
 import ThumbUpIcon from '@mui/icons-material/ThumbUp';
@@ -226,6 +226,35 @@ const PostCard = ({ item, userPost, updatePosts, allUsers }) => {
     const handleOpenEditPostModal = () => {
         setOpenEditPostModal(true);
     }
+
+
+    //Confirm delete
+    const [showConfirmModal, setShowConfirmModal] = React.useState(false);
+
+    const handleDelete = () => {
+        setShowConfirmModal(true); // Hiển thị modal xác nhận
+    };
+
+    const handleConfirmDelete = async () => {
+        try {
+            // Gọi API xóa bài viết ở đây
+            const result = await authService.deletePost(item.postID);
+            if (result.success) {
+                await updatePosts();
+            }
+            else {
+                // Xử lý lỗi
+                console.error("Error deleting post:", result.error);
+            }
+            setShowConfirmModal(false);
+        } catch (error) {
+            console.error("Error deleting post:", error);
+        }
+    };
+
+    const handleCancelDelete = () => {
+        setShowConfirmModal(false);
+    };
     return (
         <div className="bg-white rounded-lg shadow-sm">
             {/* Header */}
@@ -256,28 +285,22 @@ const PostCard = ({ item, userPost, updatePosts, allUsers }) => {
 
 
                 <div ref={menuRef} className="relative">
-                    <button
-                        onClick={handlePostSetting}
-                        className="p-1 rounded-full hover:bg-gray-100"
-                    >
-                        <MoreHorizIcon size={20} />
-                    </button>
-
+                    {
+                        currentUser.user.userID === item.userID && (
+                            <>
+                                <button
+                                    onClick={handlePostSetting}
+                                    className="p-1 rounded-full hover:bg-gray-100"
+                                >
+                                    <MoreHorizIcon size={20} />
+                                </button>
+                            </>
+                        )
+                    }
                     {showPostMenu && (
                         <div className="absolute right-0 mt-2 w-64 bg-white rounded shadow-lg z-50 py-1 border border-gray-200">
                             <div className="flex flex-col">
-                                {/* Ghim bài viết */}
-                                {/* <button className="flex items-center px-4 py-2 hover:bg-gray-100 text-left">
-                                    <span className="mr-3">📌</span>
-                                    <span className="font-medium">Ghim bài viết</span>
-                                </button> */}
-
-                                {/* Lưu bài viết */}
-                                {/* <button className="flex items-center px-4 py-2 hover:bg-gray-100 text-left">
-                                    <span className="mr-3">🔖</span>
-                                    <span className="font-medium">Lưu bài viết</span>
-                                    <div className="text-xs text-gray-500 ml-8">Thêm vào danh sách mục đã lưu</div>
-                                </button> */}
+                            
 
                                 <div className="border-t border-gray-200 my-1"></div>
 
@@ -287,40 +310,10 @@ const PostCard = ({ item, userPost, updatePosts, allUsers }) => {
                                     <span className="font-medium" >Chỉnh sửa bài viết</span>
                                 </button>
 
-                                {/* Chỉnh sửa đối tượng */}
-                                {/* <button className="flex items-center px-4 py-2 hover:bg-gray-100 text-left">
-                                    <span className="mr-3">⚙️</span>
-                                    <span className="font-medium">Chỉnh sửa đối tượng</span>
-                                </button> */}
-
-                                {/* Tắt thông báo về bài viết này */}
-                                {/* <button className="flex items-center px-4 py-2 hover:bg-gray-100 text-left">
-                                    <span className="mr-3">🔕</span>
-                                    <span className="font-medium">Tắt thông báo về bài viết này</span>
-                                </button> */}
-
-                                {/* Tắt bản dịch */}
-                                {/* <button className="flex items-center px-4 py-2 hover:bg-gray-100 text-left">
-                                    <span className="mr-3">🌐</span>
-                                    <span className="font-medium">Tắt bản dịch</span>
-                                </button> */}
-
-                                {/* Chỉnh sửa ngày */}
-                                {/* <button className="flex items-center px-4 py-2 hover:bg-gray-100 text-left">
-                                    <span className="mr-3">📅</span>
-                                    <span className="font-medium">Chỉnh sửa ngày</span>
-                                </button> */}
-
                                 <div className="border-t border-gray-200 my-1"></div>
 
-                                {/* Chuyển vào kho lưu trữ */}
-                                {/* <button className="flex items-center px-4 py-2 hover:bg-gray-100 text-left">
-                                    <span className="mr-3">📦</span>
-                                    <span className="font-medium">Chuyển vào kho lưu trữ</span>
-                                </button> */}
-
                                 {/* Chuyển vào thùng rác */}
-                                <button className="flex items-center px-4 py-2 hover:bg-gray-100 text-left">
+                                <button className="flex items-center px-4 py-2 hover:bg-gray-100 text-left" onClick={handleDelete}>
                                     <span className="mr-3">🗑️</span>
                                     <span className="font-medium">Chuyển vào thùng rác</span>
                                     {/* <div className="text-xs text-gray-500 ml-8">Các trang trong thùng rác sẽ bị xóa sau 30 ngày.</div> */}
@@ -557,6 +550,44 @@ const PostCard = ({ item, userPost, updatePosts, allUsers }) => {
             <div>
                 <CreateSharePostModal open={showShareModal} handleClose={closeSharePost} shareModalRef={shareModalRef} item={item} userPost={userPost} updatePosts={updatePosts} />
             </div>
+
+            {/* Modal xác nhận xóa */}
+            <Modal
+                open={showConfirmModal}
+                onClose={handleCancelDelete}
+                aria-labelledby="confirm-delete-title"
+                aria-describedby="confirm-delete-description"
+            >
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        bgcolor: 'background.paper',
+                        borderRadius: 2,
+                        boxShadow: 24,
+                        p: 4,
+                        width: '400px',
+                        textAlign: 'center',
+                    }}
+                >
+                    <Typography id="confirm-delete-title" variant="h6" component="h2">
+                        Xác nhận xóa
+                    </Typography>
+                    <Typography id="confirm-delete-description" sx={{ mt: 2 }}>
+                        Bạn có chắc chắn muốn xóa bài viết này không? Hành động này không thể hoàn tác.
+                    </Typography>
+                    <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between' }}>
+                        <Button variant="contained" color="error" onClick={handleConfirmDelete}>
+                            Xóa
+                        </Button>
+                        <Button variant="outlined" onClick={handleCancelDelete}>
+                            Hủy
+                        </Button>
+                    </Box>
+                </Box>
+            </Modal>
         </div>
     );
 };

@@ -88,9 +88,13 @@ const MiddlePart = () => {
 
             if (item.originalPostID != null) {
               // Tìm originalPost trong posts dựa trên originalPostID
-              const originalPost = posts.find((post) => post.postID === item.originalPostID);
+              const originalPost = posts.find((post) => post.postID === item.originalPostID) || null;
 
-              const userOriginalPost = allUsers.find((user) => user.userID === originalPost.userID);
+              // Chỉ tìm userOriginalPost nếu originalPost tồn tại
+              const userOriginalPost = originalPost
+                ? allUsers.find((user) => user.userID === originalPost.userID) || null
+                : null;
+
               // Truyền cả item, userPost và originalPost vào SharepostCard
               return (
                 <SharepostCard

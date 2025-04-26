@@ -220,6 +220,25 @@ const authService = {
     }
   },
 
+  deletePost: async (postId) => {
+    try {
+      console.log("Delete post called", postId);
+      const response = await api.delete(`/posts/delete/${postId}`);
+      return {
+        success: true
+      };
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      return {
+        success: false,
+        error: error.response?.data || {
+          message: error.message || "Không thể xóa bài viết",
+          status: error.response?.status || 500
+        }
+      };
+        }
+  },
+
   createShareAction: async (values) => {
     try {
       console.log("Create share action called", values);
