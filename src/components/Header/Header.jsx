@@ -254,7 +254,7 @@ const Header = () => {
         <ChatBubbleIcon
           sx={{ width: 40, height: 40 }}
           className="icon cursor-pointer p-2 hover:bg-gray-200 rounded-full"
-          onClick={() => navigate("/message")}
+          onClick={() => navigate("/messages")}
         />
         <div
           ref={notificationRef}
