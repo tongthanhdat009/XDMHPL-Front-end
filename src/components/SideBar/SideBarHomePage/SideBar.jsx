@@ -17,8 +17,8 @@ const SideBar = () => {
     if (item.title == "Profile") {
       navigate(`/profile/3`)
     }
-    else {
-      navigate(item.path)
+    else if (item.title == "Friends") {
+      navigate(`/friends`)
     }
   }
   return (
