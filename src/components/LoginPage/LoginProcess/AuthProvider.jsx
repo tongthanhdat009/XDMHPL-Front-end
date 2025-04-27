@@ -49,111 +49,143 @@ export const AuthProvider = ({ children }) => {
     return () => window.removeEventListener('storage', handleStorage)
   }, [])
 
+  // Callback function để xử lý tin nhắn online status nhận được
+  const onOnlineStatusReceive = (payload) => {
+    console.log("fdssdfs");
+    console.log("🚀 Raw WebSocket payload:", payload);
+    
+    if (!payload.body) {
+      console.log("❌ Không có body trong payload");
+      return;
+    }
+    
+    try {
+      const statusUpdate = JSON.parse(payload.body);
+      console.log("✅ Friend status update parsed:", statusUpdate);
+      
+      // Cập nhật state với thông tin online status mới
+      setFriendsOnlineStatus(prev => ({
+        ...prev,
+        [statusUpdate.userId]: statusUpdate.online
+      }));
+    } catch (error) {
+      console.error("❌ Lỗi khi parse JSON:", error);
+    }
+  }
+
   const payload = user ? { userId: user.user.userID } : null;
+  
   // Kết nối WebSocket
   const connectWebSocket = () => {
-    if (!user) return
+    if (!user) return;
 
-    const socket = new SockJS('http://localhost:8080/ws')
-    const stompClient = Stomp.over(socket)
+    console.log("🔌 Đang kết nối WebSocket...");
+    const socket = new SockJS('http://localhost:8080/ws');
+    const stompClient = Stomp.over(socket);
+    
+    // Thêm user ID vào header khi kết nối
+    const headers = {
+      'userId': user.user.userID.toString()
+    };
 
-    stompClient.connect({}, frame => {
-      console.log('Connected to WebSocket:', frame)
-      stompClientRef.current = stompClient
+    stompClient.connect(headers, frame => {
+      console.log("🔌 Kết nối WebSocket thành công:", frame);
+      stompClientRef.current = stompClient;
 
-      // Đăng ký nhận thông báo về trạng thái bạn bè
-      stompClient.subscribe(`/user/${user.user.fullName}/queue/friend-status`, message => {
-        const statusUpdate = JSON.parse(message.body)
-        setFriendsOnlineStatus(prev => ({
-          ...prev,
-          [statusUpdate.userId]: statusUpdate.online
-        }))
-      })
+      console.log(`🔔 Đăng ký nhận thông báo tại: /user/${user.user.userID}/statususer`);
+      
+      // Sử dụng cách mới để subscribe với callback riêng
+      const subscription = stompClient.subscribe(
+        `/user/${user.user.userID}/statususer`, 
+        onOnlineStatusReceive
+      );
+      
+      console.log("🔔 Đăng ký subscription thành công:", subscription.id);
 
-      // Gửi thông báo rằng người dùng(đang đăng nhập) đã online
-      sendOnlineStatus()
-
+      // Gửi thông báo online sau khi kết nối thành công
+      sendOnlineStatus();
+      
       // Thiết lập heartbeat
-      startHeartbeat()
+      // startHeartbeat();
     }, error => {
-      console.error('WebSocket connection error:', error)
+      console.error("❌ Lỗi kết nối WebSocket:", error);
       // Thử kết nối lại sau 3 giây
-      setTimeout(connectWebSocket, 3000)
-    })
+      setTimeout(connectWebSocket, 3000);
+    });
 
     // Xử lý khi kết nối bị đóng
     socket.onclose = () => {
-      console.log('WebSocket connection closed')
-      stompClientRef.current = null
+      console.log("🔌 Kết nối WebSocket đã đóng");
+      stompClientRef.current = null;
       // Thử kết nối lại sau 3 giây
-      setTimeout(connectWebSocket, 3000)
-    }
-  }
+      setTimeout(connectWebSocket, 3000);
+    };
+  };
 
   // Gửi trạng thái online
   const sendOnlineStatus = () => {
     if (stompClientRef.current && stompClientRef.current.connected && user) {
-      stompClientRef.current.send('/app/status/online', {} , JSON.stringify(payload));
+      console.log("📤 Gửi trạng thái online");
+      stompClientRef.current.send('/app/status/online', {}, JSON.stringify(payload));
     }
-  }
+  };
 
   // Gửi trạng thái offline
   const sendOfflineStatus = () => {
     if (stompClientRef.current && stompClientRef.current.connected && user) {
-      stompClientRef.current.send(
-        '/app/status/offline' ,{} ,JSON.stringify(payload))
+      console.log("📤 Gửi trạng thái offline");
+      stompClientRef.current.send('/app/status/offline', {}, JSON.stringify(payload));
     }
-  }
+  };
 
   // Thiết lập heartbeat để duy trì kết nối
-  const startHeartbeat = () => {
-    const intervalId = setInterval(() => {
-      if (stompClientRef.current && stompClientRef.current.connected && user) {
-        stompClientRef.current.send(
-          '/app/status/heartbeat',{} ,JSON.stringify(payload))
-      } else {
-        clearInterval(intervalId)
-      }
-    }, 60000) // 1 phút
+  // const startHeartbeat = () => {
+  //   const intervalId = setInterval(() => {
+  //     if (stompClientRef.current && stompClientRef.current.connected && user) {
+  //       console.log("💓 Gửi heartbeat");
+  //       stompClientRef.current.send('/app/status/heartbeat', {}, JSON.stringify(payload));
+  //     } else {
+  //       clearInterval(intervalId);
+  //     }
+  //   }, 60000); // 1 phút
 
-    // Lưu intervalId để có thể clear khi cần
-    stompClientRef.current.heartbeatIntervalId = intervalId
-  }
+  //   // Lưu intervalId để có thể clear khi cần
+  //   stompClientRef.current.heartbeatIntervalId = intervalId;
+  // };
 
   const login = async (...args) => {
-    const result = await authService.login(...args)
+    const result = await authService.login(...args);
     if (result.success) {
-      setUser(authService.getCurrentUser())
+      setUser(authService.getCurrentUser());
       // WebSocket sẽ được kết nối tự động nhờ useEffect phía trên
     }
-    return result
-  }
-
+    return result;
+  };
 
   const logout = () => {
     // Gửi trạng thái offline trước khi đăng xuất
-    sendOfflineStatus()
+    sendOfflineStatus();
+    
     // Ngắt kết nối WebSocket
     if (stompClientRef.current) {
       if (stompClientRef.current.heartbeatIntervalId) {
-        clearInterval(stompClientRef.current.heartbeatIntervalId)
+        clearInterval(stompClientRef.current.heartbeatIntervalId);
       }
-      stompClientRef.current.disconnect()
-      stompClientRef.current = null
+      stompClientRef.current.disconnect();
+      stompClientRef.current = null;
     }
 
-
-    authService.logout()
-    setUser(null)
-
-    setFriendsOnlineStatus({})
-  }
-
+    // Đăng xuất và xóa state
+    authService.logout();
+    setUser(null);
+    setFriendsOnlineStatus({});
+  };
 
   // Hàm để lấy trạng thái online của một người dùng cụ thể
-  const isFriendOnline = (username) => {
-    return !!friendsOnlineStatus[username]
-  }
+  const isFriendOnline = (userId) => {
+    return !!friendsOnlineStatus[userId];
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -164,7 +196,7 @@ export const AuthProvider = ({ children }) => {
     }}>
       {children}
     </AuthContext.Provider>
-  )
+  );
 }
 
 // 2. Custom Hook
