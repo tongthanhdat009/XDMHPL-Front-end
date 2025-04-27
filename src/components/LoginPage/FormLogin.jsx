@@ -19,7 +19,7 @@ const FormLogin = () => {
       const result = await authService.login(userIdentifier, password, remember);
 
       if (result.success) {
-        navigate("/");
+        window.location.reload(); // Tải lại trang sau khi đăng nhập thành công
       } else {
         // Hiển thị thông báo lỗi nếu đăng nhập thất bại
         setErrorMessage(result.error.message || "Đăng nhập thất bại. Vui lòng thử lại.");

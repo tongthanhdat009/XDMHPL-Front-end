@@ -4,9 +4,11 @@ import MoreHorizRoundedIcon from '@mui/icons-material/MoreHorizRounded';
 import Contact from './Contact';
 import ChatBox from './ChatBox.';
 import authService from '../LoginPage/LoginProcess/ValidateLogin';
+import { useAuth } from '../LoginPage/LoginProcess/AuthProvider';
 const HomeRight = () => {
   const [openChats, setOpenChats] = useState([]);
-
+  const { friendsOnlineStatus } = useAuth();
+  console.log("friendsOnlineStatus", friendsOnlineStatus);
   const handleOpenChat = (contact) => {
     if (openChats.find(chat => chat.id === contact.id)) {
       return;
