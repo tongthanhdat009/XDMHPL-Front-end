@@ -153,7 +153,7 @@ const authService = {
         console.log(`${key}:`, value);
       });
 
-      const response = await api.post('/posts/create', formData);
+      const response = await api.post('/api/posts/create', formData);
       return {
         success: true
       };
@@ -206,7 +206,7 @@ const authService = {
       console.log(`${key}:`, value);
     });
 
-    const response = await api.put('/posts/update', formData);
+    const response = await api.put('/api/posts/update', formData);
       return {
         success: true,
         // data: response.data
@@ -227,7 +227,7 @@ const authService = {
   deletePost: async (postId) => {
     try {
       console.log("Delete post called", postId);
-      const response = await api.delete(`/posts/delete/${postId}`);
+      const response = await api.delete(`/api/posts/delete/${postId}`);
       return {
         success: true
       };
@@ -246,7 +246,7 @@ const authService = {
   createShareAction: async (values) => {
     try {
       console.log("Create share action called", values);
-      const response = await api.post('/postshare/create', values);
+      const response = await api.post('/api/postshare/create', values);
       return {
         success: true
       };
@@ -264,7 +264,7 @@ const authService = {
 
   getAllPostsFormDB: async () => {
     try {
-      const response = await api.get(`/posts`);
+      const response = await api.get(`/api/posts`);
       localStorage.setItem("posts", JSON.stringify(response.data));
       return {
         success: true,
@@ -284,7 +284,7 @@ const authService = {
 
   likePost: async (postId, userId) => {
     try {
-      const response = await api.put(`/posts/like/${postId}/${userId}`);
+      const response = await api.put(`/api/posts/like/${postId}/${userId}`);
       return {
         success: true,
         data: response.data
@@ -303,7 +303,7 @@ const authService = {
 
   commentPost: async (reqData) => {
     try {
-      const response = await api.post(`/comments/post/${reqData.postId}/${reqData.userId}`, reqData.data);
+      const response = await api.post(`/api/comments/post/${reqData.postId}/${reqData.userId}`, reqData.data);
       return {
         success: true
       };
@@ -321,7 +321,7 @@ const authService = {
 
   getAllUsersFormDB: async () => {
     try {
-      const response = await api.get(`/users`);
+      const response = await api.get(`/api/users`);
       localStorage.setItem("users", JSON.stringify(response.data));
       return {
         success: true,
