@@ -34,7 +34,7 @@ const PostModal = ({ isOpen, handleClose, post, userPost, updatePosts, allUsers,
 
     const reqData = {
       postId: post.postID,
-      userId: currentUser.user.userID,
+      userId: currentUser.userID,
       data: {
         content: newComment
       }
@@ -66,7 +66,7 @@ const PostModal = ({ isOpen, handleClose, post, userPost, updatePosts, allUsers,
     setShowMediaModal(true);
   };
   const isLikedByCurrentUser = post.likes.some(
-    (like) => like.userId === currentUser.user.userID
+    (like) => like.userId === currentUser.userID
   );
   if (!isOpen || !post) return null;
 

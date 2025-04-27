@@ -73,7 +73,7 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  const payload = user ? { userId: user.user.userID } : null;
+  const payload = user ? { userId: user.userID } : null;
   
   // Kết nối WebSocket
   const connectWebSocket = () => {
@@ -85,18 +85,18 @@ export const AuthProvider = ({ children }) => {
     
     // Thêm user ID vào header khi kết nối
     const headers = {
-      'userId': user.user.userID.toString()
+      'userId': user.userID.toString()
     };
 
     stompClient.connect(headers, frame => {
       console.log("🔌 Kết nối WebSocket thành công:", frame);
       stompClientRef.current = stompClient;
 
-      console.log(`🔔 Đăng ký nhận thông báo tại: /user/${user.user.userID}/statususer`);
+      console.log(`🔔 Đăng ký nhận thông báo tại: /user/${user.userID}/statususer`);
       
       // Sử dụng cách mới để subscribe với callback riêng
       const subscription = stompClient.subscribe(
-        `/user/${user.user.userID}/statususer`, 
+        `/user/${user.userID}/statususer`, 
         onOnlineStatusReceive
       );
       

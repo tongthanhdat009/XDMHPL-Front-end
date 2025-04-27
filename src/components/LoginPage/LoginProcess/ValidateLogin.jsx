@@ -42,19 +42,19 @@ const authService = {
 
       if (remember) {
         localStorage.setItem("sessionID", sessionId);
-        localStorage.setItem("currentUser", JSON.stringify({ user }));
+        localStorage.setItem("currentUser", JSON.stringify(response.data.user));
         sessionStorage.removeItem("sessionID");
         sessionStorage.removeItem("currentUser");
       } else {
         sessionStorage.setItem("sessionID", sessionId);
-        sessionStorage.setItem("currentUser", JSON.stringify({ user }));
+        sessionStorage.setItem("currentUser", JSON.stringify(response.data.user));
         localStorage.removeItem("sessionID");
         localStorage.removeItem("currentUser");
       }
 
       // Luôn sử dụng localStorage (người dùng không bị đăng xuất khi đóng tab)
       localStorage.setItem("sessionID", sessionId);
-      localStorage.setItem("currentUser", JSON.stringify({ user }));
+      localStorage.setItem("currentUser", JSON.stringify(response.data.user));
       sessionStorage.removeItem("sessionID");
       sessionStorage.removeItem("currentUser");
 
@@ -70,6 +70,18 @@ const authService = {
           status: error.response?.status || 500
         }
       };
+    }
+  },
+
+  getCurrentUserFormDB: async (userID) => {
+    try {
+      const response = await api.get(`/auth/current-user/${userID}`);
+      console.log("Current user data:", response.data);
+      localStorage.setItem("currentUser", JSON.stringify( response.data ));
+      return { success: true};
+    } catch (error) {
+      console.error("Login error:", error);
+      return { success: false, error: error.response?.data };
     }
   },
 
@@ -333,6 +345,60 @@ const authService = {
         success: false,
         error: error.response?.data || {
           message: error.message || "Không thể lấy danh sách bài viết",
+          status: error.response?.status || 500
+        }
+      };
+    }
+  },
+
+  sentFriendRequest: async (reqData) => {
+    try {
+      const response = await api.post(`/friendrequests/${reqData.senderId}/${reqData.receiverId}`);
+      return {
+        success: true
+      };
+    } catch (error) {
+      console.error("Error sending friend request:", error);
+      return {
+        success: false,
+        error: error.response?.data || {
+          message: error.message || "Không thể kb",
+          status: error.response?.status || 500
+        }
+      };
+    }
+  },
+
+  deleteFriendRequest: async (reqData) => {
+    try {
+      const response = await api.delete(`/friendrequests/${reqData.senderId}/${reqData.receiverId}`);
+      return {
+        success: true
+      };
+    } catch (error) {
+      console.error("Error sending friend request:", error);
+      return {
+        success: false,
+        error: error.response?.data || {
+          message: error.message || "Không thể kb",
+          status: error.response?.status || 500
+        }
+      };
+    }
+  },
+
+  acceptFriendRequest: async (reqData) => {
+    try {
+      const response = await api.put(`/friendrequests/${reqData.senderId}/${reqData.receiverId}`);
+      return {
+        success: true
+      };
+    } catch (error) {
+      console.error("Error sending friend request:", error);
+      return {
+        success: false,
+        error: error.response?.data || {
+          message: error.message || "Không thể kb",
           status: error.response?.status || 500
         }
       };

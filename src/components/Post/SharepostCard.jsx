@@ -19,7 +19,7 @@ import CreateSharePostModal from '../CreatePost/CreateSharePostModal';
 import SharepostModal from './SharepostModal';
 import EditSharePostModal from '../EditPost/EditSharePostModal';
 // import PostModal from './PostModal';
-const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updatePosts, allUsers }) => {
+const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updatePosts, allUsers, updateUsers, updateCurentUser }) => {
     const currentUser = authService.getCurrentUser();
 
     dayjs.extend(relativeTime);
@@ -49,7 +49,7 @@ const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updateP
 
     const handleLikePost = async () => {
         try {
-            const result = await authService.likePost(item.postID, currentUser.user.userID);
+            const result = await authService.likePost(item.postID, currentUser.userID);
             console.log(result)
             if (result.success) {
                 // Gọi callback để cập nhật danh sách bài viết
@@ -105,43 +105,95 @@ const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updateP
     }, []);
 
 
-    const sendFriendRequest = () => {
+    const sendFriendRequest = async () => {
         const reqData = {
-            senderId: auth.user.id,
-            receiverId: item.user.id
+            senderId: currentUser.userID,
+            receiverId: item.userID
         };
+
+        try {
+            const result = await authService.sentFriendRequest(reqData)
+            console.log(result)
+            if (result.success) {
+                // Gọi callback để cập nhật danh sách bài viết
+                await updateCurentUser();
+                await updatePosts();
+                await updateUsers();
+            } else {
+                // Xử lý lỗi
+                console.error("Error liking post:", result.error);
+            }
+        } catch (error) {
+            console.error("Error in form submission:", error);
+        }
+
+    };
+
+    const deleteFriend =async () => {
+        const inFriendOf = currentUser.friendOf.find(
+            (friend) => friend.userID === item.userID
+        );
+
+        const reqData = {
+            senderId: inFriendOf ? item.userID : currentUser.userID,
+            receiverId: inFriendOf ? currentUser.userID : item.userID
+        };
+
+        try {
+            const result = await authService.deleteFriendRequest(reqData)
+            console.log(result)
+            if (result.success) {
+                await updateCurentUser();
+                await updatePosts();
+                await updateUsers();
+            } else {
+                // Xử lý lỗi
+                console.error("Error liking post:", result.error);
+            }
+        } catch (error) {
+            console.error("Error in form submission:", error);
+        }
+
+    };
+
+    const acceptFriend = async() => {
+        // const friendRequest = currentUser.friendOf.find(
+        //     (friend) => friend.userID === item.userID && friend.status === "PENDING"
+        // );
+        const reqData = {
+            senderId: item.userID,
+            receiverId: currentUser.userID
+        };
+
+        try {
+            const result = await authService.acceptFriendRequest(reqData)
+            console.log(result)
+            if (result.success) {
+                await updateCurentUser();
+                await updatePosts();
+                await updateUsers();
+            } else {
+                // Xử lý lỗi
+                console.error("Error liking post:", result.error);
+            }
+        } catch (error) {
+            console.error("Error in form submission:", error);
+        }
 
 
     };
 
-    const deleteFriend = () => {
-        const reqData = {
-            senderId: auth.user.id,
-            receiverId: item.user.id
-        };
-
-
-    };
-
-    const acceptFriend = () => {
-        const friendRequest = auth.user.receivedFriendRequests.find(req => req.userId === item.user.id);
-        const reqData = {
-            friendshipId: friendRequest ? friendRequest.id : null
-        };
-
-    };
-
-    const isSent = currentUser.user.friends.some(
+    const isSent = currentUser.friends.some(
         (friend) => friend.userID === item.userID && friend.status === "PENDING"
     );
 
-    const isReceived = currentUser.user.friendOf.some(
+    const isReceived = currentUser.friendOf.some(
         (friend) => friend.userID === item.userID && friend.status === "PENDING"
     );
 
-    const isFriend = currentUser.user.friends.some(
+    const isFriend = currentUser.friends.some(
         (friend) => friend.userID === item.userID && friend.status === "ACCEPTED"
-    ) || currentUser.user.friendOf.some(
+    ) || currentUser.friendOf.some(
         (friend) => friend.userID === item.userID && friend.status === "ACCEPTED"
     );
 
@@ -183,7 +235,7 @@ const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updateP
     };
 
     const isLikedByCurrentUser = item.likes.some(
-        (like) => like.userId === currentUser.user.userID
+        (like) => like.userId === currentUser.userID
     );
 
 
@@ -277,7 +329,7 @@ const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updateP
                 </div>
                 <div ref={menuRef} className="relative">
                     {
-                        currentUser.user.userID === item.userID && (
+                        currentUser.userID === item.userID && (
                             <>
                                 <button
                                     onClick={handlePostSetting}
@@ -475,7 +527,7 @@ const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updateP
 
                             <div className="flex space-x-2">
                                 {
-                                    currentUser.user.userID === item.userID ? (
+                                    currentUser.userID === item.userID ? (
                                         <>
                                             <button className="flex-1 bg-gray-200 text-gray-800 py-1 px-2 rounded-md text-sm font-medium flex items-center justify-center">
                                                 <PersonAddIcon fontSize="small" className="mr-1" />

@@ -17,10 +17,10 @@ const style = {
 
 const CreateSharePostModal = ({ open, handleClose, shareModalRef, item, userPost, updatePosts }) => {
     const currentUser = authService.getCurrentUser();
-    // console.log('currentUser', currentUser.user.userID);
+    // console.log('currentUser', currentUser.userID);
     const formik = useFormik({
         initialValues: {
-            userID: currentUser.user.userID,
+            userID: currentUser.userID,
             parentShareID: item.originalPostID==null ? null : item.postID,
             originalPostID : item.originalPostID!=null ? item.originalPostID : item.postID,
             caption: ""

@@ -27,7 +27,7 @@ const SharepostModal = ({ isOpen, handleClose, post, userPost, originalPost, use
     // Handle liking post
     const handleLikePost = async () => {
         try {
-            const result = await authService.likePost(post.postID, currentUser.user.userID);
+            const result = await authService.likePost(post.postID, currentUser.userID);
             if (result.success) {
                 await updatePosts();
             } else {
@@ -44,7 +44,7 @@ const SharepostModal = ({ isOpen, handleClose, post, userPost, originalPost, use
 
         const reqData = {
             postId: post.postID,
-            userId: currentUser.user.userID,
+            userId: currentUser.userID,
             data: {
                 content: newComment
             }
@@ -74,7 +74,7 @@ const SharepostModal = ({ isOpen, handleClose, post, userPost, originalPost, use
     };
 
     const isLikedByCurrentUser = post?.likes?.some(
-        (like) => like.userId === currentUser.user.userID
+        (like) => like.userId === currentUser.userID
     );
 
 
@@ -564,7 +564,7 @@ const SharepostModal = ({ isOpen, handleClose, post, userPost, originalPost, use
                                 fontSize: '0.9rem'
                             }}
                         >
-                            {currentUser.user.fullName?.[0]}
+                            {currentUser.fullName?.[0]}
                         </Avatar>
                         <TextField
                             fullWidth

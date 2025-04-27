@@ -42,6 +42,26 @@ const MiddlePart = () => {
       console.error("Error updating posts:", error);
     }
   };
+
+  const updateUsers = async () => {
+    try {
+      const result = await authService.getAllUsersFormDB();
+      if (result.success) {
+        setAllUsers(result.data); // Cập nhật danh sách bài viết
+      }
+    } catch (error) {
+      console.error("Error updating posts:", error);
+    }
+  };
+
+  const updateCurentUser = async () => {
+    try {
+      const currentUser=authService.getCurrentUser();
+      const result = await authService.getCurrentUserFormDB(currentUser.userID);
+    } catch (error) {
+      console.error("Error updating posts:", error);
+    }
+  }
   // console.log('post', post);
   // useEffect(() => {
 
@@ -105,11 +125,14 @@ const MiddlePart = () => {
                   userOriginalPost={userOriginalPost}
                   allUsers={allUsers}
                   updatePosts={updatePosts}
+                  updateUsers={updateUsers}
+                  updateCurentUser={updateCurentUser}
                 />
               );
             } else {
               // Truyền item và userPost vào PostCard
-              return <PostCard key={item.postID} item={item} userPost={userPost} updatePosts={updatePosts} allUsers={allUsers} />;
+              return <PostCard key={item.postID} item={item} userPost={userPost} updatePosts={updatePosts} allUsers={allUsers} updateUsers={updateUsers}
+              updateCurentUser={updateCurentUser} />;
             }
           })}
         </div>

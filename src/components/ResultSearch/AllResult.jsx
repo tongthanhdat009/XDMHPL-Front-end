@@ -33,18 +33,38 @@ const AllResult = () => {
     const UsersSearch = allUsers.filter(
         (user) =>
             user.fullName.toLowerCase().includes(queryValue.toLowerCase()) 
-        // && user.userID !== currentUser.user.userID 
+        // && user.userID !== currentUser.userID 
     );
     const updatePosts = async () => {
         try {
-            const result = await authService.getAllPostsFormDB();
-            if (result.success) {
-                setPosts(result.data); // Cập nhật danh sách bài viết
-            }
+          const result = await authService.getAllPostsFormDB();
+          if (result.success) {
+            setPosts(result.data); // Cập nhật danh sách bài viết
+          }
         } catch (error) {
-            console.error("Error updating posts:", error);
+          console.error("Error updating posts:", error);
         }
-    };
+      };
+    
+      const updateUsers = async () => {
+        try {
+          const result = await authService.getAllUsersFormDB();
+          if (result.success) {
+            setAllUsers(result.data); // Cập nhật danh sách bài viết
+          }
+        } catch (error) {
+          console.error("Error updating posts:", error);
+        }
+      };
+    
+      const updateCurentUser = async () => {
+        try {
+          const currentUser=authService.getCurrentUser();
+          const result = await authService.getCurrentUserFormDB(currentUser.userID);
+        } catch (error) {
+          console.error("Error updating posts:", error);
+        }
+      }
 
     return (
         <div className="flex-grow bg-gray-100 p-4 overflow-y-auto scrollbar ">
@@ -54,17 +74,17 @@ const AllResult = () => {
                         <div className="bg-white rounded-lg p-2">
                             <h2 className="text-xl font-bold mb-4">Mọi người</h2>
                             {UsersSearch.map((person, index) => {
-                                const isSent = currentUser.user.friends.some(
+                                const isSent = currentUser.friends.some(
                                     (friend) => friend.userID === person.userID && friend.status === "PENDING"
                                 );
                             
-                                const isReceived = currentUser.user.friendOf.some(
+                                const isReceived = currentUser.friendOf.some(
                                     (friend) => friend.userID === person.userID && friend.status === "PENDING"
                                 );
                             
-                                const isFriend = currentUser.user.friends.some(
+                                const isFriend = currentUser.friends.some(
                                     (friend) => friend.userID === person.userID && friend.status === "ACCEPTED"
-                                ) || currentUser.user.friendOf.some(
+                                ) || currentUser.friendOf.some(
                                     (friend) => friend.userID === person.userID && friend.status === "ACCEPTED"
                                 );
 
@@ -152,11 +172,14 @@ const AllResult = () => {
                                             userOriginalPost={userOriginalPost}
                                             allUsers={allUsers}
                                             updatePosts={updatePosts}
+                                            updateUsers={updateUsers}
+                                            updateCurentUser={updateCurentUser}
                                         />
                                     );
                                 } else {
                                     // Truyền item và userPost vào PostCard
-                                    return <PostCard key={item.postID} item={item} userPost={userPost} updatePosts={updatePosts} allUsers={allUsers} />;
+                                    return <PostCard key={item.postID} item={item} userPost={userPost} updatePosts={updatePosts} allUsers={allUsers} updateUsers={updateUsers}
+                                    updateCurentUser={updateCurentUser} />;
                                 }
                             })}
                         </div>
@@ -198,17 +221,17 @@ const AllResult = () => {
                     <div className="bg-white rounded-lg p-2">
                         <h2 className="text-xl font-bold mb-4">Mọi người</h2>
                         {UsersSearch.map((person, index) => {
-                                const isSent = currentUser.user.friends.some(
+                                const isSent = currentUser.friends.some(
                                     (friend) => friend.userID === person.userID && friend.status === "PENDING"
                                 );
                             
-                                const isReceived = currentUser.user.friendOf.some(
+                                const isReceived = currentUser.friendOf.some(
                                     (friend) => friend.userID === person.userID && friend.status === "PENDING"
                                 );
                             
-                                const isFriend = currentUser.user.friends.some(
+                                const isFriend = currentUser.friends.some(
                                     (friend) => friend.userID === person.userID && friend.status === "ACCEPTED"
-                                ) || currentUser.user.friendOf.some(
+                                ) || currentUser.friendOf.some(
                                     (friend) => friend.userID === person.userID && friend.status === "ACCEPTED"
                                 );
 

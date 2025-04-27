@@ -42,10 +42,10 @@ const HomeRight = () => {
   }, []);
 
   const acceptedFriends = allUsers.length > 0 ? [
-    ...currentUser.user.friends
+    ...currentUser.friends
         .filter((friend) => friend.status === "ACCEPTED")
         .map((friend) => allUsers.find((user) => user.userID === friend.userID)),
-    ...currentUser.user.friendOf
+    ...currentUser.friendOf
         .filter((friend) => friend.status === "ACCEPTED")
         .map((friend) => allUsers.find((user) => user.userID === friend.userID))
 ].filter(Boolean) : []; // Đảm bảo loại bỏ các giá trị undefined

@@ -25,7 +25,7 @@ const CreatePostModal = ({ open, handleClose, updatePosts }) => {
   const user = authService.getCurrentUser()
   const formik = useFormik({
     initialValues: {
-      userId: user.user.userID,
+      userId: user.userID,
       caption: "",
       media: []
     },

@@ -25,7 +25,7 @@ const EditSharePostModal = ({ open, handleClose, updatePosts, item }) => {
   const formik = useFormik({
     initialValues: {
       postID: item.postID,
-      userId: user.user.userID,
+      userId: user.userID,
       caption: item.content,
       media: []
     },
