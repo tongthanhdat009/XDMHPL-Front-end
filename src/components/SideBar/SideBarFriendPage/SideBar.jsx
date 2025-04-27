@@ -1,14 +1,10 @@
 import * as React from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
 
 import PeopleIcon from '@mui/icons-material/People';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import GroupsIcon from '@mui/icons-material/Groups';
 import SideBarItem from './SideBarItem';
-import CakeIcon from '@mui/icons-material/Cake';
-const SideBar = () => {
-  const { type } = useParams();
-  const [activeFilter, setActiveFilter] = React.useState(type);
+const SideBar = ({ activeSection, setActiveSection }) => {
   return (
     <div className="w-64 min-h-screen bg-white p-2 shadow-sm">
       <div className="flex items-center p-2">
@@ -27,35 +23,33 @@ const SideBar = () => {
         <SideBarItem 
           icon={<PeopleIcon />}
           title="Trang chủ"
-          active={true}
+          active={activeSection === 'home'}
+          onClick={() => setActiveSection('home')}
         />
         <SideBarItem 
           icon={<PersonAddIcon />}
           title="Lời mời kết bạn"
           count="25"
-          active={false}
+          active={activeSection === 'requests'}
           hasMore={true}
+          onClick={() => setActiveSection('requests')}
         />
         <SideBarItem 
           icon={<PersonAddIcon />}
           title="Gợi ý"
-          active={false}
+          active={activeSection === 'suggestions'}
           hasMore={true}
+          onClick={() => setActiveSection('suggestions')}
         />
         <SideBarItem 
           icon={<GroupsIcon />}
           title="Tất cả bạn bè"
-          active={false}
+          active={activeSection === 'all-friends'}
           hasMore={true}
-        />
-        <SideBarItem 
-          icon={<CakeIcon />}
-          title="Sinh nhật"
-          active={false}
+          onClick={() => setActiveSection('all-friends')}
         />
       </div>
     </div>
-  )
-}
-
+  );
+};
 export default SideBar
