@@ -142,7 +142,7 @@ const AllResult = () => {
                                 )
                             })}
                             <div className="text-center mt-4">
-                                <button className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md w-full cursor-pointer" onClick={() => navigate(`/search/people/?q=${queryParams}`)}>
+                                <button className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md w-full cursor-pointer" onClick={() => navigate(`/search/people/?q=${queryValue}`)}>
                                     Xem tất cả
                                 </button>
                             </div>
