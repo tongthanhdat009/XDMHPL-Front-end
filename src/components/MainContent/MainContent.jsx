@@ -12,6 +12,100 @@ const MainContent = ({ activeSection, setActiveSection }) => {
   const currentUser = authService.getCurrentUser();
   const [allUsers, setAllUsers] = useState([]);
 
+  const updateUsers = async () => {
+    try {
+      const result = await authService.getAllUsersFormDB();
+      if (result.success) {
+        setAllUsers(result.data); // Cập nhật danh sách bài viết
+      }
+    } catch (error) {
+      console.error("Error updating posts:", error);
+    }
+  };
+
+  const updateCurentUser = async () => {
+    try {
+      const currentUser=authService.getCurrentUser();
+      const result = await authService.getCurrentUserFormDB(currentUser.userID);
+    } catch (error) {
+      console.error("Error updating posts:", error);
+    }
+  }
+  const sendFriendRequest = async (senderId, receiverId) => {
+    const reqData = {
+      senderId: senderId,
+      receiverId: receiverId
+    };
+
+    try {
+      const result = await authService.sentFriendRequest(reqData)
+      console.log(result)
+      if (result.success) {
+        // Gọi callback để cập nhật danh sách bài viết
+        await updateCurentUser();
+        await updateUsers();
+      } else {
+        // Xử lý lỗi
+        console.error("Error liking post:", result.error);
+      }
+    } catch (error) {
+      console.error("Error in form submission:", error);
+    }
+
+  };
+
+  const deleteFriend = async (friendId) => {
+    const inFriendOf = currentUser.friendOf.find(
+      (friend) => friend.userID === friendId
+    );
+
+    const reqData = {
+      senderId: inFriendOf ? friendId : currentUser.userID,
+      receiverId: inFriendOf ? currentUser.userID : friendId
+    };
+
+    try {
+      const result = await authService.deleteFriendRequest(reqData)
+      console.log(result)
+      if (result.success) {
+        // Gọi callback để cập nhật danh sách bài viết
+        await updateCurentUser();
+        await updateUsers();
+      } else {
+        // Xử lý lỗi
+        console.error("Error liking post:", result.error);
+      }
+    } catch (error) {
+      console.error("Error in form submission:", error);
+    }
+
+  };
+
+  const acceptFriend = async (senderId, receiverId) => {
+    const reqData = {
+      senderId: senderId,
+      receiverId: receiverId
+    };
+
+    try {
+      const result = await authService.acceptFriendRequest(reqData)
+      console.log(result)
+      if (result.success) {
+        // Gọi callback để cập nhật danh sách bài viết
+        await updateCurentUser();
+        await updateUsers();
+      } else {
+        // Xử lý lỗi
+        console.error("Error liking post:", result.error);
+      }
+    } catch (error) {
+      console.error("Error in form submission:", error);
+    }
+
+
+  };
+
+
   useEffect(() => {
     const fetchDatas = async () => {
       try {
@@ -55,7 +149,7 @@ const MainContent = ({ activeSection, setActiveSection }) => {
       type: "suggesting"
     }));
 
-    const allFriendsData = allUsers
+  const allFriendsData = allUsers
     .filter((user) => {
       const isInFriends = currentUser.friends.some((friend) => friend.userID === user.userID && friend.status === "ACCEPTED") // Lọc chỉ những user có status là "ACCEPTED");
       const isInFriendOf = currentUser.friendOf.some((friend) => friend.userID === user.userID && friend.status === "ACCEPTED");
@@ -112,7 +206,6 @@ const MainContent = ({ activeSection, setActiveSection }) => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2">
             {requestsData.slice(0, requestsVisible).map((friend) => {
-              console.log(friend)
               return (
                 <FriendCard
                   key={friend.id}
@@ -122,7 +215,7 @@ const MainContent = ({ activeSection, setActiveSection }) => {
                   image={friend.image}
                   isAvatar={friend.isAvatar}
                   type={friend.type}
-                  onClick1={handleApplyFriend}
+                  onClick1={() => acceptFriend(friend.id, currentUser.userID)}
                   onClick2={handleCancelRequest}
                 />
               )
@@ -168,7 +261,7 @@ const MainContent = ({ activeSection, setActiveSection }) => {
                 image={friend.image}
                 isAvatar={friend.isAvatar}
                 type={friend.type}
-                onClick1={handleApplyFriend}
+                onClick1={() => sendFriendRequest(currentUser.userID, friend.id)}
                 onClick2={handleCancelRequest}
               />
             ))}
@@ -205,8 +298,8 @@ const MainContent = ({ activeSection, setActiveSection }) => {
                 image={friend.image}
                 isAvatar={friend.isAvatar}
                 type="friend"
-                onClick1={() => console.log("Message friend")}
-                onClick2={() => console.log("Remove friend")}
+                onClick1={() => console.log("Nhắn tin")}
+                onClick2={() => deleteFriend(friend.id)}
               />
             ))}
           </div>
