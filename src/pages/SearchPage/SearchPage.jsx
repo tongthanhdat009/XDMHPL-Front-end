@@ -8,12 +8,14 @@ import authService from '../../components/LoginPage/LoginProcess/ValidateLogin';
 const SearchPage = () => {
     const [searchParams] = useSearchParams();
     const q = searchParams.get("q"); // Lấy giá trị q từ URL
+    const currentUser = authService.getCurrentUser();
 
     useEffect(() => {
         const fetchDatas = async () => {
           try {
             await authService.getAllPostsFormDB();
             await authService.getAllUsersFormDB();
+          await authService.getCurrentUserFormDB(currentUser.userID);
           } catch (error) {
             console.error("Error fetching:", error);
           }

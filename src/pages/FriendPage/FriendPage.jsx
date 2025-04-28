@@ -7,11 +7,13 @@ import { useParams } from 'react-router-dom'
 import authService from '../../components/LoginPage/LoginProcess/ValidateLogin'
 
 const FriendPage = () => {
+    const currentUser = authService.getCurrentUser();
     useEffect(() => {
         const fetchDatas = async () => {
           try {
             await authService.getAllPostsFormDB();
             await authService.getAllUsersFormDB();
+            await authService.getCurrentUserFormDB(currentUser.userID);
           } catch (error) {
             console.error("Error fetching:", error);
           }

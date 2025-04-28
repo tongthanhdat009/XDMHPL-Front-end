@@ -119,7 +119,6 @@ const MainContent = ({ activeSection, setActiveSection }) => {
     fetchDatas();
   }, []);
 
-  console.log("allUsers", allUsers);
   // Mock data for the different lists
   const requestsData = currentUser.friendOf
     .filter((user) => user.status === "PENDING") // Lọc chỉ những user có status là "PENDING"

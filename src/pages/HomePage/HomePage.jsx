@@ -7,7 +7,7 @@ import authService from '../../components/LoginPage/LoginProcess/ValidateLogin'
 
 const HomePage = () => {
   
-
+const currentUser = authService.getCurrentUser();
 //   let totalSize = 0;
 // for (let key in localStorage) {
 //     if (localStorage.hasOwnProperty(key)) {
@@ -20,6 +20,7 @@ const HomePage = () => {
       try {
         await authService.getAllPostsFormDB();
         await authService.getAllUsersFormDB();
+        await authService.getCurrentUserFormDB(currentUser.userID);
       } catch (error) {
         console.error("Error fetching:", error);
       }
