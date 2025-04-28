@@ -5,9 +5,60 @@ import Contact from './Contact';
 import ChatBox from './ChatBox.';
 import authService from '../LoginPage/LoginProcess/ValidateLogin';
 import { useAuth } from '../LoginPage/LoginProcess/AuthProvider';
+
 const HomeRight = () => {
   const [openChats, setOpenChats] = useState([]);
-  const { friendsOnlineStatus } = useAuth();
+  const {connected, stompClient,user } = useAuth();
+  const [friendsOnlineStatus, setFriendsOnlineStatus] = useState({})
+  console.log("connected", connected);
+
+  // Xử lý tin nhắn online status nhận được
+  useEffect(() => {
+    let subscription = null;
+    
+    if (connected && stompClient && user) {
+      // Đăng ký nhận thông báo trạng thái online/offline
+      console.log(`🔔 Đăng ký nhận thông báo tại: /user/${user.userID}/queue/statususer`);
+      
+      const onOnlineStatusReceive = (payload) => {
+        console.log("🚀 Raw WebSocket payload:", payload);
+        
+        if (!payload.body) {
+          console.log("❌ Không có body trong payload");
+          return;
+        }
+        
+        try {
+          const statusUpdate = JSON.parse(payload.body);
+          console.log("✅ Friend status update parsed:", statusUpdate);
+          
+          // Cập nhật state với thông tin online status mới
+          setFriendsOnlineStatus(prev => ({
+            ...prev,
+            [statusUpdate.userId]: statusUpdate.online
+          }));
+        } catch (error) {
+          console.error("❌ Lỗi khi parse JSON:", error);
+        }
+      };
+      
+      subscription = stompClient.subscribe(
+        `/user/${user.userID}/queue/statususer`, 
+        onOnlineStatusReceive
+      );
+      
+      console.log("🔔 Đăng ký subscription thành công:", subscription.id);
+    }
+    
+    // Cleanup function to unsubscribe when component unmounts or dependencies change
+    return () => {
+      if (subscription) {
+        console.log("🔌 Hủy đăng ký subscription:", subscription.id);
+        subscription.unsubscribe();
+      }
+    };
+  }, [connected, stompClient, user]); // Dependencies: re-run when these change
+
   console.log("friendsOnlineStatus", friendsOnlineStatus);
   const handleOpenChat = (contact) => {
     if (openChats.find(chat => chat.id === contact.id)) {

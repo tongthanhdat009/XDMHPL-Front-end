@@ -1,11 +1,26 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import FriendCard from "../ResultFriend/FriendCard";
+import authService from '../LoginPage/LoginProcess/ValidateLogin';
 
-const MainContent = ({ activeSection }) => {
+const MainContent = ({ activeSection, setActiveSection }) => {
+
     // State for loading more items
     const [requestsVisible, setRequestsVisible] = useState(14);
     const [suggestionsVisible, setSuggestionsVisible] = useState(14);
     const [allFriendsVisible, setAllFriendsVisible] = useState(14);
+
+    useEffect(() => {
+            const fetchDatas = async () => {
+              try {
+                await authService.getAllPostsFormDB();
+                await authService.getAllUsersFormDB();
+              } catch (error) {
+                console.error("Error fetching:", error);
+              }
+            };
+        
+            fetchDatas();
+    }, []);
     
     // Mock data for the different lists
     const requestsData = Array(30).fill().map((_, i) => ({
@@ -78,8 +93,10 @@ const MainContent = ({ activeSection }) => {
             </div>
   
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2">
-              {requestsData.slice(0, requestsVisible).map((friend) => (
-                <FriendCard
+              {requestsData.slice(0, requestsVisible).map((friend) => {
+                console.log(friend)
+                return(
+                  <FriendCard
                   key={friend.id}
                   name={friend.name}
                   mutualFriends={friend.mutualFriends}
@@ -90,7 +107,8 @@ const MainContent = ({ activeSection }) => {
                   onClick1={handleApplyFriend}
                   onClick2={handleCancelRequest}
                 />
-              ))}
+                )
+            })}
             </div>
             
             {/* Load more button */}

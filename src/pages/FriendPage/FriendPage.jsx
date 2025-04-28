@@ -14,7 +14,7 @@ const FriendPage = () => {
             <Header />
             <main className='flex h-full'>
                 <SideBar activeSection={activeSection} setActiveSection={setActiveSection} />
-                <MainContent activeSection={activeSection} />
+                <MainContent activeSection={activeSection}  setActiveSection={setActiveSection} />
             </main>
         </div>
     );
