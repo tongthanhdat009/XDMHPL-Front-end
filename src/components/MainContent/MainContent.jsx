@@ -127,8 +127,7 @@ const MainContent = ({ activeSection, setActiveSection }) => {
       name: user.fullName,
       mutualFriends: null,
       followers: null,
-      image: `/path/to/profile${(i % 7) + 1}.jpg`,
-      isAvatar: i % 11 === 0,
+      isAvatar: user.avatarURL ? user.avatarURL : null,
       type: "pending"
     }));
 
@@ -143,8 +142,7 @@ const MainContent = ({ activeSection, setActiveSection }) => {
       name: user.fullName,
       mutualFriends: i % 4 === 0 ? `${i + 3} bạn chung` : null,
       followers: i % 6 === 0 ? `Có ${i * 15 + 200} người theo dõi` : null,
-      image: `/path/to/profile${(i % 7) + 1}.jpg`,
-      isAvatar: i % 13 === 0,
+      isAvatar: user.avatarURL ? user.avatarURL : null,
       type: "suggesting"
     }));
 
@@ -159,7 +157,7 @@ const MainContent = ({ activeSection, setActiveSection }) => {
       name: user.fullName,
       mutualFriends: i % 4 === 0 ? `${i + 3} bạn chung` : null,
       followers: i % 6 === 0 ? `Có ${i * 15 + 200} người theo dõi` : null,
-      image: `/path/to/profile${(i % 7) + 1}.jpg`,
+      image: user.avatarURL ? user.avatarURL : null,
       isAvatar: i % 13 === 0,
       type: "suggesting"
     }));
@@ -211,7 +209,6 @@ const MainContent = ({ activeSection, setActiveSection }) => {
                   name={friend.name}
                   mutualFriends={friend.mutualFriends}
                   followers={friend.followers}
-                  image={friend.image}
                   isAvatar={friend.isAvatar}
                   type={friend.type}
                   onClick1={() => acceptFriend(friend.id, currentUser.userID)}
@@ -257,7 +254,6 @@ const MainContent = ({ activeSection, setActiveSection }) => {
                 name={friend.name}
                 mutualFriends={friend.mutualFriends}
                 followers={friend.followers}
-                image={friend.image}
                 isAvatar={friend.isAvatar}
                 type={friend.type}
                 onClick1={() => sendFriendRequest(currentUser.userID, friend.id)}
@@ -294,7 +290,6 @@ const MainContent = ({ activeSection, setActiveSection }) => {
                 name={friend.name}
                 mutualFriends={friend.mutualFriends}
                 followers={friend.followers}
-                image={friend.image}
                 isAvatar={friend.isAvatar}
                 type="friend"
                 onClick1={() => console.log("Nhắn tin")}

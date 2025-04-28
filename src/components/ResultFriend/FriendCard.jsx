@@ -1,5 +1,5 @@
 import React from 'react'
-const FriendCard = ({ name, mutualFriends, followers, image, isPlaceholder, isAvatar, type, onClick1, onClick2 }) => {
+const FriendCard = ({ name, mutualFriends, followers, isPlaceholder, isAvatar, type, onClick1, onClick2 }) => {
     return (
         <div className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-200">
             <div className="relative pb-[100%]">
@@ -9,12 +9,12 @@ const FriendCard = ({ name, mutualFriends, followers, image, isPlaceholder, isAv
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
                     </div>
-                ) : isAvatar ? (
+                ) : isAvatar==null ? (
                     <div className="absolute inset-0 bg-blue-500 flex items-center justify-center">
                         <div className="w-12 h-12 bg-blue-700"></div>
                     </div>
                 ) : (
-                    <img src={image} alt={name} className="absolute inset-0 w-full h-full object-cover" />
+                    <img src={'http://localhost:8080'+isAvatar} alt={name} className="absolute inset-0 w-full h-full object-cover" />
                 )}
             </div>
             <div className="p-2">
