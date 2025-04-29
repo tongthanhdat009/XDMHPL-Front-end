@@ -6,6 +6,8 @@ import SearchPage from "./pages/SearchPage/SearchPage.jsx";
 import AdminPage from "./pages/AdminPage/AdminPage.jsx";
 import UserLogin from "./pages/LoginPage/User/UserLogin.jsx";
 import UserSignin from "./pages/LoginPage/User/UserSignin.jsx";
+import ProfilePage from "./pages/ProfilePage/ProfilePage.jsx";
+
 function App() {
   
   return (
@@ -17,6 +19,7 @@ function App() {
       <Route path='/login/*' element={<UserLogin />} />
       <Route path='/signin/*' element={<UserSignin />} />
       <Route path='/user/*' element={<user />} />
+      <Route path='/profile/:id' element={<ProfilePage />} />
     </Routes>
 
   )
