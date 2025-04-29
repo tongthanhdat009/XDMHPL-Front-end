@@ -316,6 +316,7 @@ const authService = {
   commentPost: async (reqData) => {
     try {
       const response = await api.post(`/comments/post/${reqData.postId}/${reqData.userId}`, reqData.data);
+      console.log(response.data);
       return {
         success: true
       };

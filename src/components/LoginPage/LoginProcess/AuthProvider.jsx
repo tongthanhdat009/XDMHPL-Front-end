@@ -3,6 +3,7 @@ import authService from './ValidateLogin'  // đường dẫn tới file authSer
 import SockJS from 'sockjs-client'
 import { Stomp } from '@stomp/stompjs';
 // 1. Tạo Context
+
 const AuthContext = createContext()
 
 export const AuthProvider = ({ children }) => {
@@ -10,6 +11,7 @@ export const AuthProvider = ({ children }) => {
   const [stompClient, setStompClient] = useState(null);
   const [connected, setConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [onlineUsers, setOnlineUsers] = useState(new Set()); // Thêm state lưu danh sách người dùng online
 
   // Tự động kết nối/ngắt kết nối khi user thay đổi
   useEffect(() => {
@@ -56,17 +58,30 @@ export const AuthProvider = ({ children }) => {
     
     // Header cho kết nối
     const headers = {
-      'userId': user.userID.toString(),
-      'Authorization': user.token // Nếu có token
+      'userId': user.userID.toString()
     };
 
     stomp.connect(headers, (frame) => {
-      console.log("🔌 WebSocket Connected!", frame);
+      console.log("🔌 WebSocket Đã kết nối!", frame);
+      
+      // Thêm bộ lắng nghe debug để xem tất cả tin nhắn đến
+      stomp.debug = function(str) {
+        console.log("STOMP Debug:", str);
+      };
+      
       setStompClient(stomp);
       setConnected(true);
       setIsConnecting(false);
+      
+      // In thông tin kết nối
+      console.log("Đã kết nối với user:", user.userID);
+      console.log("Session ID:", stomp.ws._transport.url.split('/').pop());
+      
       // Gửi trạng thái online sau khi kết nối thành công
       sendOnlineStatus(stomp);
+      
+      // Đăng ký nhận cập nhật về trạng thái người dùng
+      subscribeToUserStatuses(stomp);
       
     }, (error) => {
       console.error("❌ Lỗi kết nối WebSocket:", error);
@@ -96,6 +111,59 @@ export const AuthProvider = ({ children }) => {
     };
   };
 
+  // Đăng ký nhận thông báo trạng thái người dùng
+  const subscribeToUserStatuses = (client = stompClient) => {
+    if (client && user) {
+      // Đăng ký nhận cập nhật trạng thái người dùng
+      console.log(`Đăng ký nhận thông báo tại: /user/${user.userID}/queue/statususer`);
+      
+      client.subscribe(`/user/${user.userID}/queue/statususer`, (message) => {
+        console.log("📥 Đã nhận tin nhắn:", message);
+        try {
+          const response = JSON.parse(message.body);
+          console.log("📥 Nhận cập nhật trạng thái:", response);
+          
+          // Xử lý thông báo trạng thái người dùng
+          if (response.userId && response.online !== undefined) {
+            setOnlineUsers(prev => {
+              const newSet = new Set(Array.from(prev));
+              
+              if (response.online) {
+                newSet.add(response.userId);
+              } else {
+                newSet.delete(response.userId);
+              }
+              
+              return newSet;
+            });
+          }
+          
+          // Xử lý danh sách người dùng online
+          if (response.onlineFriends) {
+            setOnlineUsers(new Set(response.onlineFriends));
+            console.log("Đã cập nhật danh sách người dùng online:", response.onlineFriends);
+          }
+        } catch (e) {
+          console.error("Lỗi khi xử lý trạng thái:", e);
+        }
+      });
+  
+      // Sau khi kết nối, gửi trạng thái online để server cập nhật
+      sendOnlineStatus(client);
+      
+      // Yêu cầu danh sách người dùng đang online
+      requestOnlineUsersList(client);
+    }
+  };
+
+  const requestOnlineUsersList = (client = stompClient) => {
+    if (client && user) {
+      const payload = { userId: user.userID };
+      console.log("📤 Yêu cầu danh sách người dùng online");
+      client.send('/app/status/get-online-users', {}, JSON.stringify(payload));
+    }
+  };
+
   // Ngắt kết nối WebSocket
   const disconnectWebSocket = () => {
     if (stompClient && connected) {
@@ -113,7 +181,7 @@ export const AuthProvider = ({ children }) => {
 
   // Gửi trạng thái online
   const sendOnlineStatus = (client = stompClient) => {
-    if (client && connected && user) {
+    if (client && user) {
       const payload = { userId: user.userID };
       console.log("📤 Gửi trạng thái online");
       client.send('/app/status/online', {}, JSON.stringify(payload));
@@ -127,6 +195,11 @@ export const AuthProvider = ({ children }) => {
       console.log("📤 Gửi trạng thái offline");
       client.send('/app/status/offline', {}, JSON.stringify(payload));
     }
+  };
+
+  // Kiểm tra người dùng có online không
+  const isUserOnline = (userId) => {
+    return onlineUsers.has(userId);
   };
 
   const login = async (...args) => {
@@ -144,12 +217,13 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-
   return (
     <AuthContext.Provider value={{
       stompClient,
       user,
       connected, // Export để component con biết trạng thái kết nối
+      onlineUsers: Array.from(onlineUsers), // Export danh sách người dùng online
+      isUserOnline, // Export hàm kiểm tra người dùng có online không
       login,
       logout
     }}>
