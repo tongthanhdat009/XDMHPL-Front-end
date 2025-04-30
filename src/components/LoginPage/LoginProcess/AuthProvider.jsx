@@ -47,117 +47,137 @@ export const AuthProvider = ({ children }) => {
     return () => window.removeEventListener('storage', handleStorage);
   }, []);
 
+  // ...existing code...
+
   // Kết nối WebSocket
   const connectWebSocket = () => {
-    if (!user || isConnecting || connected) return;
+    // --- KIỂM TRA CHẶT CHẼ HƠN ---
+    // Đảm bảo user và user.userID đều tồn tại
+    if (!user || !user.userID || isConnecting || connected) {
+        if (!user || !user.userID) {
+            console.warn("Attempted to connect WebSocket without a valid user ID.");
+        }
+        return;
+    }
+    // --- KẾT THÚC KIỂM TRA ---
 
     setIsConnecting(true);
 
-    const socket = new SockJS('http://localhost:8080/ws');
-    const stomp = Stomp.over(socket);
-    
+    const stomp = Stomp.over(() => {
+        console.log("Creating new SockJS connection...");
+        return new SockJS('http://localhost:8080/ws');
+    });
+
     // Header cho kết nối
+    // --- Dòng 71 --- Đã được bảo vệ bởi kiểm tra ở trên
     const headers = {
       'userId': user.userID.toString()
     };
 
+    // stomp.reconnect_delay = 5000;
+
     stomp.connect(headers, (frame) => {
       console.log("🔌 WebSocket Đã kết nối!", frame);
-      
-      // Thêm bộ lắng nghe debug để xem tất cả tin nhắn đến
+
       stomp.debug = function(str) {
         console.log("STOMP Debug:", str);
       };
-      
+
       setStompClient(stomp);
       setConnected(true);
       setIsConnecting(false);
-      
-      // In thông tin kết nối
-      console.log("Đã kết nối với user:", user.userID);
-      console.log("Session ID:", stomp.ws._transport.url.split('/').pop());
-      
-      // Gửi trạng thái online sau khi kết nối thành công
+
+      // --- KIỂM TRA TRƯỚC KHI LOG ---
+      console.log("Đã kết nối với user:", user?.userID); // Sử dụng optional chaining
+
       sendOnlineStatus(stomp);
-      
-      // Đăng ký nhận cập nhật về trạng thái người dùng
       subscribeToUserStatuses(stomp);
-      
+
     }, (error) => {
       console.error("❌ Lỗi kết nối WebSocket:", error);
       setIsConnecting(false);
       setConnected(false);
-      
-      // Thử kết nối lại sau 5 giây
-      setTimeout(() => {
-        if (user && !connected && !isConnecting) {
-          connectWebSocket();
-        }
-      }, 5000);
+      setStompClient(null);
+
+      // Thử kết nối lại thủ công (có thể không cần nếu dùng reconnect_delay)
+      // setTimeout(() => {
+      //   // Kiểm tra lại user và userID trước khi thử lại
+      //   if (user && user.userID && !connected && !isConnecting) {
+      //     connectWebSocket();
+      //   }
+      // }, 5000);
     });
 
-    // Xử lý khi kết nối bị đóng
-    socket.onclose = () => {
-      console.log("🔌 Kết nối WebSocket đã đóng");
-      setConnected(false);
-      setStompClient(null);
-      
-      // Thử kết nối lại sau 5 giây
-      setTimeout(() => {
-        if (user && !connected && !isConnecting) {
-          connectWebSocket();
-        }
-      }, 5000);
+    stomp.onWebSocketError = (error) => {
+        console.error('Error with websocket', error);
+        setConnected(false);
+        setIsConnecting(false);
+        setStompClient(null);
+    };
+
+    stomp.onWebSocketClose = (event) => {
+        console.log('Websocket closed', event);
+        setConnected(false);
+        setIsConnecting(false);
+        setStompClient(null);
+        // Thử kết nối lại thủ công (có thể không cần nếu dùng reconnect_delay)
+        // setTimeout(() => {
+        //   // Kiểm tra lại user và userID trước khi thử lại
+        //   if (user && user.userID && !connected && !isConnecting) {
+        //     connectWebSocket();
+        //   }
+        // }, 5000);
     };
   };
 
   // Đăng ký nhận thông báo trạng thái người dùng
   const subscribeToUserStatuses = (client = stompClient) => {
-    if (client && user) {
-      // Đăng ký nhận cập nhật trạng thái người dùng
+    // --- KIỂM TRA user VÀ user.userID ---
+    if (client && user && user.userID) {
       console.log(`Đăng ký nhận thông báo tại: /user/${user.userID}/queue/statususer`);
-      
+
       client.subscribe(`/user/${user.userID}/queue/statususer`, (message) => {
+        // ... (xử lý message như cũ) ...
         console.log("📥 Đã nhận tin nhắn:", message);
         try {
           const response = JSON.parse(message.body);
           console.log("📥 Nhận cập nhật trạng thái:", response);
-          
+
           // Xử lý thông báo trạng thái người dùng
           if (response.userId && response.online !== undefined) {
             setOnlineUsers(prev => {
-              const newSet = new Set(Array.from(prev));
-              
+              const newSet = new Set(prev); // Tạo Set mới từ Set cũ
+
               if (response.online) {
                 newSet.add(response.userId);
               } else {
                 newSet.delete(response.userId);
               }
-              
-              return newSet;
+
+              return newSet; // Trả về Set mới
             });
           }
-          
-          // Xử lý danh sách người dùng online
-          if (response.onlineFriends) {
-            setOnlineUsers(new Set(response.onlineFriends));
-            console.log("Đã cập nhật danh sách người dùng online:", response.onlineFriends);
+
+          // Xử lý danh sách người dùng online ban đầu
+          if (response.onlineUsers) { // Giả sử server trả về key là onlineUsers
+            setOnlineUsers(new Set(response.onlineUsers));
+            console.log("Đã cập nhật danh sách người dùng online:", response.onlineUsers);
           }
         } catch (e) {
           console.error("Lỗi khi xử lý trạng thái:", e);
         }
       });
-  
-      // Sau khi kết nối, gửi trạng thái online để server cập nhật
+
       sendOnlineStatus(client);
-      
-      // Yêu cầu danh sách người dùng đang online
       requestOnlineUsersList(client);
+    } else {
+        console.warn("Không thể đăng ký nhận status: client hoặc user/userID không hợp lệ.");
     }
   };
 
   const requestOnlineUsersList = (client = stompClient) => {
-    if (client && user) {
+    // --- KIỂM TRA user VÀ user.userID ---
+    if (client && user && user.userID) {
       const payload = { userId: user.userID };
       console.log("📤 Yêu cầu danh sách người dùng online");
       client.send('/app/status/get-online-users', {}, JSON.stringify(payload));
@@ -166,22 +186,26 @@ export const AuthProvider = ({ children }) => {
 
   // Ngắt kết nối WebSocket
   const disconnectWebSocket = () => {
-    if (stompClient && connected) {
+    // Kiểm tra stompClient trước khi truy cập thuộc tính/phương thức
+    if (stompClient && stompClient.connected) {
       // Gửi trạng thái offline trước khi ngắt kết nối
       sendOfflineStatus(stompClient);
-      
-      // Ngắt kết nối
+
       stompClient.disconnect(() => {
         console.log("🔌 WebSocket đã ngắt kết nối");
-        setConnected(false);
-        setStompClient(null);
       });
     }
+    // Luôn reset state dù có kết nối hay không
+    setConnected(false);
+    setStompClient(null);
+    setIsConnecting(false);
   };
+
 
   // Gửi trạng thái online
   const sendOnlineStatus = (client = stompClient) => {
-    if (client && user) {
+    // --- KIỂM TRA client, user VÀ user.userID ---
+    if (client && client.connected && user && user.userID) {
       const payload = { userId: user.userID };
       console.log("📤 Gửi trạng thái online");
       client.send('/app/status/online', {}, JSON.stringify(payload));
@@ -190,10 +214,16 @@ export const AuthProvider = ({ children }) => {
 
   // Gửi trạng thái offline
   const sendOfflineStatus = (client = stompClient) => {
-    if (client && connected && user) {
+    // --- KIỂM TRA client, connected, user VÀ user.userID ---
+    // Chỉ gửi nếu thực sự đang kết nối
+    if (client && connected && user && user.userID) {
       const payload = { userId: user.userID };
       console.log("📤 Gửi trạng thái offline");
-      client.send('/app/status/offline', {}, JSON.stringify(payload));
+      try {
+        client.send('/app/status/offline', {}, JSON.stringify(payload));
+      } catch (error) {
+        console.warn("Không thể gửi trạng thái offline, kết nối có thể đang đóng:", error);
+      }
     }
   };
 
