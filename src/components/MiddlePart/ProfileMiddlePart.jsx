@@ -8,6 +8,7 @@ import PostCard from '../Post/PostCard';
 import CreatePostModal from '../CreatePost/CreatePostModal';
 import SharepostCard from '../Post/SharepostCard';
 import authService from '../LoginPage/LoginProcess/ValidateLogin';
+import { useParams } from 'react-router-dom';
 const MiddlePart = () => {
   const [openCreatePostModal, setOpenCreatePostModal] = React.useState(false);
   const handleCloseCreatePostModal = () => setOpenCreatePostModal(false);
@@ -16,7 +17,7 @@ const MiddlePart = () => {
   }
   const [posts, setPosts] = useState([]); // Khai báo state cho posts
   const [allUsers, setAllUsers] = useState([]);
-
+  const { id } = useParams();
   useEffect(() => {
     const fetchDatas = async () => {
       try {
@@ -101,35 +102,39 @@ const MiddlePart = () => {
         {posts.map((item) => {
             // Tìm userPost trong allUsers dựa trên item.userID
             const userPost = allUsers.find((user) => user.userID === item.userID);
-
-            if (item.originalPostID != null) {
-              // Tìm originalPost trong posts dựa trên originalPostID
-              const originalPost = posts.find((post) => post.postID === item.originalPostID) || null;
-
-              // Chỉ tìm userOriginalPost nếu originalPost tồn tại
-              const userOriginalPost = originalPost
-                ? allUsers.find((user) => user.userID === originalPost.userID) || null
-                : null;
-
-              // Truyền cả item, userPost và originalPost vào SharepostCard
-              return (
-                <SharepostCard
-                  key={item.postID}
-                  item={item}
-                  userPost={userPost}
-                  originalPost={originalPost}
-                  userOriginalPost={userOriginalPost}
-                  allUsers={allUsers}
-                  updatePosts={updatePosts}
-                  updateUsers={updateUsers}
-                  updateCurentUser={updateCurentUser}
-                />
-              );
-            } else {
-              // Truyền item và userPost vào PostCard
-              return <PostCard key={item.postID} item={item} userPost={userPost} updatePosts={updatePosts} allUsers={allUsers} updateUsers={updateUsers}
-              updateCurentUser={updateCurentUser} />;
+            if(item.userID==id){
+              if (item.originalPostID != null) {
+                // Tìm originalPost trong posts dựa trên originalPostID
+                const originalPost = posts.find((post) => post.postID === item.originalPostID) || null;
+  
+                // Chỉ tìm userOriginalPost nếu originalPost tồn tại
+                const userOriginalPost = originalPost
+                  ? allUsers.find((user) => user.userID === originalPost.userID) || null
+                  : null;
+  
+                // Truyền cả item, userPost và originalPost vào SharepostCard
+                return (
+                  <SharepostCard
+                    key={item.postID}
+                    item={item}
+                    userPost={userPost}
+                    originalPost={originalPost}
+                    userOriginalPost={userOriginalPost}
+                    allUsers={allUsers}
+                    updatePosts={updatePosts}
+                    updateUsers={updateUsers}
+                    updateCurentUser={updateCurentUser}
+                  />
+                );
+              } else {
+                // Truyền item và userPost vào PostCard
+                return <PostCard key={item.postID} item={item} userPost={userPost} updatePosts={updatePosts} allUsers={allUsers} updateUsers={updateUsers}
+                updateCurentUser={updateCurentUser} />;
+              }
             }
+           
+
+            
           })}
         </div>
         <div>

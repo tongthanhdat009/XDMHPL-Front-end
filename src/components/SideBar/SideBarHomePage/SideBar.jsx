@@ -15,7 +15,7 @@ const SideBar = () => {
   const currentUser = authService.getCurrentUser();
   const handleNavigate = (item) => {
     if (item.title == "Profile") {
-      navigate(`/profile/3`)
+      navigate(`/profile/${currentUser.userID}`)
     }
     else if (item.title == "Friends") {
       navigate(`/friends`)

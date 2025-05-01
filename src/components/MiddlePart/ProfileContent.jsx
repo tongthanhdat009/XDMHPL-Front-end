@@ -7,6 +7,7 @@ import { useLocation } from "react-router-dom";
 import EditProfileModal from '../CreatePost/EditProfileModal';
 import MiddlePart from './ProfileMiddlePart';
 import EditBioModal from '../CreatePost/EditBioModal';
+import authService from '../LoginPage/LoginProcess/ValidateLogin';
 
 const ProfileContent = ({ selectedTab, setSelectedTab }) => {
     const location = useLocation();
@@ -15,59 +16,40 @@ const ProfileContent = ({ selectedTab, setSelectedTab }) => {
 
     const [userData, setUserData] = useState(null);
     const [currentUserId, setCurrentUserId] = useState(null);
-    const [profileUserId, setProfileUserId] = useState(null);
     const [friends, setFriends] = useState([]);
     const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
     const [isEditBioModalOpen, setIsEditBioModalOpen] = useState(false);
+    const [allUsers, setAllUsers] = useState([]);
 
     useEffect(() => {
         const userInfo = JSON.parse(localStorage.getItem("currentUser"));
-        const currentId = userInfo?.userId;
+        const currentId = userInfo?.userID;
         setCurrentUserId(currentId);
 
         const viewedUserId = parseInt(id) || currentId;
-        setProfileUserId(viewedUserId);
-
-        // if (viewedUserId) {
-        //     axios.get(`http://localhost:8080/users/${viewedUserId}`)
-        //         .then(res => {
-        //             setUserData(res.data);
-        //         })
-        //         .catch(err => {
-        //             console.error("Lỗi khi lấy thông tin người dùng:", err);
-        //         });
-
-        //     axios.get(`http://localhost:8080/friends/list/${viewedUserId}`)
-        //         .then(res => {
-        //             const friendIds = res.data.map(friend =>
-        //                 friend.userID === viewedUserId ? friend.friendUserID : friend.userID
-        //             );
-
-        //             if (friendIds && friendIds.length > 0) {
-        //                 const friendPromises = friendIds.map(friendId =>
-        //                     axios.get(`http://localhost:8080/users/${friendId}`)
-        //                 );
-
-        //                 Promise.all(friendPromises)
-        //                     .then(friendResponses => {
-        //                         const friendData = friendResponses.map(response => response.data);
-        //                         setFriends(friendData);
-        //                     })
-        //                     .catch(err => {
-        //                         console.error("Lỗi khi lấy thông tin bạn bè:", err);
-        //                     });
-        //             } else {
-        //                 setFriends([]);
-        //             }
-        //         })
-        //         .catch(err => {
-        //             console.error("Lỗi khi lấy danh sách bạn bè:", err);
-        //         });
-        // }
+        if (viewedUserId) {
+            const fetchDatas = async () => {
+                try {
+                  const users = await authService.getAllUsers();
+                  setUserData(users.find(user => user.userID === viewedUserId));
+                  setAllUsers(users);
+                } catch (error) {
+                  console.error("Error fetching posts:", error);
+                }
+            };
+            fetchDatas();
+        }
 
         setSelectedTab("posts");
 
     }, [id]);
+
+    useEffect(() => {
+            setFriends(allUsers.filter((user) => {
+                return userData.friends.some((friend) => friend.userID === user.userID && friend.status === "ACCEPTED") || 
+                       userData.friendOf.some((friend) => friend.userID === user.userID && friend.status === "ACCEPTED");
+            }));
+    }, [id, allUsers, userData]);
 
     const handleEditProfile = () => {
         setIsEditProfileModalOpen(true);
@@ -140,7 +122,7 @@ const ProfileContent = ({ selectedTab, setSelectedTab }) => {
         if (avatarPath) {
           return `http://localhost:8080${avatarPath}`;
         }
-        return "http://localhost:8080/avatars/default.jpg";
+        return "http://localhost:8080/uploads/avatars/default.jpg";
       };
 
     return (

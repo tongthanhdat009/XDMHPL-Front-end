@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { FaUserPlus, FaComments } from 'react-icons/fa';
 import axios from 'axios';
 import { useLocation, useNavigate } from 'react-router-dom';
+import authService from '../LoginPage/LoginProcess/ValidateLogin';
 
 const ProfileHeader = ({ selectedTab, setSelectedTab }) => {
     const location = useLocation();
@@ -15,81 +16,148 @@ const ProfileHeader = ({ selectedTab, setSelectedTab }) => {
     const [selectedCoverPhoto, setSelectedCoverPhoto] = useState(null); // Lưu ảnh bìa chọn từ máy tính
     const [isCoverModalOpen, setIsCoverModalOpen] = useState(false); // Trạng thái modal ảnh bìa
     const [previewCoverImage, setPreviewCoverImage] = useState(null); // Ảnh preview bìa
-    const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+    const currentUser = authService.getCurrentUser();
+    const [allUsers, setAllUsers] = useState([]);
+    
+    const updateUsers = async () => {
+        try {
+          const result = await authService.getAllUsersFormDB();
+          if (result.success) {
+            setAllUsers(result.data); // Cập nhật danh sách bài viết
+          }
+        } catch (error) {
+          console.error("Error updating posts:", error);
+        }
+      };
+    
+    // Sửa hàm updateCurrentUser
+    const updateCurrentUser = async () => {
+        try {
+            const currentUser = authService.getCurrentUser();
+            const result = await authService.getCurrentUserFormDB(currentUser.userID);
+            
+            // Cập nhật userData nếu đây là profile của người dùng hiện tại
+            const pathParts = location.pathname.split('/');
+            const profileUserId = parseInt(pathParts[pathParts.length - 1]);
+            
+            if (profileUserId === currentUser.userID) {
+                setUserData(result.data); // Giả sử API trả về data trong trường này
+            } else {
+                // Nếu đang xem profile người khác, cần fetch lại thông tin của họ
+                const profileData = await authService.getUserById(profileUserId);
+                setUserData(profileData);
+            }
+        } catch (error) {
+            console.error("Error updating current user:", error);
+        }
+    };
+    useEffect(() => {
+        const pathParts = location.pathname.split('/');
+        const profileUserId = parseInt(pathParts[pathParts.length - 1]);
+        const currentId = parseInt(currentUser?.userID);
 
-    // useEffect(() => {
-    //     const pathParts = location.pathname.split('/');
-    //     const profileUserId = parseInt(pathParts[pathParts.length - 1]);
-    //     const currentId = parseInt(currentUser?.userId);
+        if (profileUserId && currentId) {
+            setIsCurrentUser(currentId === profileUserId);
 
-    //     if (profileUserId && currentId) {
-    //         setIsCurrentUser(currentId === profileUserId);
+            const fetchDatas = async () => {
+                try {
+                  const users = await authService.getAllUsers();
+                  setUserData(users.find(user => user.userID === profileUserId));
+                  setAllUsers(users);
+                } catch (error) {
+                  console.error("Error fetching posts:", error);
+                }
+            };
+            fetchDatas();
 
-    //         axios.get(`http://localhost:8080/users/${profileUserId}`)
-    //             .then(res => setUserData(res.data))
-    //             .catch(err => console.error("Lỗi khi lấy thông tin người dùng:", err));
 
-    //         axios.get(`http://localhost:8080/friends/friend-status`, {
-    //             params: {
-    //                 userID: currentId,
-    //                 friendUserID: profileUserId
-    //             }
-    //         })
-    //         .then(res => {
-    //             setFriendStatus(res.data.toLowerCase()); // "kết bạn", "bạn bè", "đang chờ"
-    //         })
-    //         .catch(err => {
-    //             console.error("Lỗi khi lấy trạng thái bạn bè:", err);
-    //             setFriendStatus("kết bạn"); // fallback
-    //         });
-    //     }
-    // }, [location.pathname]);
+            axios.get(`http://localhost:8080/friendrequests/friend-status`, {
+                params: {
+                    userID: currentId,
+                    friendUserID: profileUserId
+                }
+            })
+            .then(res => {
+                setFriendStatus(res.data.toLowerCase()); // "kết bạn", "bạn bè", "đang chờ"
+            })
+            .catch(err => {
+                console.error("Lỗi khi lấy trạng thái bạn bè:", err);
+                setFriendStatus("kết bạn"); // fallback
+            });
+        }
+    }, [location.pathname]);
 
     const [friends, setFriends] = useState([]);
-
-    // useEffect(() => {
-    //     const profileUserId = parseInt(location.pathname.split('/').pop());
-    
-    //     axios.get(`http://localhost:8080/friends/list/${profileUserId}`)
-    //         .then(async res => {
-    //             const friendIds = res.data.map(item => {
-    //                 return item.userID === profileUserId ? item.friendUserID : item.userID;
-    //             });
-    //             const friendDetails = await Promise.all(
-    //                 friendIds.map(id => axios.get(`http://localhost:8080/users/${id}`))
-    //             );
-    //             setFriends(friendDetails.map(res => res.data));
-    //         })
-    //         .catch(err => console.error("Lỗi khi lấy danh sách bạn bè:", err));
-    // }, [location.pathname]);
+    console.log(allUsers.filter((user) => {
+        return userData.friends.some((friend) => friend.userID === user.userID && friend.status === "ACCEPTED") || 
+               userData.friendOf.some((friend) => friend.userID === user.userID && friend.status === "ACCEPTED");
+    }));
+    useEffect(() => {
+        const filteredFriends = allUsers.filter((user) => {
+            return userData.friends.some((friend) => friend.userID === user.userID && friend.status === "ACCEPTED") ||
+                   userData.friendOf.some((friend) => friend.userID === user.userID && friend.status === "ACCEPTED");
+        });
+        
+        setFriends(filteredFriends);
+        console.log("Friends sau khi lọc:", filteredFriends);
+    }, [allUsers, userData, location.pathname]);
 
     const handleNavigate = () => {
         navigate('/messages');
     };
 
-    // const handleFriendAction = () => {
-    //     const currentUser = JSON.parse(localStorage.getItem("currentUser"));
-    //     const currentId = parseInt(currentUser?.userId);
-    //     const profileId = parseInt(location.pathname.split('/').pop());
-
-    //     if (friendStatus === "kết bạn") {
-    //         axios.post("http://localhost:8080/friends/request", {
-    //             userID: currentId,
-    //             friendUserID: profileId
-    //         })
-    //         .then(() => setFriendStatus("đang chờ"))
-    //         .catch(err => console.error("Lỗi gửi lời mời kết bạn:", err));
-    //     } else if (friendStatus === "bạn bè") {
-    //         axios.delete("http://localhost:8080/friends/remove", {
-    //             params: {
-    //                 userID: currentId,
-    //                 friendUserID: profileId
-    //             }
-    //         })
-    //         .then(() => setFriendStatus("kết bạn"))
-    //         .catch(err => console.error("Lỗi hủy kết bạn:", err));
-    //     }
-    // };
+    const handleFriendAction = async () => {
+        const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+        const currentId = parseInt(currentUser?.userID);
+        const profileId = parseInt(location.pathname.split('/').pop());
+        try {
+            if (friendStatus === "kết bạn") {
+                await axios.post(`http://localhost:8080/friendrequests/${currentId}/${profileId}`);
+                setFriendStatus("đang chờ");
+            }
+            else if (friendStatus === "đang chờ") {
+                await axios.delete(`http://localhost:8080/friendrequests/${currentId}/${profileId}`);
+                setFriendStatus("kết bạn");
+            }
+            else if (friendStatus === "chờ xác nhận") {
+                await axios.put(`http://localhost:8080/friendrequests/${profileId}/${currentId}`);
+                setFriendStatus("bạn bè");
+            }
+            else if (friendStatus === "bạn bè") {
+                await axios.delete(`http://localhost:8080/friendrequests/${currentId}/${profileId}`);
+                setFriendStatus("kết bạn");
+            }
+            
+            // Cập nhật dữ liệu người dùng
+            await updateCurrentUser();
+            
+            // Cập nhật danh sách người dùng
+            const updatedUsers = await authService.getAllUsersFormDB();
+            if (updatedUsers.success) {
+                setAllUsers(updatedUsers.data);
+                
+                // Lấy thông tin chi tiết của người dùng profile hiện tại
+                const pathParts = location.pathname.split('/');
+                const profileUserId = parseInt(pathParts[pathParts.length - 1]);
+                const profileUser = updatedUsers.data.find(user => user.userID === profileUserId);
+                
+                if (profileUser) {
+                    setUserData(profileUser);
+                    
+                    // Cập nhật danh sách bạn bè trực tiếp
+                    const updatedFriends = updatedUsers.data.filter((user) => {
+                        return profileUser.friends.some((friend) => friend.userID === user.userID && friend.status === "ACCEPTED") || 
+                               profileUser.friendOf.some((friend) => friend.userID === user.userID && friend.status === "ACCEPTED");
+                    });
+                    
+                    setFriends(updatedFriends);
+                }
+            }
+        } catch (error) {
+            console.error("Lỗi khi thực hiện hành động bạn bè:", error);
+        }
+        
+    };
 
     const renderFriendButton = () => {
         let label = "";
@@ -97,6 +165,7 @@ const ProfileHeader = ({ selectedTab, setSelectedTab }) => {
         let bgColor = "";
         let hoverColor = "";
 
+        console.log("friendStatus", friendStatus);
         switch (friendStatus) {
             case "kết bạn":
                 label = "Kết bạn";
@@ -104,15 +173,20 @@ const ProfileHeader = ({ selectedTab, setSelectedTab }) => {
                 hoverColor = "hover:bg-blue-700";
                 break;
             case "đang chờ":
-                label = "Đã gửi lời mời";
+                label = "Hủy lời mời";
                 bgColor = "bg-gray-400";
                 hoverColor = "hover:bg-gray-400";
-                disabled = true;
+                // disabled = true;
                 break;
             case "bạn bè":
                 label = "Hủy kết bạn";
                 bgColor = "bg-gray-400";
                 hoverColor = "hover:bg-gray-500";
+                break;
+            case "chờ xác nhận":
+                label = "Chấp nhận";
+                bgColor = "bg-blue-600";
+                hoverColor = "hover:bg-blue-700";
                 break;
             default:
                 return null;
@@ -151,7 +225,7 @@ const ProfileHeader = ({ selectedTab, setSelectedTab }) => {
         const formData = new FormData();
         formData.append("coverPhoto", selectedCoverPhoto);
     
-        const userId = currentUser?.userId;
+        const userId = currentUser?.userID;
     
         // Kiểm tra nếu userId có giá trị hợp lệ
         if (!userId) {
@@ -196,7 +270,7 @@ const ProfileHeader = ({ selectedTab, setSelectedTab }) => {
         const formData = new FormData();
         formData.append("avatar", selectedAvatar);
     
-        const userId = currentUser?.userId; // Lấy đúng userId từ currentUser
+        const userId = currentUser?.userID; // Lấy đúng userId từ currentUser
         
         // Kiểm tra nếu userId có giá trị hợp lệ
         if (!userId) {
@@ -229,7 +303,7 @@ const ProfileHeader = ({ selectedTab, setSelectedTab }) => {
         <div className="flex flex-col">
             <div className='h-[480px] relative bg-white px-50 pb-20'>
                 <img 
-                    src={userData?.coverPhotoURL ? `http://localhost:8080${userData.coverPhotoURL}` : "http://localhost:8080/covers/default.jpg"}
+                    src={userData?.coverPhotoUrl ? `http://localhost:8080/uploads${userData.coverPhotoUrl}` : "http://localhost:8080/uploads/covers/default.jpg"}
                     alt="Cover"
                     className="w-full h-full object-cover rounded-b-lg shadow-ml"
                     onClick={handleCoverClick}
@@ -242,7 +316,7 @@ const ProfileHeader = ({ selectedTab, setSelectedTab }) => {
                         <div className="relative">
                         <div className="translate-x-10 -translate-y-12 h-[178px] w-[178px] rounded-full border-4 border-white overflow-hidden">
                             <img 
-                                src={userData?.avatar ? `http://localhost:8080${userData.avatar}` : "http://localhost:8080/avatars/default.jpg"}
+                                src={userData?.avatarURL ? `http://localhost:8080/uploads${userData.avatarURL}` : "http://localhost:8080/uploads/avatars/default.jpg"}
                                 alt="Profile"
                                 className="w-full h-full object-cover cursor-pointer"
                                 onClick={handleAvatarClick}
@@ -258,8 +332,8 @@ const ProfileHeader = ({ selectedTab, setSelectedTab }) => {
                             <div className="flex mt-2 space-x-2">
                                 {friends.slice(0, 5).map(friend => (
                                     <img
-                                        key={friend.userId}
-                                        src={`http://localhost:8080${friend.avatar || '/avatars/default.jpg'}`}
+                                        key={friend.userID}
+                                        src={`http://localhost:8080/uploads${friend.avatarURL || '/avatars/default.jpg'}`}
                                         alt={friend.fullName}
                                         className="w-8 h-8 rounded-full cursor-pointer hover:ring-2 hover:ring-blue-500"
                                         onClick={() => navigate(`/profile/${friend.userID}`)}
@@ -291,7 +365,7 @@ const ProfileHeader = ({ selectedTab, setSelectedTab }) => {
                         {/* Preview Image */}
                         <div className="mb-6 flex justify-center">
                             <img
-                                src={ previewCoverImage ||"http://localhost:8080/covers/default.jpg"}
+                                src={ previewCoverImage ||"http://localhost:8080/uploads/covers/default.jpg"}
                                 alt="Preview"
                                 className="w-full h-[150px] object-cover border-4 border-gray-300"
                             />
@@ -338,7 +412,7 @@ const ProfileHeader = ({ selectedTab, setSelectedTab }) => {
                         {/* Preview Image */}
                         <div className="mb-6 flex justify-center">
                             <img 
-                                src={previewImage || "http://localhost:8080/avatars/default.jpg"}
+                                src={previewImage || "http://localhost:8080/uploads/avatars/default.jpg"}
                                 alt="Preview" 
                                 className="w-50 h-50 object-cover border-4 border-gray-300" 
                             />
