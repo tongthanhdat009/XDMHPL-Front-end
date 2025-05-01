@@ -45,6 +45,24 @@ const ProfileHeader = ({ selectedTab, setSelectedTab }) => {
         }
     }, [location.pathname]);
 
+    const [friends, setFriends] = useState([]);
+
+    useEffect(() => {
+        const profileUserId = parseInt(location.pathname.split('/').pop());
+    
+        axios.get(`http://localhost:8080/friends/list/${profileUserId}`)
+            .then(async res => {
+                const friendIds = res.data.map(item => {
+                    return item.userID === profileUserId ? item.friendUserID : item.userID;
+                });
+                const friendDetails = await Promise.all(
+                    friendIds.map(id => axios.get(`http://localhost:8080/users/${id}`))
+                );
+                setFriends(friendDetails.map(res => res.data));
+            })
+            .catch(err => console.error("Lỗi khi lấy danh sách bạn bè:", err));
+    }, [location.pathname]);
+
     const handleNavigate = () => {
         navigate('/messages');
     };
@@ -233,9 +251,22 @@ const ProfileHeader = ({ selectedTab, setSelectedTab }) => {
                         </div>
                         <div className="ml-12 -mt-15">
                             <h2 className="text-4xl font-semibold text-black">{userData?.fullName}</h2>
+                            {console.log("Friends:", friends)}
                             <p className="text-sm text-gray-600 mt-1">
-                                10 bạn bè, 5 bạn chung
+                                {friends.length} bạn bè 
                             </p>
+                            <div className="flex mt-2 space-x-2">
+                                {friends.slice(0, 5).map(friend => (
+                                    <img
+                                        key={friend.userId}
+                                        src={`http://localhost:8080${friend.avatar || '/avatars/default.jpg'}`}
+                                        alt={friend.fullName}
+                                        className="w-8 h-8 rounded-full cursor-pointer hover:ring-2 hover:ring-blue-500"
+                                        onClick={() => navigate(`/profile/${friend.userID}`)}
+                                        title={friend.fullName}
+                                    />
+                                ))}
+                            </div>
                         </div>
                     </div>
 
