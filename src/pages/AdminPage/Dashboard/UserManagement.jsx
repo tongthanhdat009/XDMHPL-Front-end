@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
+  const navigate = useNavigate();
 
-  useEffect(() => {
+  // Lấy danh sách người dùng
+  const fetchUsers = () => {
     axios
       .get("http://localhost:8080/users")
       .then((response) => {
@@ -13,8 +16,41 @@ const UserManagement = () => {
       .catch((error) => {
         console.error("Lỗi khi lấy danh sách người dùng:", error);
       });
+  };
+
+  useEffect(() => {
+    fetchUsers();
   }, []);
 
+  // Xử lý xem profile
+  const handleView = (userID) => {
+    navigate(`/profile/${userID}`);
+  };
+
+  // Xử lý ẩn người dùng
+  const handleHide = (userID) => {
+    axios
+      .put(`http://localhost:8080/users/${userID}/hide`)
+      .then(() => {
+        fetchUsers();
+      })
+      .catch((error) => {
+        console.error("Lỗi khi ẩn người dùng:", error);
+      });
+  };
+
+  const handleUpdateRole = (userID, currentRole) => {
+    const newRole = currentRole === "user" ? "admin" : "user";
+    axios
+      .put(`http://localhost:8080/users/${userID}/role`, { role: newRole })
+      .then(() => {
+        fetchUsers();
+      })
+      .catch((error) => {
+        console.error("Lỗi khi cập nhật role:", error);
+      });
+  };
+  
   return (
     <div className="p-8 min-h-screen bg-gray-50 rounded-lg shadow-md">
       <h1 className="text-3xl font-bold mb-8 text-gray-800 text-center">Quản lý người dùng</h1>
@@ -49,20 +85,30 @@ const UserManagement = () => {
                 <td className="px-6 py-4">
                   <span
                     className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      user.role === "admin"
-                        ? "bg-blue-100 text-blue-600"
-                        : "bg-gray-100 text-gray-600"
+                      user.role === "admin" ? "bg-blue-100 text-blue-600" : "bg-gray-100 text-gray-600"
                     }`}
                   >
                     {user.role}
                   </span>
                 </td>
                 <td className="px-6 py-4 space-x-2">
-                  <button className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">
+                  <button
+                    className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                    onClick={() => handleView(user.userID)}
+                  >
                     Xem
                   </button>
-                  <button className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">
+                  <button
+                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                    onClick={() => handleHide(user.userID)}
+                  >
                     Xóa
+                  </button>
+                  <button
+                    className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+                    onClick={() => handleUpdateRole(user.userID, user.role)}
+                  >
+                    Sửa Role
                   </button>
                 </td>
               </tr>
