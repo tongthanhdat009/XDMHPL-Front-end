@@ -21,6 +21,19 @@ const ProfileContent = ({ selectedTab, setSelectedTab }) => {
     const [isEditBioModalOpen, setIsEditBioModalOpen] = useState(false);
     const [allUsers, setAllUsers] = useState([]);
 
+    const fetchUserData = async (userId) => {
+        try {
+            await authService.getAllUsersFormDB();
+            await authService.getCurrentUserFormDB(userId);
+            const users = await authService.getAllUsers();
+            const user = users.find(user => user.userID === userId);
+            setUserData(user);
+            setAllUsers(users);
+            return user;
+        } catch (error) {
+            console.error("Error fetching posts:", error);
+        }
+    };
     useEffect(() => {
         const userInfo = JSON.parse(localStorage.getItem("currentUser"));
         const currentId = userInfo?.userID;
@@ -28,16 +41,7 @@ const ProfileContent = ({ selectedTab, setSelectedTab }) => {
 
         const viewedUserId = parseInt(id) || currentId;
         if (viewedUserId) {
-            const fetchDatas = async () => {
-                try {
-                  const users = await authService.getAllUsers();
-                  setUserData(users.find(user => user.userID === viewedUserId));
-                  setAllUsers(users);
-                } catch (error) {
-                  console.error("Error fetching posts:", error);
-                }
-            };
-            fetchDatas();
+            fetchUserData(viewedUserId);
         }
 
         setSelectedTab("posts");
@@ -45,11 +49,13 @@ const ProfileContent = ({ selectedTab, setSelectedTab }) => {
     }, [id]);
 
     useEffect(() => {
+        if (userData && allUsers.length > 0) {
             setFriends(allUsers.filter((user) => {
-                return userData.friends.some((friend) => friend.userID === user.userID && friend.status === "ACCEPTED") || 
-                       userData.friendOf.some((friend) => friend.userID === user.userID && friend.status === "ACCEPTED");
+                return userData.friends.some((friend) => friend.userID === user.userID && friend.status === "ACCEPTED") ||
+                    userData.friendOf.some((friend) => friend.userID === user.userID && friend.status === "ACCEPTED");
             }));
-    }, [id, allUsers, userData]);
+        }
+    }, [allUsers, userData]);
 
     const handleEditProfile = () => {
         setIsEditProfileModalOpen(true);
@@ -68,12 +74,16 @@ const ProfileContent = ({ selectedTab, setSelectedTab }) => {
                 },
                 body: JSON.stringify(updatedData),
             });
-    
+
             if (response.ok) {
                 // Cập nhật thành công
                 console.log("Thông tin cá nhân đã được cập nhật.");
                 setIsEditProfileModalOpen(false); // Đóng modal sau khi lưu thành công
-                window.location.reload(); // Reload trang sau khi cập nhật thành công
+
+                // window.location.reload(); // Reload trang sau khi cập nhật thành công
+                const updatedUserData = await fetchUserData(currentUserId);
+                setUserData(updatedUserData);
+
             } else {
                 // Nếu có lỗi từ API
                 const error = await response.text();
@@ -85,7 +95,8 @@ const ProfileContent = ({ selectedTab, setSelectedTab }) => {
             alert("Lỗi kết nối với máy chủ.");
         }
     };
-    
+
+
     const handleSaveBio = async (newBio) => {
         try {
             const response = await fetch(`http://localhost:8080/users/${currentUserId}/bio`, {
@@ -95,14 +106,19 @@ const ProfileContent = ({ selectedTab, setSelectedTab }) => {
                 },
                 body: JSON.stringify(newBio),
             });
-    
             if (response.ok) {
-                // Cập nhật thành công
                 console.log("Tiểu sử đã được cập nhật.");
-                setIsEditBioModalOpen(false); // Đóng modal sau khi lưu thành công
-                window.location.reload(); // Reload trang sau khi cập nhật thành công
+                setIsEditBioModalOpen(false);
+
+                // Cập nhật userData trực tiếp với giá trị bio mới
+                setUserData(prevData => ({
+                    ...prevData,
+                    bio: newBio
+                }));
+
+                // Đồng thời gọi API để lấy dữ liệu mới nhất
+                fetchUserData(currentUserId);
             } else {
-                // Nếu có lỗi từ API
                 const error = await response.text();
                 console.error("Cập nhật tiểu sử thất bại:", error);
                 alert("Có lỗi khi cập nhật tiểu sử.");
@@ -112,7 +128,7 @@ const ProfileContent = ({ selectedTab, setSelectedTab }) => {
             alert("Lỗi kết nối với máy chủ.");
         }
     };
-    
+
     const handleNavigateProfile = (userID) => {
         navigate(`/profile/${userID}`);
         setSelectedTab("posts");
@@ -120,10 +136,10 @@ const ProfileContent = ({ selectedTab, setSelectedTab }) => {
 
     const getAvatarUrl = (avatarPath) => {
         if (avatarPath) {
-          return `http://localhost:8080${avatarPath}`;
+            return `http://localhost:8080${avatarPath}`;
         }
         return "http://localhost:8080/uploads/avatars/default.jpg";
-      };
+    };
 
     return (
         <div className="flex justify-center w-full p-4">
@@ -235,19 +251,19 @@ const ProfileContent = ({ selectedTab, setSelectedTab }) => {
             </div>
             {/* Modals */}
             {isEditProfileModalOpen && (
-            <EditProfileModal
-                userData={userData}
-                onClose={() => setIsEditProfileModalOpen(false)}
-                onSave={handleSaveProfile}
-            />
+                <EditProfileModal
+                    userData={userData}
+                    onClose={() => setIsEditProfileModalOpen(false)}
+                    onSave={handleSaveProfile}
+                />
             )}
 
             {isEditBioModalOpen && (
-            <EditBioModal
-                userData={userData}
-                onClose={() => setIsEditBioModalOpen(false)}
-                onSave={handleSaveBio}
-            />
+                <EditBioModal
+                    userData={userData}
+                    onClose={() => setIsEditBioModalOpen(false)}
+                    onSave={handleSaveBio}
+                />
             )}
         </div>
     );

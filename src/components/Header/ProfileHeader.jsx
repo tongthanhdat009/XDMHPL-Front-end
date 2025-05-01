@@ -19,17 +19,6 @@ const ProfileHeader = ({ selectedTab, setSelectedTab }) => {
     const currentUser = authService.getCurrentUser();
     const [allUsers, setAllUsers] = useState([]);
     
-    const updateUsers = async () => {
-        try {
-          const result = await authService.getAllUsersFormDB();
-          if (result.success) {
-            setAllUsers(result.data); // Cập nhật danh sách bài viết
-          }
-        } catch (error) {
-          console.error("Error updating posts:", error);
-        }
-      };
-    
     // Sửa hàm updateCurrentUser
     const updateCurrentUser = async () => {
         try {

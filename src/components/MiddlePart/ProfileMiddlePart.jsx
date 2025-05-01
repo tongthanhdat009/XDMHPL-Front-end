@@ -138,7 +138,7 @@ const MiddlePart = () => {
           })}
         </div>
         <div>
-          <CreatePostModal handleClose={handleCloseCreatePostModal} open={openCreatePostModal} updatePosts={updatePosts} allUsers={allUsers} />
+          <CreatePostModal handleClose={handleCloseCreatePostModal} open={openCreatePostModal} updatePosts={updatePosts} />
         </div>
       </div>
     </div>
