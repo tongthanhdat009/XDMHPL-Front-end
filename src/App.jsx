@@ -8,6 +8,7 @@ import UserLogin from "./pages/LoginPage/User/UserLogin.jsx";
 import UserSignin from "./pages/LoginPage/User/UserSignin.jsx";
 import authService from "./components/LoginPage/LoginProcess/ValidateLogin.jsx";
 import FriendPage from "./pages/FriendPage/FriendPage.jsx";
+import ProfilePage from "./pages/ProfilePage/ProfilePage.jsx";
 // PrivateRoute component to protect routes
 const PrivateRoute = ({ children }) => {
   const location = useLocation();
@@ -75,10 +76,10 @@ function App() {
         }
       />
       <Route
-        path="/user/*"
+        path="/profile/:id"
         element={
           <PrivateRoute>
-            <div>User Page</div> {/* Replace with actual user component */}
+            <ProfilePage />
           </PrivateRoute>
         }
       />
