@@ -58,7 +58,7 @@ export const AuthProvider = ({ children }) => {
     
     // Header cho kết nối
     const headers = {
-      'userId': user.userID.toString()
+      'username': user.username
     };
 
     stomp.connect(headers, (frame) => {
@@ -74,7 +74,7 @@ export const AuthProvider = ({ children }) => {
       setIsConnecting(false);
       
       // In thông tin kết nối
-      console.log("Đã kết nối với user:", user.userID);
+      console.log("Đã kết nối với user:", user.username);
       console.log("Session ID:", stomp.ws._transport.url.split('/').pop());
       
       // Gửi trạng thái online sau khi kết nối thành công
@@ -115,9 +115,9 @@ export const AuthProvider = ({ children }) => {
   const subscribeToUserStatuses = (client = stompClient) => {
     if (client && user) {
       // Đăng ký nhận cập nhật trạng thái người dùng
-      console.log(`Đăng ký nhận thông báo tại: /user/${user.userID}/queue/statususer`);
+      console.log(`Đăng ký nhận thông báo tại: /topic/status/${user.username}`);
       
-      client.subscribe(`/user/${user.userID}/queue/statususer`, (message) => {
+      client.subscribe(`/topic/status/${user.username}`, (message) => {
         console.log("📥 Đã nhận tin nhắn:", message);
         try {
           const response = JSON.parse(message.body);
@@ -158,7 +158,7 @@ export const AuthProvider = ({ children }) => {
 
   const requestOnlineUsersList = (client = stompClient) => {
     if (client && user) {
-      const payload = { userId: user.userID };
+      const payload = { userId: user.userID, username: user.username };
       console.log("📤 Yêu cầu danh sách người dùng online");
       client.send('/app/status/get-online-users', {}, JSON.stringify(payload));
     }
