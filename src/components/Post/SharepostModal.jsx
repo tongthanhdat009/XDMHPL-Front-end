@@ -30,7 +30,11 @@ const SharepostModal = ({ isOpen, handleClose, post, userPost, originalPost, use
     // Handle liking post
     const handleLikePost = async () => {
         try {
-            const result = await authService.likePost(post.postID, currentUser.userID);
+            const Like = {
+                postId: post.postID,
+                userId: currentUser.userID
+            }
+            const result = await authService.likePost({Like, sendNotifyLikeToServer});
             if (result.success) {
                 await updatePosts();
             } else {
@@ -55,7 +59,7 @@ const SharepostModal = ({ isOpen, handleClose, post, userPost, originalPost, use
     };
 
     try {
-      const result = await authService.commentPost({comment, sendNotifyToServer});
+      const result = await authService.commentPost({comment, sendNotifyCommentToServer});
       console.log(result)
       if (result.success) {
         // Gọi callback để cập nhật danh sách bài viết
@@ -72,12 +76,19 @@ const SharepostModal = ({ isOpen, handleClose, post, userPost, originalPost, use
   };
 
 
-  const sendNotifyToServer = (newMessage) => {
+  const sendNotifyCommentToServer = (newMessage) => {
     if (stompClient && newMessage) {
       console.log("📤 Sending message:", newMessage);
       stompClient.send(`/app/comment/notification`, {}, JSON.stringify(newMessage));
     }
 };
+
+    const sendNotifyLikeToServer = (newMessage) => {
+        if (stompClient && newMessage) {
+        console.log("📤 Sending message:", newMessage);
+        stompClient.send(`/app/like/notification`, {}, JSON.stringify(newMessage));
+        }
+    };
 
 
     const [currentMediaIndex, setCurrentMediaIndex] = useState(0);

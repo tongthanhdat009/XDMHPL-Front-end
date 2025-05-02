@@ -18,6 +18,7 @@ import MediaModal from './MediaModal';
 import CreateSharePostModal from '../CreatePost/CreateSharePostModal';
 import SharepostModal from './SharepostModal';
 import EditSharePostModal from '../EditPost/EditSharePostModal';
+import { useAuth } from '../LoginPage/LoginProcess/AuthProvider';
 // import PostModal from './PostModal';
 const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updatePosts, allUsers, updateUsers, updateCurentUser }) => {
     const currentUser = authService.getCurrentUser();
@@ -39,6 +40,8 @@ const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updateP
     const timeoutRef = React.useRef(null);
     const navigate = useNavigate();
 
+    const {stompClient } = useAuth();
+
     const handleShowComments = () => {
         setShowPostModal(true);
     };
@@ -49,17 +52,26 @@ const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updateP
 
     const handleLikePost = async () => {
         try {
-            const result = await authService.likePost(item.postID, currentUser.userID);
-            console.log(result)
+            const Like = {
+                postId: item.postID,
+                userId: currentUser.userID
+            }
+            const result = await authService.likePost({Like, sendNotifyLikeToServer});
             if (result.success) {
-                // Gọi callback để cập nhật danh sách bài viết
                 await updatePosts();
             } else {
-                // Xử lý lỗi
                 console.error("Error liking post:", result.error);
             }
         } catch (error) {
             console.error("Error in form submission:", error);
+        }
+    };
+
+
+    const sendNotifyLikeToServer = (newMessage) => {
+        if (stompClient && newMessage) {
+        console.log("📤 Sending message:", newMessage);
+        stompClient.send(`/app/like/notification`, {}, JSON.stringify(newMessage));
         }
     };
 

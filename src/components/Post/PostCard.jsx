@@ -50,21 +50,31 @@ const PostCard = ({ item, userPost, updatePosts, allUsers,  updateUsers, updateC
         setShowPostModal(false);
     };
 
-    const handleLikePost = async () => {
-        try {
-            const result = await authService.likePost(item.postID, currentUser.userID);
-            console.log(result)
-            if (result.success) {
-                // Gọi callback để cập nhật danh sách bài viết
-                await updatePosts();
-            } else {
-                // Xử lý lỗi
-                console.error("Error liking post:", result.error);
-            }
-        } catch (error) {
-            console.error("Error in form submission:", error);
+     // Handle liking post
+  const handleLikePost = async () => {
+    try {
+        const Like = {
+            postId: item.postID,
+            userId: currentUser.userID
         }
-    };
+        const result = await authService.likePost({Like, sendNotifyLikeToServer});
+        if (result.success) {
+            await updatePosts();
+        } else {
+            console.error("Error liking post:", result.error);
+        }
+    } catch (error) {
+        console.error("Error in form submission:", error);
+    }
+};
+
+
+const sendNotifyLikeToServer = (newMessage) => {
+    if (stompClient && newMessage) {
+    console.log("📤 Sending message:", newMessage);
+    stompClient.send(`/app/like/notification`, {}, JSON.stringify(newMessage));
+    }
+};
 
     const handleProfileMouseEnter = (e) => {
         if (timeoutRef.current) {

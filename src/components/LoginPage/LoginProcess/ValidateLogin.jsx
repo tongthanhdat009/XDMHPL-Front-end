@@ -294,13 +294,20 @@ const authService = {
     }
   },
 
-  likePost: async (postId, userId) => {
+  likePost: async (reqData) => {
     try {
-      const response = await api.put(`/posts/like/${postId}/${userId}`);
-      return {
-        success: true,
-        data: response.data
-      };
+      const response = await api.put(`/posts/like/${reqData.Like.postId}/${reqData.Like.userId}`);
+      console.log(response.data);
+      if((response.data.senderID === response.data.userID) || response.data===null || response.data.isOnline===false){
+        return {
+          success: true
+        };
+      }else {
+          reqData.sendNotifyLikeToServer(response.data);
+          return {
+            success: true
+          };
+      }
     } catch (error) {
       console.error("Error liking post:", error);
       return {
@@ -317,12 +324,12 @@ const authService = {
     try {
       const response = await api.post(`/comments/post/${reqData.comment.postId}/${reqData.comment.userId}`, reqData.comment.data);
       console.log(response.data);
-      if(response.data.senderID === response.data.userID){
+      if(response.data.senderID === response.data.userID || response.data.isOnline===false){
         return {
           success: true
         };
       } else {
-          reqData.sendNotifyToServer(response.data);
+          reqData.sendNotifyCommentToServer(response.data);
           return {
             success: true
           };

@@ -27,9 +27,30 @@ const PostModal = ({ isOpen, handleClose, post, userPost, updatePosts, allUsers,
   const formattedTime = dayjs(post?.creationDate).format("DD [tháng] M [lúc] HH:mm");
 
   // Handle liking post
-  const handleLikePost = () => {
+  const handleLikePost = async () => {
+    try {
+        const Like = {
+            postId: post.postID,
+            userId: currentUser.userID
+        }
+        const result = await authService.likePost({Like, sendNotifyLikeToServer});
+        if (result.success) {
+            await updatePosts();
+        } else {
+            console.error("Error liking post:", result.error);
+        }
+    } catch (error) {
+        console.error("Error in form submission:", error);
+    }
+};
 
-  };
+
+const sendNotifyLikeToServer = (newMessage) => {
+    if (stompClient && newMessage) {
+    console.log("📤 Sending message:", newMessage);
+    stompClient.send(`/app/like/notification`, {}, JSON.stringify(newMessage));
+    }
+};
 
   // Handle creating comment
   const handleCreateComment = async () => {
