@@ -13,12 +13,15 @@ import MediaModal from './MediaModal';
 import VideoThumbnail from './VideoThumbnail';
 import authService from '../LoginPage/LoginProcess/ValidateLogin';
 import { data, useNavigate } from 'react-router-dom';
+import CommentItem from './CommentItem';
+import { useAuth } from '../LoginPage/LoginProcess/AuthProvider';
 // SharepostModal component
 
 const SharepostModal = ({ isOpen, handleClose, post, userPost, originalPost, userOriginalPost, updatePosts, allUsers, handleOpenCreatePostModal }) => {
     const currentUser = authService.getCurrentUser();
     const [newComment, setNewComment] = React.useState('');
     const navigate = useNavigate();
+    const {stompClient } = useAuth();
     // Format date/time
     dayjs.extend(relativeTime);
     dayjs.locale('vi');
@@ -39,30 +42,43 @@ const SharepostModal = ({ isOpen, handleClose, post, userPost, originalPost, use
     };
 
     // Handle creating comment
-    const handleCreateComment = async () => {
-        if (!newComment.trim()) return;
+  const handleCreateComment = async () => {
+    if (!newComment.trim()) return;
 
-        const reqData = {
-            postId: post.postID,
-            userId: currentUser.userID,
-            data: {
-                content: newComment
-            }
-        };
+    const comment = {
+      postId: post.postID,
+      userId: currentUser.userID,
+      data: {
+        content: newComment
+      }
 
-        try {
-            const result = await authService.commentPost(reqData);
-            if (result.success) {
-                await updatePosts();
-            } else {
-                console.error("Error comment post:", result.error);
-            }
-        } catch (error) {
-            console.error("Error in form submission:", error);
-        }
-
-        setNewComment('');
     };
+
+    try {
+      const result = await authService.commentPost({comment, sendNotifyToServer});
+      console.log(result)
+      if (result.success) {
+        // Gọi callback để cập nhật danh sách bài viết
+        await updatePosts();
+      } else {
+        // Xử lý lỗi
+        console.error("Error comment post:", result.error);
+      }
+    } catch (error) {
+      console.error("Error in form submission:", error);
+    }
+
+    setNewComment('');
+  };
+
+
+  const sendNotifyToServer = (newMessage) => {
+    if (stompClient && newMessage) {
+      console.log("📤 Sending message:", newMessage);
+      stompClient.send(`/app/comment/notification`, {}, JSON.stringify(newMessage));
+    }
+};
+
 
     const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
     const [showMediaModal, setShowMediaModal] = useState(false);
@@ -450,95 +466,13 @@ const SharepostModal = ({ isOpen, handleClose, post, userPost, originalPost, use
                             // Tìm thông tin người dùng từ allUsers
                             const commentUser = allUsers.find((user) => user.userID === comment.userID);
                             return (
-                                <Box key={comment.id || comment.commentID} sx={{ display: 'flex', gap: 1.5 }}>
-                                    <Avatar
-                                        sx={{
-                                            width: 32,
-                                            height: 32,
-                                            fontSize: '0.8rem',
-                                            cursor: 'pointer'
-                                        }}
-                                        onClick={() => navigate(`/profile/${comment.userID}`)}
-                                    >
-                                        {commentUser?.fullName?.[0]}
-                                    </Avatar>
-                                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                                        <Box
-                                            sx={{
-                                                bgcolor: 'grey.100',
-                                                borderRadius: 3,
-                                                p: 1.5,
-                                                overflow: 'hidden'
-                                            }}
-                                        >
-                                            <Typography
-                                                variant="subtitle2"
-                                                sx={{
-                                                    fontWeight: 500,
-                                                    fontSize: '0.85rem',
-                                                    cursor: 'pointer',
-                                                    '&:hover': { textDecoration: 'underline' }
-                                                }}
-                                                onClick={() => navigate(`/profile/${comment.userID}`)}
-                                            >
-                                                {commentUser?.fullName}
-                                            </Typography>
-                                            <Typography
-                                                variant="body2"
-                                                sx={{
-                                                    wordBreak: 'break-word',
-                                                    overflowWrap: 'break-word',
-                                                    hyphens: 'auto',
-                                                    fontSize: '0.85rem',
-                                                    mt: 0.5
-                                                }}
-                                            >
-                                                {comment.content}
-                                            </Typography>
-                                        </Box>
-                                        <Box
-                                            sx={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: 2,
-                                                mt: 0.5,
-                                                px: 1
-                                            }}
-                                        >
-                                            <Typography
-                                                variant="caption"
-                                                color="text.secondary"
-                                                sx={{ fontSize: '0.75rem', fontWeight: 500 }}
-                                            >
-                                                {dayjs(comment.creationDate).fromNow()}
-                                            </Typography>
-                                            <Typography
-                                                variant="caption"
-                                                color="text.secondary"
-                                                sx={{
-                                                    fontSize: '0.75rem',
-                                                    fontWeight: 500,
-                                                    cursor: 'pointer',
-                                                    '&:hover': { textDecoration: 'underline' }
-                                                }}
-                                            >
-                                                Thích
-                                            </Typography>
-                                            <Typography
-                                                variant="caption"
-                                                color="text.secondary"
-                                                sx={{
-                                                    fontSize: '0.75rem',
-                                                    fontWeight: 500,
-                                                    cursor: 'pointer',
-                                                    '&:hover': { textDecoration: 'underline' }
-                                                }}
-                                            >
-                                                Phản hồi
-                                            </Typography>
-                                        </Box>
-                                    </Box>
-                                </Box>
+                                <CommentItem
+                                key={comment.commentID}
+                                comment={comment}
+                                user={commentUser}
+                                currentUser={currentUser}
+                                updatePosts={updatePosts}
+                              />
                             );
                         })}
                     </Box>

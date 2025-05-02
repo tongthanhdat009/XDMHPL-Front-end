@@ -296,7 +296,7 @@ const PostModal = ({ isOpen, handleClose, post, userPost, updatePosts, allUsers,
               const user = allUsers.find((user) => user.userID === comment.userID);
               return (
                 <CommentItem
-                  key={comment.id}
+                  key={comment.commentID}
                   comment={comment}
                   user={user}
                   currentUser={currentUser}
