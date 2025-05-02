@@ -339,6 +339,42 @@ const authService = {
     }
   },
 
+  updateComment: async (reqData) => {
+    try {
+      const response = await api.put(`/comments/update/${reqData.commentId}`, reqData.data);
+      return {
+        success: true
+      };
+    } catch (error) {
+      console.error("Error updating comment:", error);
+      return {
+        success: false,
+        error: error.response?.data || {
+          message: error.message || "Không thể lIKE bài viết",
+          status: error.response?.status || 500
+        }
+      };
+    }
+  },
+
+  deleteComment: async (commentId) => {
+    try {
+      const response = await api.delete(`/comments/delete/${commentId}`);
+      return {
+        success: true
+      };
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      return {
+        success: false,
+        error: error.response?.data || {
+          message: error.message || "Không thể lIKE bài viết",
+          status: error.response?.status || 500
+        }
+      };
+    }
+  },
+
   getAllUsersFormDB: async () => {
     try {
       const response = await api.get(`/users`);

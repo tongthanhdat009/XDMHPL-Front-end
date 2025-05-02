@@ -13,6 +13,7 @@ import MediaModal from './MediaModal';
 import VideoThumbnail from './VideoThumbnail';
 import authService from '../LoginPage/LoginProcess/ValidateLogin';
 import { useAuth } from '../LoginPage/LoginProcess/AuthProvider';
+import CommentItem from './CommentItem';
 
 // PostModal component
 const PostModal = ({ isOpen, handleClose, post, userPost, updatePosts, allUsers, handleOpenCreatePostModal }) => {
@@ -294,85 +295,13 @@ const PostModal = ({ isOpen, handleClose, post, userPost, updatePosts, allUsers,
               // Tìm thông tin người dùng từ allUsers
               const user = allUsers.find((user) => user.userID === comment.userID);
               return (
-                <Box key={comment.id} sx={{ display: 'flex', gap: 1 }}>
-                  <Avatar sx={{ width: 32, height: 32, fontSize: '0.8rem' }}>
-                    {/* {comment.user.firstName[0]} */}
-                  </Avatar>
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Box sx={{
-                      bgcolor: 'action.hover',
-                      borderRadius: 3,
-                      p: 1,
-                      overflow: 'hidden'
-                    }}>
-                      <Typography variant="subtitle2">
-                        {
-                          user.fullName
-                        }
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          wordBreak: 'break-word',
-                          overflowWrap: 'break-word',
-                          hyphens: 'auto'
-                        }}
-                      >
-                        {comment.content}
-                      </Typography>
-                    </Box>
-                    <Box sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1,
-                      mt: 0.5
-                    }}>
-                      <Typography variant="caption" color="text.secondary">
-                        {dayjs(comment.creationDate).fromNow()}
-                      </Typography>
-                      {/* <Typography 
-                        variant="caption" 
-                        fontWeight="medium"
-                        sx={{ 
-                          cursor: 'pointer',
-                          '&:hover': { textDecoration: 'underline' }
-                        }}
-                      >
-                        Thích
-                      </Typography>
-                      <Typography 
-                        variant="caption" 
-                        fontWeight="medium"
-                        sx={{ 
-                          cursor: 'pointer',
-                          '&:hover': { textDecoration: 'underline' }
-                        }}
-                      >
-                        Phản hồi
-                      </Typography> */}
-                      {/* <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Box 
-                          sx={{ 
-                            bgcolor: 'primary.main',
-                            color: 'white',
-                            width: 16,
-                            height: 16,
-                            borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '0.6rem'
-                          }}
-                        >
-                          
-                        </Box>
-                        <Typography variant="caption" sx={{ ml: 0.5 }}>
-                          {comment.likeCount}
-                        </Typography>
-                      </Box> */}
-                    </Box>
-                  </Box>
-                </Box>
+                <CommentItem
+                  key={comment.id}
+                  comment={comment}
+                  user={user}
+                  currentUser={currentUser}
+                  updatePosts={updatePosts}
+                />
               )
             })}
           </Box>
