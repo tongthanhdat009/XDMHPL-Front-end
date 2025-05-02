@@ -315,11 +315,18 @@ const authService = {
 
   commentPost: async (reqData) => {
     try {
-      const response = await api.post(`/comments/post/${reqData.postId}/${reqData.userId}`, reqData.data);
+      const response = await api.post(`/comments/post/${reqData.comment.postId}/${reqData.comment.userId}`, reqData.comment.data);
       console.log(response.data);
-      return {
-        success: true
-      };
+      if(response.data.senderID === response.data.userID){
+        return {
+          success: true
+        };
+      } else {
+          reqData.sendNotifyToServer(response.data);
+          return {
+            success: true
+          };
+      }
     } catch (error) {
       console.error("Error comment post:", error);
       return {

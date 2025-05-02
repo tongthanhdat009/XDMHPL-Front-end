@@ -12,6 +12,7 @@ export const AuthProvider = ({ children }) => {
   const [connected, setConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState(new Set()); // Thêm state lưu danh sách người dùng online
+  const [notify, setNotify] = useState([]); // Thêm state lưu danh sách người dùng online
 
   // Tự động kết nối/ngắt kết nối khi user thay đổi
   useEffect(() => {
@@ -55,7 +56,7 @@ export const AuthProvider = ({ children }) => {
 
     const socket = new SockJS('http://localhost:8080/ws');
     const stomp = Stomp.over(socket);
-    
+
     // Header cho kết nối
     const headers = {
       'username': user.username
@@ -63,31 +64,34 @@ export const AuthProvider = ({ children }) => {
 
     stomp.connect(headers, (frame) => {
       console.log("🔌 WebSocket Đã kết nối!", frame);
-      
+
       // Thêm bộ lắng nghe debug để xem tất cả tin nhắn đến
-      stomp.debug = function(str) {
+      stomp.debug = function (str) {
         console.log("STOMP Debug:", str);
       };
-      
+
       setStompClient(stomp);
       setConnected(true);
       setIsConnecting(false);
-      
+
       // In thông tin kết nối
       console.log("Đã kết nối với user:", user.username);
       console.log("Session ID:", stomp.ws._transport.url.split('/').pop());
-      
+
       // Gửi trạng thái online sau khi kết nối thành công
       sendOnlineStatus(stomp);
-      
+
       // Đăng ký nhận cập nhật về trạng thái người dùng
       subscribeToUserStatuses(stomp);
-      
+
+      // Đăng ký nhận cập nhật về thống báo
+      subscribeToNotifications(stomp);
+
     }, (error) => {
       console.error("❌ Lỗi kết nối WebSocket:", error);
       setIsConnecting(false);
       setConnected(false);
-      
+
       // Thử kết nối lại sau 5 giây
       setTimeout(() => {
         if (user && !connected && !isConnecting) {
@@ -101,7 +105,7 @@ export const AuthProvider = ({ children }) => {
       console.log("🔌 Kết nối WebSocket đã đóng");
       setConnected(false);
       setStompClient(null);
-      
+
       // Thử kết nối lại sau 5 giây
       setTimeout(() => {
         if (user && !connected && !isConnecting) {
@@ -116,28 +120,28 @@ export const AuthProvider = ({ children }) => {
     if (client && user) {
       // Đăng ký nhận cập nhật trạng thái người dùng
       console.log(`Đăng ký nhận thông báo tại: /topic/status/${user.username}`);
-      
+
       client.subscribe(`/topic/status/${user.username}`, (message) => {
         console.log("📥 Đã nhận tin nhắn:", message);
         try {
           const response = JSON.parse(message.body);
           console.log("📥 Nhận cập nhật trạng thái:", response);
-          
+
           // Xử lý thông báo trạng thái người dùng
           if (response.userId && response.online !== undefined) {
             setOnlineUsers(prev => {
               const newSet = new Set(Array.from(prev));
-              
+
               if (response.online) {
                 newSet.add(response.userId);
               } else {
                 newSet.delete(response.userId);
               }
-              
+
               return newSet;
             });
           }
-          
+
           // Xử lý danh sách người dùng online
           if (response.onlineFriends) {
             setOnlineUsers(new Set(response.onlineFriends));
@@ -147,12 +151,42 @@ export const AuthProvider = ({ children }) => {
           console.error("Lỗi khi xử lý trạng thái:", e);
         }
       });
-  
+
       // Sau khi kết nối, gửi trạng thái online để server cập nhật
       sendOnlineStatus(client);
-      
+
       // Yêu cầu danh sách người dùng đang online
       requestOnlineUsersList(client);
+
+    }
+  };
+
+  // Đăng ký nhận thông báo
+  const subscribeToNotifications = (client = stompClient) => {
+    if (client && user) {
+      console.log(`Đăng ký nhận thông báo tại: /topic/notifications/${user.username}`);
+
+      client.subscribe(`/topic/notifications/${user.username}`, (message) => {
+        console.log("📥 Đã nhận tin nhắn:", message);
+        try {
+          const response = JSON.parse(message.body);
+          setNotify(prev => [...prev, response]);
+
+        } catch (e) {
+          console.error("Lỗi khi xử lý trạng thái:", e);
+        }
+      });
+
+      // Yêu cầu danh sách thông báo
+      requestNotificationsList(client);
+    }
+  };
+
+  const requestNotificationsList = (client = stompClient) => {
+    if (client && user) {
+      const payload = { userId: user.userID, username: user.username };
+      console.log("📤 Yêu cầu danh sách thông báo");
+      client.send('/app/status/get-notification', {}, JSON.stringify(payload));
     }
   };
 
@@ -169,7 +203,7 @@ export const AuthProvider = ({ children }) => {
     if (stompClient && connected) {
       // Gửi trạng thái offline trước khi ngắt kết nối
       sendOfflineStatus(stompClient);
-      
+
       // Ngắt kết nối
       stompClient.disconnect(() => {
         console.log("🔌 WebSocket đã ngắt kết nối");

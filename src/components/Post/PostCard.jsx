@@ -50,13 +50,6 @@ const PostCard = ({ item, userPost, updatePosts, allUsers,  updateUsers, updateC
         setShowPostModal(false);
     };
 
-    const sendNotifyToServer = (newMessage) => {
-        if (stompClient && newMessage) {
-          console.log("📤 Sending message:", newMessage);
-          console.log("📡 Destination:", `/app/chat/${currentChat?.id}`);
-          stompClient.send(`/app/notification/${currentChat?.id}`, {}, JSON.stringify(newMessage));
-        }
-    };
     const handleLikePost = async () => {
         try {
             const result = await authService.likePost(item.postID, currentUser.userID);

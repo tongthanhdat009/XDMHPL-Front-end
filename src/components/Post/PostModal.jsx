@@ -12,11 +12,13 @@ import SendIcon from '@mui/icons-material/Send';
 import MediaModal from './MediaModal';
 import VideoThumbnail from './VideoThumbnail';
 import authService from '../LoginPage/LoginProcess/ValidateLogin';
-import { data } from 'react-router-dom';
+import { useAuth } from '../LoginPage/LoginProcess/AuthProvider';
+
 // PostModal component
 const PostModal = ({ isOpen, handleClose, post, userPost, updatePosts, allUsers, handleOpenCreatePostModal }) => {
   const currentUser = authService.getCurrentUser();
   const [newComment, setNewComment] = React.useState('');
+  const {stompClient } = useAuth();
 
   // Format date/time
   dayjs.extend(relativeTime);
@@ -32,7 +34,7 @@ const PostModal = ({ isOpen, handleClose, post, userPost, updatePosts, allUsers,
   const handleCreateComment = async () => {
     if (!newComment.trim()) return;
 
-    const reqData = {
+    const comment = {
       postId: post.postID,
       userId: currentUser.userID,
       data: {
@@ -42,7 +44,7 @@ const PostModal = ({ isOpen, handleClose, post, userPost, updatePosts, allUsers,
     };
 
     try {
-      const result = await authService.commentPost(reqData);
+      const result = await authService.commentPost({comment, sendNotifyToServer});
       console.log(result)
       if (result.success) {
         // Gọi callback để cập nhật danh sách bài viết
@@ -57,6 +59,14 @@ const PostModal = ({ isOpen, handleClose, post, userPost, updatePosts, allUsers,
 
     setNewComment('');
   };
+
+
+  const sendNotifyToServer = (newMessage) => {
+    if (stompClient && newMessage) {
+      console.log("📤 Sending message:", newMessage);
+      stompClient.send(`/app/comment/notification`, {}, JSON.stringify(newMessage));
+    }
+};
 
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [showMediaModal, setShowMediaModal] = useState(false);
