@@ -9,7 +9,7 @@ const Messenger = () => {
   const [chats, setChats] = useState([]);
   const [messages, setMessages] = useState([]);
 
-  const currentUserId = 1; // TODO: Lấy từ AuthContext hoặc props nếu có
+  const currentUserId = 1; 
 
   // Hàm lấy danh sách chat
   const fetchChats = async () => {
