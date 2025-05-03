@@ -15,14 +15,15 @@ const FormLogin = () => {
     setErrorMessage(""); // Reset thông báo lỗi trước khi thử đăng nhập
 
     try {
-      const { userIdentifier, password, remember = false } = values;
-      const result = await authService.login(userIdentifier, password, remember);
-
+      const { userIdentifier, password} = values;
+      const result = await authService.login(userIdentifier, password, "user");
+      console.log("Kết quả đăng nhập: ", result);
       if (result.success) {
-        window.location.reload(); // Tải lại trang sau khi đăng nhập thành công
+        // Điều hướng đến trang chính sau khi đăng nhập thành công
+        navigate('/'); // Hoặc '/dashboard', '/home', tùy vào cấu trúc route của bạn
       } else {
         // Hiển thị thông báo lỗi nếu đăng nhập thất bại
-        setErrorMessage(result.error.message || "Đăng nhập thất bại. Vui lòng thử lại.");
+        setErrorMessage(result.error?.message || "Đăng nhập thất bại. Vui lòng thử lại.");
       }
     } catch (error) {
       console.error("Lỗi đăng nhập: ", error);
@@ -73,14 +74,7 @@ const FormLogin = () => {
               />
             </Form.Item>
 
-            <div className="flex justify-between items-center mb-4">
-              <Form.Item 
-                name="remember" 
-                valuePropName="checked" 
-                noStyle
-              >
-                <Checkbox>Nhớ tài khoản</Checkbox>
-              </Form.Item>
+            <div className="flex justify-center items-center mb-4">
               <Link to="/forgot-password" className="text-blue-600 text-sm hover:underline">
                 Quên mật khẩu?
               </Link>

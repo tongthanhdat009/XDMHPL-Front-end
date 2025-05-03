@@ -19,56 +19,65 @@ api.interceptors.request.use(
 );
 
 const authService = {
-  login: async (userIdentifier, password, remember, role = "user") => {
+  login: async (userIdentifier, password, role) => {
     try {
-      const deviceInfo = navigator.userAgent;
-      // nếu muốn thêm platform, screen size:
-      // const deviceInfo = `${navigator.userAgent} | ${navigator.platform} | ${window.screen.width}x${window.screen.height}`;
-
-      // 2. Gửi request kèm deviceInfo
-      const response = await api.post("/auth/login", {
+      const deviceInfo = navigator.userAgent; // Lấy thông tin thiết bị
+      let sessionId = authService.getSessionId(); // Lấy sessionID từ localStorage hoặc sessionStorage
+  
+      // 1. Kiểm tra session hiện tại
+      if (sessionId) {
+        const currentUser = authService.getCurrentUser();
+        if (currentUser) {
+          // Gọi API để kiểm tra xem session có hợp lệ không
+          const checkSessionResponse = await api.get(`/auth/check-session/${currentUser.userID}`);
+          if (checkSessionResponse.status === 200) {
+            console.log("Session hiện tại hợp lệ:", checkSessionResponse.data);
+            return { success: true, data: { sessionId, user: currentUser } };
+          } else {
+            console.log("Session không còn hợp lệ. Tiến hành đăng nhập lại.");
+          }
+        }
+      }
+  
+      // 2. Tiến hành đăng nhập
+      const loginResponse = await api.post("/auth/login", {
         userIdentifier,
         password,
         role,
-        deviceInfo
+        deviceInfo,
       });
-
-      // 3. Xử lý lưu sessionID & user
-      const { sessionId, user } = response.data;
-      localStorage.setItem("rememberMe", remember);
-
+      // Xử lý dữ liệu trả về
+      const { sessionId: newSessionId, user } = loginResponse.data;
+      
       await authService.getAllPostsFormDB();
       await authService.getAllUsersFormDB();
-
-      if (remember) {
-        localStorage.setItem("sessionID", sessionId);
-        localStorage.setItem("currentUser", JSON.stringify(response.data.user));
+      
+      // Luôn lưu session vào localStorage để hỗ trợ đăng nhập tự động
+      if(role === "admin") {
+        localStorage.setItem("adminSessionID", newSessionId); 
+        localStorage.setItem("adminCurrentUser", JSON.stringify(user));
+        sessionStorage.removeItem("adminSessionID");
+        sessionStorage.removeItem("adminCurrentUser");
+      }
+      else{
+        localStorage.setItem("sessionID", newSessionId);
+        localStorage.setItem("currentUser", JSON.stringify(user));
         sessionStorage.removeItem("sessionID");
         sessionStorage.removeItem("currentUser");
-      } else {
-        sessionStorage.setItem("sessionID", sessionId);
-        sessionStorage.setItem("currentUser", JSON.stringify(response.data.user));
-        localStorage.removeItem("sessionID");
-        localStorage.removeItem("currentUser");
       }
-
-      // Luôn sử dụng localStorage (người dùng không bị đăng xuất khi đóng tab)
-      localStorage.setItem("sessionID", sessionId);
-      localStorage.setItem("currentUser", JSON.stringify(response.data.user));
-      sessionStorage.removeItem("sessionID");
-      sessionStorage.removeItem("currentUser");
-
-      return { success: true, data: response.data };
+      
+  
+      return { success: true, data: loginResponse.data };
     } catch (error) {
       console.error("Login error:", error);
-
+  
       // Xử lý lỗi để trả về toàn bộ ErrorResponse
       return {
         success: false,
         error: error.response?.data || {
           message: error.message || "Đăng nhập thất bại",
-          status: error.response?.status || 500
-        }
+          status: error.response?.status || 500,
+        },
       };
     }
   },
@@ -87,6 +96,11 @@ const authService = {
 
   getCurrentUser: () => {
     const str = localStorage.getItem("currentUser") || sessionStorage.getItem("currentUser");
+    return str ? JSON.parse(str) : null;
+  },
+
+  getAdminCurrentUser: () => {
+    const str = localStorage.getItem("adminCurrentUser") || sessionStorage.getItem("adminCurrentUser");
     return str ? JSON.parse(str) : null;
   },
 
@@ -128,6 +142,11 @@ const authService = {
     localStorage.removeItem("posts");
     localStorage.removeItem("users");
     
+    localStorage.removeItem("adminSessionID");
+    localStorage.removeItem("adminCurrentUser");
+    sessionStorage.removeItem("adminSessionID");
+    sessionStorage.removeItem("adminCurrentUser");
+
     sessionStorage.removeItem("sessionID");
     sessionStorage.removeItem("currentUser");
   },
@@ -336,6 +355,7 @@ const authService = {
     try {
       const response = await api.get(`/users`);
       localStorage.setItem("users", JSON.stringify(response.data));
+      console.log("ALL", localStorage.getItem("users"));
       return {
         success: true,
         data: response.data
@@ -416,7 +436,6 @@ const authService = {
     return users ? JSON.parse(users) : null;
   },
 
-  getRememberMe: () => localStorage.getItem("rememberMe") === "true"
 };
 
 export default authService;
