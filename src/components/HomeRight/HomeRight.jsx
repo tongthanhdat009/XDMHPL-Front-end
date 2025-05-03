@@ -1,12 +1,14 @@
-import React, { useState } from 'react'
-import contacts from './PopularUserCard'
+import React, { useEffect, useState } from 'react'
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import MoreHorizRoundedIcon from '@mui/icons-material/MoreHorizRounded';
 import Contact from './Contact';
 import ChatBox from './ChatBox.';
+import authService from '../LoginPage/LoginProcess/ValidateLogin';
+import { useAuth } from '../LoginPage/LoginProcess/AuthProvider';
+
 const HomeRight = () => {
   const [openChats, setOpenChats] = useState([]);
-
+  const {stompClient } = useAuth();
   const handleOpenChat = (contact) => {
     if (openChats.find(chat => chat.id === contact.id)) {
       return;
@@ -23,6 +25,32 @@ const HomeRight = () => {
     setOpenChats(newOpenChats);
   };
 
+  const [allUsers, setAllUsers] = useState([]);
+  const currentUser = authService.getCurrentUser();
+
+  useEffect(() => {
+      const fetchDatas = async () => {
+        try {
+          const users = await authService.getAllUsers();
+          setAllUsers(users);
+        } catch (error) {
+          console.error("Error fetching posts:", error);
+        }
+      };
+  
+      fetchDatas();
+  }, []);
+
+  const acceptedFriends = allUsers.length > 0 ? [
+    ...currentUser.friends
+        .filter((friend) => friend.status === "ACCEPTED")
+        .map((friend) => allUsers.find((user) => user.userID === friend.userID)),
+    ...currentUser.friendOf
+        .filter((friend) => friend.status === "ACCEPTED")
+        .map((friend) => allUsers.find((user) => user.userID === friend.userID))
+].filter(Boolean) : []; // Đảm bảo loại bỏ các giá trị undefined
+  console.log(acceptedFriends);
+
   const handleCloseChat = (contactId) => {
     setOpenChats(openChats.filter(chat => chat.id !== contactId));
   };
@@ -37,9 +65,9 @@ const HomeRight = () => {
           </div>
       </div>
 
-      {contacts.map((contact) => (
+      {acceptedFriends.map((contact) => (
         <Contact 
-          key={contact.id} 
+          key={contact.userID} 
           contact={contact}
           onClick={() => handleOpenChat(contact)}
         />

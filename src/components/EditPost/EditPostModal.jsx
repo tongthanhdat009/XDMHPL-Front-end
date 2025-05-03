@@ -1,6 +1,6 @@
 import { Avatar, Backdrop, Box, Button, CircularProgress, IconButton, Modal } from '@mui/material'
 import { useFormik } from 'formik';
-import React from 'react'
+import React, { useEffect } from 'react'
 import ImageIcon from '@mui/icons-material/Image';
 import authService from '../LoginPage/LoginProcess/ValidateLogin';
 import CloseIcon from '@mui/icons-material/Close';
@@ -18,15 +18,29 @@ const style = {
   outline: "none"
 };
 
-const CreatePostModal = ({ open, handleClose, updatePosts }) => {
+const EditPostModal = ({ open, handleClose, updatePosts, item }) => {
   const [mediaFiles, setMediaFiles] = React.useState([]);
   const [isLoading, setIsLoading] = React.useState(false);
-  
+
+  // Chuyển đổi mediaList sang mediaFiles khi item thay đổi
+  useEffect(() => {
+    if (item && item.mediaList) {
+      const convertedMediaFiles = item.mediaList.map((media) => ({
+        file: null, // Không có file gốc vì đây là dữ liệu từ server
+        type: media.type, // Loại media (image hoặc video)
+        url: 'http://localhost:8080'+media.mediaURL, // URL của media
+        id: media.postMediaID, // ID duy nhất của media
+      }));
+      setMediaFiles(convertedMediaFiles);
+    }
+  }, [item]);
+
   const user = authService.getCurrentUser()
   const formik = useFormik({
     initialValues: {
+      postID: item.postID,
       userId: user.userID,
-      caption: "",
+      caption: item.content,
       media: []
     },
     onSubmit: async (values) => {
@@ -34,7 +48,7 @@ const CreatePostModal = ({ open, handleClose, updatePosts }) => {
       setIsLoading(true);
       try {
         // Gọi API tạo bài viết với media files
-        const result = await  authService.createPost(values.caption, "post", values.media, values.userId);
+        const result = await  authService.updatePost(values.caption, "post", values.media, values.userId, values.postID);
         console.log(result)
         if (result.success) {
            // Gọi callback để cập nhật danh sách bài viết
@@ -194,4 +208,4 @@ const CreatePostModal = ({ open, handleClose, updatePosts }) => {
   );
 };
 
-export default CreatePostModal;
+export default EditPostModal;

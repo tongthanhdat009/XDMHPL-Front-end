@@ -1,5 +1,4 @@
-import React from 'react'
-import { Navigate, useLocation } from 'react-router-dom'
+import React, { useEffect } from 'react'
 import SideBar from '../../components/SideBar/SideBarHomePage/SideBar'
 import MiddlePart from '../../components/MiddlePart/MiddlePart'
 import HomeRight from '../../components/HomeRight/HomeRight'
@@ -7,19 +6,29 @@ import Header from '../../components/Header/Header'
 import authService from '../../components/LoginPage/LoginProcess/ValidateLogin'
 
 const HomePage = () => {
-  const location = useLocation()
+  
+const currentUser = authService.getCurrentUser();
+//   let totalSize = 0;
+// for (let key in localStorage) {
+//     if (localStorage.hasOwnProperty(key)) {
+//         totalSize += localStorage.getItem(key).length;
+//     }
+// }
+// console.log(`Dung lượng đã sử dụng: ${totalSize} bytes`);
+  useEffect(() => {
+    const fetchDatas = async () => {
+      try {
+        await authService.getAllPostsFormDB();
+        await authService.getAllUsersFormDB();
+        await authService.getCurrentUserFormDB(currentUser.userID);
+      } catch (error) {
+        console.error("Error fetching:", error);
+      }
+    };
 
-  const user = authService.getCurrentUser()
+    fetchDatas();
+  }, []);
 
-  if (!user) {
-    return (
-      <Navigate
-        to="/login"
-        replace
-        state={{ from: location }}
-      />
-    )
-  }
 
   return (
     <div className="h-screen bg-gray-100 overflow-hidden">

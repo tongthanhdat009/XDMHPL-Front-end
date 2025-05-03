@@ -1,13 +1,14 @@
+
 import { Avatar } from '@mui/material'
 import React, { useEffect, useState } from 'react'
-import Stories from './Stories';
 import MoodIcon from '@mui/icons-material/Mood';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
 import PostCard from '../Post/PostCard';
 import CreatePostModal from '../CreatePost/CreatePostModal';
-import authService from '../LoginPage/LoginProcess/ValidateLogin';
 import SharepostCard from '../Post/SharepostCard';
+import authService from '../LoginPage/LoginProcess/ValidateLogin';
+import { useParams } from 'react-router-dom';
 const MiddlePart = () => {
   const [openCreatePostModal, setOpenCreatePostModal] = React.useState(false);
   const handleCloseCreatePostModal = () => setOpenCreatePostModal(false);
@@ -16,6 +17,7 @@ const MiddlePart = () => {
   }
   const [posts, setPosts] = useState([]); // Khai báo state cho posts
   const [allUsers, setAllUsers] = useState([]);
+  const { id } = useParams();
   useEffect(() => {
     const fetchDatas = async () => {
       try {
@@ -30,7 +32,6 @@ const MiddlePart = () => {
 
     fetchDatas();
   }, []);
-
 
   const updatePosts = async () => {
     try {
@@ -62,13 +63,9 @@ const MiddlePart = () => {
       console.error("Error updating posts:", error);
     }
   }
-  // console.log('post', post);
-  // useEffect(() => {
-
-  // }, [post.newComment]);
   return (
 
-    <div className='flex-grow h-screen pb-44 pt-6 mr-4 xl:mr-40 overflow-y-auto scrollbar' style={{ scrollbarWidth: "none" }}>
+    <div className='flex-grow min-w-[680px] h-screen pb-44 pt-6 ml-2 mr-4 xl:mr-40 '>
       <div className='mx-auto max-w-md md:max-w-lg lg:max-w-2xl'>
         {/* <Stories /> */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200  m-2">
@@ -102,42 +99,46 @@ const MiddlePart = () => {
 
 
         <div className='mt-5 space-y-5'>
-          {posts.map((item) => {
+        {posts.map((item) => {
             // Tìm userPost trong allUsers dựa trên item.userID
             const userPost = allUsers.find((user) => user.userID === item.userID);
-
-            if (item.originalPostID != null) {
-              // Tìm originalPost trong posts dựa trên originalPostID
-              const originalPost = posts.find((post) => post.postID === item.originalPostID) || null;
-
-              // Chỉ tìm userOriginalPost nếu originalPost tồn tại
-              const userOriginalPost = originalPost
-                ? allUsers.find((user) => user.userID === originalPost.userID) || null
-                : null;
-
-              // Truyền cả item, userPost và originalPost vào SharepostCard
-              return (
-                <SharepostCard
-                  key={item.postID}
-                  item={item}
-                  userPost={userPost}
-                  originalPost={originalPost}
-                  userOriginalPost={userOriginalPost}
-                  allUsers={allUsers}
-                  updatePosts={updatePosts}
-                  updateUsers={updateUsers}
-                  updateCurentUser={updateCurentUser}
-                />
-              );
-            } else {
-              // Truyền item và userPost vào PostCard
-              return <PostCard key={item.postID} item={item} userPost={userPost} updatePosts={updatePosts} allUsers={allUsers} updateUsers={updateUsers}
-              updateCurentUser={updateCurentUser} />;
+            if(item.userID==id){
+              if (item.originalPostID != null) {
+                // Tìm originalPost trong posts dựa trên originalPostID
+                const originalPost = posts.find((post) => post.postID === item.originalPostID) || null;
+  
+                // Chỉ tìm userOriginalPost nếu originalPost tồn tại
+                const userOriginalPost = originalPost
+                  ? allUsers.find((user) => user.userID === originalPost.userID) || null
+                  : null;
+  
+                // Truyền cả item, userPost và originalPost vào SharepostCard
+                return (
+                  <SharepostCard
+                    key={item.postID}
+                    item={item}
+                    userPost={userPost}
+                    originalPost={originalPost}
+                    userOriginalPost={userOriginalPost}
+                    allUsers={allUsers}
+                    updatePosts={updatePosts}
+                    updateUsers={updateUsers}
+                    updateCurentUser={updateCurentUser}
+                  />
+                );
+              } else {
+                // Truyền item và userPost vào PostCard
+                return <PostCard key={item.postID} item={item} userPost={userPost} updatePosts={updatePosts} allUsers={allUsers} updateUsers={updateUsers}
+                updateCurentUser={updateCurentUser} />;
+              }
             }
+           
+
+            
           })}
         </div>
         <div>
-          <CreatePostModal handleClose={handleCloseCreatePostModal} open={openCreatePostModal} updatePosts={updatePosts} allUsers={allUsers} />
+          <CreatePostModal handleClose={handleCloseCreatePostModal} open={openCreatePostModal} updatePosts={updatePosts} />
         </div>
       </div>
     </div>

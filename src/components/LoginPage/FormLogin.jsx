@@ -1,24 +1,33 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Form, Input, Checkbox, message } from "antd";
+import { Form, Input, Checkbox } from "antd";
 import { UserOutlined, LockOutlined } from "@ant-design/icons";
 import authService from "./LoginProcess/ValidateLogin"; // Đường dẫn đến authService của bạn
+
 const FormLogin = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(""); // State để lưu trữ thông báo lỗi
   const navigate = useNavigate();
 
   const onFinish = async (values) => {
     setLoading(true);
+    setErrorMessage(""); // Reset thông báo lỗi trước khi thử đăng nhập
+
     try {
-      const { userIdentifier, password, remember = false } = values;
-      await authService.login(userIdentifier, password, remember);
-      console.log("Đăng nhập thành công: ", authService.getCurrentUser());
-      // Chuyển hướng sau khi đăng nhập
-      navigate("/");
+      const { userIdentifier, password} = values;
+      const result = await authService.login(userIdentifier, password, "user");
+      console.log("Kết quả đăng nhập: ", result);
+      if (result.success) {
+        // Điều hướng đến trang chính sau khi đăng nhập thành công
+        navigate('/'); // Hoặc '/dashboard', '/home', tùy vào cấu trúc route của bạn
+      } else {
+        // Hiển thị thông báo lỗi nếu đăng nhập thất bại
+        setErrorMessage(result.error?.message || "Đăng nhập thất bại. Vui lòng thử lại.");
+      }
     } catch (error) {
-      message.error("Đăng nhập thất bại. Vui lòng kiểm tra thông tin đăng nhập.");
-      console.error("Lỗi đăng nhập:", error);
+      console.error("Lỗi đăng nhập: ", error);
+      setErrorMessage("Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.");
     } finally {
       setLoading(false);
     }
@@ -32,7 +41,7 @@ const FormLogin = () => {
             <h1 className="text-3xl font-bold text-blue-600">Đăng nhập</h1>
             <p className="text-gray-600 mt-2">Đăng nhập vào tài khoản của bạn</p>
           </div>
-          
+
           <Form
             form={form}
             name="login"
@@ -65,18 +74,18 @@ const FormLogin = () => {
               />
             </Form.Item>
 
-            <div className="flex justify-between items-center mb-4">
-              <Form.Item 
-                name="remember" 
-                valuePropName="checked" 
-                noStyle
-              >
-                <Checkbox>Nhớ tài khoản</Checkbox>
-              </Form.Item>
+            <div className="flex justify-center items-center mb-4">
               <Link to="/forgot-password" className="text-blue-600 text-sm hover:underline">
                 Quên mật khẩu?
               </Link>
             </div>
+
+            {/* Hiển thị thông báo lỗi nếu có */}
+            {errorMessage && (
+              <div className="text-red-600 text-center mb-4 font-medium">
+                {errorMessage}
+              </div>
+            )}
 
             <Form.Item>
               <button 
