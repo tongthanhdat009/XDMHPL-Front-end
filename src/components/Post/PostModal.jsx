@@ -66,7 +66,7 @@ const sendNotifyLikeToServer = (newMessage) => {
     };
 
     try {
-      const result = await authService.commentPost({comment, sendNotifyToServer});
+      const result = await authService.commentPost({comment, sendNotifyCommentToServer});
       console.log(result)
       if (result.success) {
         // Gọi callback để cập nhật danh sách bài viết
@@ -83,7 +83,7 @@ const sendNotifyLikeToServer = (newMessage) => {
   };
 
 
-  const sendNotifyToServer = (newMessage) => {
+  const sendNotifyCommentToServer = (newMessage) => {
     if (stompClient && newMessage) {
       console.log("📤 Sending message:", newMessage);
       stompClient.send(`/app/comment/notification`, {}, JSON.stringify(newMessage));

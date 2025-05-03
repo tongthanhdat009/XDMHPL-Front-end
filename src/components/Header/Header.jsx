@@ -10,8 +10,9 @@ import KeyboardArrowDownSharpIcon from '@mui/icons-material/KeyboardArrowDownSha
 import CloseIcon from '@mui/icons-material/Close';
 import { useNavigate } from "react-router-dom";
 import authService from "../LoginPage/LoginProcess/ValidateLogin";
+import { useAuth } from "../LoginPage/LoginProcess/AuthProvider";
 const Header = () => {
-  const notifications = [
+  const notificationsTest = [
     {
       id: 1,
       type: 'friend_request',
@@ -70,6 +71,10 @@ const Header = () => {
       isRead: false
     }
   ];
+  const {notifications } = useAuth();
+
+  console.log(notifications);
+  
   const navigate = useNavigate();
   const [search, setSearch] = React.useState("")
 
@@ -337,7 +342,7 @@ const Header = () => {
                   <a href="#" className="text-blue-500 text-sm">Xem tất cả</a>
                 </div>
 
-                {notifications.filter(n => n.type === 'mention').map(notification => (
+                {notificationsTest.filter(n => n.type === 'mention').map(notification => (
                   <div key={notification.id} className="flex items-start space-x-2 mb-3 relative">
                     <div className="relative">
                       <Avatar src={notification.user.avatar} className="w-10 h-10" />
@@ -358,7 +363,7 @@ const Header = () => {
                 ))}
 
                 {/* Thêm lời mời kết bạn vào phần "Trước đó" */}
-                {notifications.filter(n => n.type === 'friend_request').slice(3).map(notification => (
+                {notificationsTest.filter(n => n.type === 'friend_request').slice(3).map(notification => (
                   <div key={notification.id} className="flex items-start space-x-2 mb-3 relative">
                     <div className="relative">
                       <Avatar src={notification.user.avatar} className="w-10 h-10" />

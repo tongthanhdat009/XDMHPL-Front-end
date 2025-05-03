@@ -3,7 +3,6 @@ import authService from './ValidateLogin'  // đường dẫn tới file authSer
 import SockJS from 'sockjs-client'
 import { Stomp } from '@stomp/stompjs';
 // 1. Tạo Context
-
 const AuthContext = createContext()
 
 export const AuthProvider = ({ children }) => {
@@ -11,9 +10,19 @@ export const AuthProvider = ({ children }) => {
   const [stompClient, setStompClient] = useState(null);
   const [connected, setConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [onlineUsers, setOnlineUsers] = useState(new Set()); // Thêm state lưu danh sách người dùng online
-  const [notify, setNotify] = useState([]); // Thêm state lưu danh sách người dùng online
-
+  const [onlineUsers, setOnlineUsers] = useState(new Set());
+  // Lấy notify từ localStorage nếu có
+  const [notify, setNotify] = useState(() => {
+    try {
+      const savedNotify = localStorage.getItem(`notifications_${user?.userID}`);
+      return savedNotify ? JSON.parse(savedNotify) : [];
+    } catch (e) {
+      console.error("Lỗi khi đọc thông báo từ localStorage:", e);
+      return [];
+    }
+  });
+  const [subscriptions, setSubscriptions] = useState({});
+  
   // Tự động kết nối/ngắt kết nối khi user thay đổi
   useEffect(() => {
     if (user) {
@@ -29,6 +38,38 @@ export const AuthProvider = ({ children }) => {
         disconnectWebSocket();
       }
     };
+  }, [user]);
+
+  // Lưu notify vào localStorage khi nó thay đổi
+  useEffect(() => {
+    if (user && notify) {
+      try {
+        localStorage.setItem(`notifications_${user.userID}`, JSON.stringify(notify));
+      } catch (e) {
+        console.error("Lỗi khi lưu thông báo vào localStorage:", e);
+      }
+    }
+  }, [notify, user]);
+
+  // Xử lý sự kiện đồng bộ thông báo giữa các tab
+  useEffect(() => {
+    // Hàm xử lý khi có thay đổi từ tab khác
+    const handleStorageChange = (e) => {
+      if (user && e.key === `notifications_${user.userID}`) {
+        try {
+          const newNotifications = JSON.parse(e.newValue);
+          if (newNotifications && Array.isArray(newNotifications)) {
+            setNotify(newNotifications);
+            console.log("Đã đồng bộ thông báo từ tab khác");
+          }
+        } catch (e) {
+          console.error("Lỗi khi đồng bộ thông báo:", e);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, [user]);
 
   // Xử lý sự kiện đóng tab/trình duyệt để gửi trạng thái offline
@@ -54,12 +95,20 @@ export const AuthProvider = ({ children }) => {
 
     setIsConnecting(true);
 
+    // Kiểm tra xem đã có kết nối khác chưa (giữa các tab)
+    const existingConnectionId = sessionStorage.getItem(`wsConnection_${user.userID}`);
+    const tabId = Date.now().toString(); // ID duy nhất cho tab hiện tại
+
+    // Thêm giá trị ngẫu nhiên để tránh trùng lặp giữa các tab được mở cùng lúc
+    sessionStorage.setItem(`wsConnection_${user.userID}`, tabId);
+
     const socket = new SockJS('http://localhost:8080/ws');
     const stomp = Stomp.over(socket);
 
     // Header cho kết nối
     const headers = {
-      'username': user.username
+      'username': user.username,
+      'tabId': tabId
     };
 
     stomp.connect(headers, (frame) => {
@@ -77,6 +126,7 @@ export const AuthProvider = ({ children }) => {
       // In thông tin kết nối
       console.log("Đã kết nối với user:", user.username);
       console.log("Session ID:", stomp.ws._transport.url.split('/').pop());
+      console.log("Tab ID:", tabId);
 
       // Gửi trạng thái online sau khi kết nối thành công
       sendOnlineStatus(stomp);
@@ -84,7 +134,7 @@ export const AuthProvider = ({ children }) => {
       // Đăng ký nhận cập nhật về trạng thái người dùng
       subscribeToUserStatuses(stomp);
 
-      // Đăng ký nhận cập nhật về thống báo
+      // Đăng ký nhận cập nhật về thông báo
       subscribeToNotifications(stomp);
 
     }, (error) => {
@@ -106,6 +156,11 @@ export const AuthProvider = ({ children }) => {
       setConnected(false);
       setStompClient(null);
 
+      // Xóa thông tin kết nối từ sessionStorage nếu là tab sở hữu kết nối
+      if (sessionStorage.getItem(`wsConnection_${user.userID}`) === tabId) {
+        sessionStorage.removeItem(`wsConnection_${user.userID}`);
+      }
+
       // Thử kết nối lại sau 5 giây
       setTimeout(() => {
         if (user && !connected && !isConnecting) {
@@ -118,11 +173,20 @@ export const AuthProvider = ({ children }) => {
   // Đăng ký nhận thông báo trạng thái người dùng
   const subscribeToUserStatuses = (client = stompClient) => {
     if (client && user) {
+      // Hủy đăng ký cũ nếu có
+      if (subscriptions.statusSubscription) {
+        try {
+          subscriptions.statusSubscription.unsubscribe();
+        } catch (e) {
+          console.error("Lỗi khi hủy đăng ký trạng thái:", e);
+        }
+      }
+
       // Đăng ký nhận cập nhật trạng thái người dùng
       console.log(`Đăng ký nhận thông báo tại: /topic/status/${user.username}`);
-
-      client.subscribe(`/topic/status/${user.username}`, (message) => {
-        console.log("📥 Đã nhận tin nhắn:", message);
+      
+      const statusSub = client.subscribe(`/topic/status/${user.username}`, (message) => {
+        console.log("📥 Đã nhận tin nhắn trạng thái:", message);
         try {
           const response = JSON.parse(message.body);
           console.log("📥 Nhận cập nhật trạng thái:", response);
@@ -152,30 +216,65 @@ export const AuthProvider = ({ children }) => {
         }
       });
 
+      // Lưu subscription để có thể hủy đăng ký sau này
+      setSubscriptions(prev => ({ ...prev, statusSubscription: statusSub }));
+
       // Sau khi kết nối, gửi trạng thái online để server cập nhật
       sendOnlineStatus(client);
 
       // Yêu cầu danh sách người dùng đang online
       requestOnlineUsersList(client);
-
     }
   };
 
   // Đăng ký nhận thông báo
   const subscribeToNotifications = (client = stompClient) => {
     if (client && user) {
-      console.log(`Đăng ký nhận thông báo tại: /topic/notifications/${user.username}`);
+      // Hủy đăng ký cũ nếu có
+      if (subscriptions.notificationSubscription) {
+        try {
+          subscriptions.notificationSubscription.unsubscribe();
+        } catch (e) {
+          console.error("Lỗi khi hủy đăng ký thông báo:", e);
+        }
+      }
 
-      client.subscribe(`/topic/notifications/${user.username}`, (message) => {
-        console.log("📥 Đã nhận tin nhắn:", message);
+      console.log(`Đăng ký nhận thông báo tại: /topic/notifications/${user.username}`);
+      
+      const notifySub = client.subscribe(`/topic/notifications/${user.username}`, (message) => {
+        console.log("📥 Đã nhận thông báo:", message);
         try {
           const response = JSON.parse(message.body);
-          setNotify(prev => [...prev, response]);
-
+          
+          // Kiểm tra xem response có phải là mảng không
+          if (Array.isArray(response)) {
+            // Nếu là mảng (phản hồi từ requestNotificationsList), thay thế toàn bộ
+            // Lọc các phần tử hợp lệ
+            const validNotifications = response.filter(item => item && item.notificationID);
+            console.log("Nhận danh sách thông báo từ server:", validNotifications);
+            setNotify(validNotifications);
+          } else if (response.notificationID) {
+            // Nếu là một thông báo đơn lẻ và có id, thêm vào nếu chưa tồn tại
+            setNotify(prev => {
+              // Kiểm tra xem thông báo đã tồn tại chưa
+              if (prev.some(item => item.notificationID === response.notificationID)) {
+                return prev; // Không thêm nếu đã tồn tại
+              }
+              const newNotify = [...prev, response]; // Thêm nếu chưa tồn tại
+              return newNotify;
+            });
+          } else {
+            // Trường hợp khác, có thể là thông báo không có id
+            console.log("Nhận thông báo không có id:", response);
+            // Bạn có thể thêm logic xử lý khác tại đây
+          }
         } catch (e) {
-          console.error("Lỗi khi xử lý trạng thái:", e);
+          console.error("Lỗi khi xử lý thông báo:", e);
         }
       });
+
+      // Lưu subscription để có thể hủy đăng ký sau này
+      setSubscriptions(prev => ({ ...prev, notificationSubscription: notifySub }));
 
       // Yêu cầu danh sách thông báo
       requestNotificationsList(client);
@@ -203,6 +302,20 @@ export const AuthProvider = ({ children }) => {
     if (stompClient && connected) {
       // Gửi trạng thái offline trước khi ngắt kết nối
       sendOfflineStatus(stompClient);
+
+      // Hủy tất cả các đăng ký
+      Object.values(subscriptions).forEach(subscription => {
+        try {
+          if (subscription && typeof subscription.unsubscribe === 'function') {
+            subscription.unsubscribe();
+          }
+        } catch (e) {
+          console.error("Lỗi khi hủy đăng ký:", e);
+        }
+      });
+
+      // Xóa danh sách đăng ký
+      setSubscriptions({});
 
       // Ngắt kết nối
       stompClient.disconnect(() => {
@@ -236,6 +349,43 @@ export const AuthProvider = ({ children }) => {
     return onlineUsers.has(userId);
   };
 
+  // Xóa thông báo
+  const clearNotification = (notificationId) => {
+    setNotify(prev => prev.filter(notification => notification.notificationID !== notificationId));
+    // Đồng thời gửi request xóa thông báo đến server nếu cần
+    if (stompClient && connected && user) {
+      const payload = { userId: user.userID, notificationId: notificationId };
+      stompClient.send('/app/status/clear-notification', {}, JSON.stringify(payload));
+    }
+  };
+
+  // Xóa tất cả thông báo
+  const clearAllNotifications = () => {
+    setNotify([]);
+    // Đồng thời gửi request xóa tất cả thông báo đến server nếu cần
+    if (stompClient && connected && user) {
+      const payload = { userId: user.userID };
+      stompClient.send('/app/status/clear-all-notifications', {}, JSON.stringify(payload));
+    }
+  };
+
+  // Đánh dấu thông báo đã đọc
+  const markNotificationAsRead = (notificationId) => {
+    setNotify(prev => 
+      prev.map(notification => 
+        notification.notificationID === notificationId 
+          ? { ...notification, read: true } 
+          : notification
+      )
+    );
+    
+    // Gửi cập nhật tới server nếu cần
+    if (stompClient && connected && user) {
+      const payload = { userId: user.userID, notificationId: notificationId };
+      stompClient.send('/app/status/mark-notification-read', {}, JSON.stringify(payload));
+    }
+  };
+
   const login = async (...args) => {
     const result = await authService.login(...args);
     if (result.success) {
@@ -247,17 +397,26 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     disconnectWebSocket();
+    // Xóa thông báo khỏi localStorage khi đăng xuất
+    if (user) {
+      localStorage.removeItem(`notifications_${user.userID}`);
+    }
     authService.logout();
     setUser(null);
+    setNotify([]);
   };
 
   return (
     <AuthContext.Provider value={{
       stompClient,
       user,
-      connected, // Export để component con biết trạng thái kết nối
-      onlineUsers: Array.from(onlineUsers), // Export danh sách người dùng online
-      isUserOnline, // Export hàm kiểm tra người dùng có online không
+      connected,
+      onlineUsers: Array.from(onlineUsers),
+      notifications: notify,
+      isUserOnline,
+      clearNotification,
+      clearAllNotifications,
+      markNotificationAsRead, // Thêm hàm đánh dấu đã đọc
       login,
       logout
     }}>

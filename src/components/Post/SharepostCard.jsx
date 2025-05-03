@@ -118,13 +118,13 @@ const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updateP
 
 
     const sendFriendRequest = async () => {
-        const reqData = {
+        const data = {
             senderId: currentUser.userID,
             receiverId: item.userID
         };
 
         try {
-            const result = await authService.sentFriendRequest(reqData)
+            const result = await authService.sentFriendRequest({data, sendNotifyFriendRequestToServer})
             console.log(result)
             if (result.success) {
                 // Gọi callback để cập nhật danh sách bài viết
@@ -139,6 +139,13 @@ const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updateP
             console.error("Error in form submission:", error);
         }
 
+    };
+
+    const sendNotifyFriendRequestToServer = (newMessage) => {
+        if (stompClient && newMessage) {
+        console.log("📤 Sending message:", newMessage);
+        stompClient.send(`/app/friendRequest/notification`, {}, JSON.stringify(newMessage));
+        }
     };
 
     const deleteFriend =async () => {

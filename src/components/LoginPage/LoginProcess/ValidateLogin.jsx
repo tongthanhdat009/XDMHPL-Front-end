@@ -404,9 +404,10 @@ const authService = {
 
   sentFriendRequest: async (reqData) => {
     try {
-      const response = await api.post(`/friendrequests/${reqData.senderId}/${reqData.receiverId}`);
-      return {
-        success: true
+      const response = await api.post(`/friendrequests/${reqData.data.senderId}/${reqData.data.receiverId}`);
+      reqData.sendNotifyFriendRequestToServer(response.data);
+          return {
+            success: true
       };
     } catch (error) {
       console.error("Error sending friend request:", error);

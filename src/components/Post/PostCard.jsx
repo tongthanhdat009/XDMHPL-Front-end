@@ -17,6 +17,7 @@ import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import CreateSharePostModal from '../CreatePost/CreateSharePostModal';
 import PostModal from './PostModal';
 import EditPostModal from '../EditPost/EditPostModal';
+import { useAuth } from '../LoginPage/LoginProcess/AuthProvider';
 const PostCard = ({ item, userPost, updatePosts, allUsers,  updateUsers, updateCurentUser }) => {
 
     const currentUser = authService.getCurrentUser();
@@ -41,6 +42,8 @@ const PostCard = ({ item, userPost, updatePosts, allUsers,  updateUsers, updateC
     // console.log('post', post);
     const timeoutRef = React.useRef(null);
     const navigate = useNavigate();
+    const {stompClient } = useAuth();
+    
 
     const handleShowComments = () => {
         setShowPostModal(true);
@@ -150,13 +153,13 @@ const sendNotifyLikeToServer = (newMessage) => {
 
 
     const sendFriendRequest = async () => {
-        const reqData = {
+        const data = {
             senderId: currentUser.userID,
             receiverId: item.userID
         };
 
         try {
-            const result = await authService.sentFriendRequest(reqData)
+            const result = await authService.sentFriendRequest({data, sendNotifyFriendRequestToServer})
             console.log(result)
             if (result.success) {
                 // Gọi callback để cập nhật danh sách bài viết
@@ -172,6 +175,14 @@ const sendNotifyLikeToServer = (newMessage) => {
         }
 
     };
+
+    const sendNotifyFriendRequestToServer = (newMessage) => {
+        if (stompClient && newMessage) {
+        console.log("📤 Sending message:", newMessage);
+        stompClient.send(`/app/friendRequest/notification`, {}, JSON.stringify(newMessage));
+        }
+    };
+    
 
     const deleteFriend =async () => {
         const inFriendOf = currentUser.friendOf.find(
