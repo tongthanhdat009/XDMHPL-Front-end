@@ -1,35 +1,62 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 
-const ChatList = ({ chats, onSelectChat }) => {
+const ChatList = ({ onSelectChat }) => {
+  const [chats, setChats] = useState([]);
+
+  useEffect(() => {
+    const fetchChats = async () => {
+      try {
+        const userId = 2; // Cập nhật đúng userId của bạn
+        const response = await axios.get(`http://localhost:8080/chat/sidebar/${userId}`);
+        setChats(response.data);
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách chat:", error);
+      }
+    };
+
+    fetchChats();
+  }, []);
+
+  const handleSelectChat = (chat) => {
+    onSelectChat(chat);  // Truyền chat vào Messenger
+  };
+
   return (
     <div className="w-1/4 bg-gray-200 p-4">
-      {/* Tiêu đề có gạch dưới */}
-      <h2 className="text-lg font-bold pb-2 mb-4 border-b border-gray-400">Chats</h2>
+      <h2 className="text-lg font-bold pb-2 mb-4 border-b border-gray-400">Danh Sách </h2>
 
-      {chats.map((chat, index) => (
-        <div
-          key={chat.id}
-          className={`flex items-start p-3 cursor-pointer hover:bg-gray-300 rounded-lg transition ${
-            index !== chats.length - 1 ? "border-b border-gray-400" : ""
-          }`}
-          onClick={() => onSelectChat(chat)}
-        >
-          {/* Avatar */}
-          <img src={chat.avatar} alt="avatar" className="w-12 h-12 rounded-full mr-3" />
+      {chats.map((chat, index) => {
+        const chatBoxImage = chat.imageURL;
+       
+       
+       
+       
+        const chatBoxName = chat.chatBoxName;
+        const otherUserName = chat.otherUserName;
 
-          {/* Nội dung chat */}
-          <div className="flex-1 min-w-0">
-            {/* Dòng trên cùng: Tên nhóm/chat + Giờ */}
-            <div className="flex justify-between items-center">
-              <span className="font-semibold truncate">{chat.name}</span>
-              <span className="text-xs text-gray-500 ml-2 whitespace-nowrap">{chat.lastMessageTime}</span>
+        return (
+          <div
+            key={chat.chatBoxID}  // Đây là id của chat, đảm bảo dùng đúng tên
+            className={`flex items-start p-3 cursor-pointer hover:bg-gray-300 rounded-lg transition ${
+              index !== chats.length - 1 ? "border-b border-gray-400" : ""
+            }`}
+            onClick={() => handleSelectChat(chat)}  // Khi chọn chat, gửi thông tin chat vào Messenger
+          >
+            <img
+              src={chatBoxImage}
+              alt="avatar"
+              className="w-12 h-12 rounded-full mr-3"
+            />
+            <div className="flex-1 min-w-0">
+              <div className="flex justify-between items-center">
+                <span className="font-semibold truncate">{chatBoxName}</span>
+              </div>
+              <p className="text-sm text-gray-600 truncate">{otherUserName}</p>
             </div>
-
-            {/* Tin nhắn cuối */}
-            <p className="text-sm text-gray-600 truncate">{chat.lastMessage}</p>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };
