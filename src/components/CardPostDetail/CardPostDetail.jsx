@@ -8,17 +8,18 @@ const CardPostDetail = ({ post, onClose, onDelete, onToggleVisibility, onDeleteC
     const [commentUsersData, setCommentUsersData] = useState({});
     const [loadingUsers, setLoadingUsers] = useState(false);
     console.log("post", post.mediaList);
-    // --- fetchUserByID ---
     const fetchUserByID = useCallback(async (userID) => {
-        // ... (giữ nguyên)
         if (!userID) return null;
         try {
             const response = await axios.get(`http://localhost:8080/users/find/${userID}`);
-            if (Array.isArray(response.data) && response.data.length > 0 && Array.isArray(response.data[0]) && response.data[0].length >= 2) {
-                return {
-                    id: response.data[0][0],
-                    name: response.data[0][1]
+            // Kiểm tra cấu trúc dữ liệu trả về [id, name, avatarUrl]
+            if (Array.isArray(response.data) && response.data.length >= 2) { // Cần ít nhất id và name
+                const userData = {
+                    id: response.data[0],
+                    name: response.data[1], 
+                    avatarUrl: response.data.length >= 3 && typeof response.data[2] === 'string' ? response.data[2] : null
                 };
+                return userData;
             }
             console.warn(`Dữ liệu user không hợp lệ từ API cho ID ${userID}:`, response.data);
             return null;
@@ -131,24 +132,29 @@ const CardPostDetail = ({ post, onClose, onDelete, onToggleVisibility, onDeleteC
         }
     };
 
+    const Avatar = (url) => {
+        
+        console.log("fullUrl", url.avatarUrl);
+        if (typeof url.avatarUrl === "string" && url.avatarUrl) {
+            // Loại bỏ phần '/avatars/' và nối URL
+            const updatedUrl = url.avatarUrl.replace('/avatars/', '');
+            const fullUrl = `http://localhost:8080/posts-management/media/avatar/${updatedUrl}`;
+            return <img src={fullUrl} alt="Avatar" className="w-10 h-10" />;
+        } else {
+            // Hiển thị placeholder nếu URL không hợp lệ
+            return <FaUserCircle className="w-10 h-10 text-gray-400 flex-shrink-0" />;
+        }
+    };
     const displayUser = postAuthor;
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 p-4 overflow-y-auto">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col relative">
-                {/* ... Close button ... */}
-                 <button
-                    onClick={onClose}
-                    className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 z-10 bg-gray-200 rounded-full p-1"
-                    aria-label="Đóng"
-                >
-                    <FaTimes size={20} />
-                </button>
-
                 <div className="flex-grow overflow-y-auto">
                     {/* ... Card Header ... */}
                      <div className="p-4 border-b border-gray-200 flex items-center space-x-3 sticky top-0 bg-white z-10">
-                        <FaUserCircle className="w-10 h-10 text-gray-400 flex-shrink-0" />
+                        {/* <FaUserCircle className="w-10 h-10 text-gray-400 flex-shrink-0" /> */}
+                        <Avatar avatarUrl={displayUser?.avatarUrl} />
                         <div>
                             <p className="font-semibold text-gray-800">{displayUser?.name || `User ID: ${post.userID}`}</p>
                             <p className="text-xs text-gray-500">{formatTime(post.creationDate || post.createdAt)}</p>
@@ -267,7 +273,7 @@ const CardPostDetail = ({ post, onClose, onDelete, onToggleVisibility, onDeleteC
                                     const currentCommentId = comment.commentID || comment.id;
                                     return (
                                         <div key={currentCommentId} className="flex items-start space-x-2 text-sm group">
-                                            <FaUserCircle className="w-7 h-7 text-gray-400 flex-shrink-0 mt-1" />
+                                            <Avatar avatarUrl={commentUser?.avatarUrl} />
                                             <div className="flex-grow bg-gray-100 rounded-xl px-3 py-2 relative">
                                                 <p className="font-semibold text-gray-800">{commentUser?.name || `User ID: ${comment.userID}`}</p>
                                                 <p className="text-gray-700 whitespace-pre-wrap">{comment.content || comment.text}</p>

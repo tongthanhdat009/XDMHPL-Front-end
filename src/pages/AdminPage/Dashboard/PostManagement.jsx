@@ -178,7 +178,7 @@ const PostManagement = () => {
   };
 
   return (
-    <div className="p-6 bg-white h-fit rounded-lg shadow-md">
+    <div className="p-6 bg-white h-auto rounded-lg shadow-md">
       <h1 className="text-2xl font-semibold mb-4 text-black text-center">Quản lý bài viết</h1>
       {/* ... Bộ lọc ... */}
        <form onSubmit={handleFilterSubmit} className="mb-6 p-4 border rounded-lg bg-gray-50 shadow-sm">
