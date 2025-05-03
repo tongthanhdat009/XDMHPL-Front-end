@@ -13,7 +13,6 @@ import authService from "../LoginPage/LoginProcess/ValidateLogin";
 import { useAuth } from "../LoginPage/LoginProcess/AuthProvider";
 import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
 import PersonIcon from '@mui/icons-material/Person';
-import { notification } from "antd";
 const Header = () => {
   const notificationsTest = [
     {
@@ -75,7 +74,7 @@ const Header = () => {
     }
   ];
   
-  const { notifications } = useAuth();
+  const { notifications, markNotificationAsRead} = useAuth();
   console.log(notifications);
   // Hàm để tính thời gian tương đối
   const getRelativeTime = (dateString) => {
@@ -132,11 +131,28 @@ const Header = () => {
         return null;
     }
   };
-
   // Trong component của bạn:
   const recentNotifications = filterRecentNotifications(notifications);
-
   const previousNotifications = filterPreviousotifications(notifications);
+  const handleNotificationItemClick = (notification) => {
+    if(notification.isReadFlag===0){
+      markNotificationAsRead(notification.notificationID);
+    }
+    switch (notification.type) {
+      case "FRIEND_REQUEST":
+        navigate(`/profile/${notification.user.id}`);
+        break;
+      case "LIKE":
+        navigate(`/post/${notification.postId}`);
+        break;
+      case "COMMENT":
+        navigate(`/post/${notification.postId}`);
+        break;
+      default:
+        break;
+    }
+    setShowNotifications(false);
+  }
 
   const navigate = useNavigate();
   const [search, setSearch] = React.useState("")
@@ -361,7 +377,6 @@ const Header = () => {
               <div className="px-4 py-2">
                 <div className="flex justify-between items-center mb-2">
                   <h3 className="font-medium">Mới nhất</h3>
-                  <a href="#" className="text-blue-500 text-sm">Xem tất cả</a>
                 </div>
 
                 {recentNotifications.slice(0, 3).map(notification => {
@@ -372,7 +387,7 @@ const Header = () => {
                   let content = notification.content;
 
                   return (
-                    <div key={notification.notificationID} className="flex items-start space-x-2 mb-3 relative">
+                    <div key={notification.notificationID} className="flex items-start space-x-2 mb-3 p-2 relative cursor-pointer hover:bg-gray-200 hover:rounded-2xl">
                       <div className="relative">
                         <Avatar src={sender?.avatarURL ? `http://localhost:8080/uploads${sender.avatarURL}` : "http://localhost:8080/uploads/avatars/default.jpg"} className="w-10 h-10" />
                         <div className={`absolute -bottom-1 -right-1 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs p-3 ${ notification.type === "COMMENT" ? "bg-green-500" : "bg-blue-500"}`}>
@@ -413,10 +428,9 @@ const Header = () => {
               <div className="px-4 py-2">
                 <div className="flex justify-between items-center mb-2">
                   <h3 className="font-medium">Trước đó</h3>
-                  <a href="#" className="text-blue-500 text-sm">Xem tất cả</a>
                 </div>
 
-                {previousNotifications.slice(0, 7).map(notification => {
+                {previousNotifications.slice(0, 4).map(notification => {
                   // Lấy thông tin user từ danh sách users dựa vào senderID
                   const sender = allUsers.find(user => user.userID === notification.senderID);
 
@@ -424,7 +438,7 @@ const Header = () => {
                   let content = notification.content;
 
                   return (
-                    <div key={notification.notificationID} className="flex items-start space-x-2 mb-3 relative">
+                    <div key={notification.notificationID} className="flex items-start space-x-2 mb-3 relative cursor-pointer p-2 hover:bg-gray-200 hover:rounded-2xl">
                       <div className="relative">
                         <Avatar src={sender?.avatarURL ? `http://localhost:8080/uploads${sender.avatarURL}` : "http://localhost:8080/uploads/avatars/default.jpg"} className="w-10 h-10" />
                         <div className={`absolute -bottom-1 -right-1 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs p-3 ${ notification.type === "COMMENT" ? "bg-green-500" : "bg-blue-500"}`}>
