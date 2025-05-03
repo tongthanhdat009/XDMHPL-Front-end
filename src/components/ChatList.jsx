@@ -7,16 +7,25 @@ const ChatList = ({ onSelectChat }) => {
   useEffect(() => {
     const fetchChats = async () => {
       try {
-        const userId = 2; // Cập nhật đúng userId của bạn
-        const response = await axios.get(`http://localhost:8080/chat/sidebar/${userId}`);
+        const storedUser = localStorage.getItem("currentUser");
+        const user = storedUser ? JSON.parse(storedUser) : null;
+  
+        if (!user || !user.userId) {
+          console.warn("Không tìm thấy userId trong localStorage");
+          return;
+        }
+  
+        const response = await axios.get(`http://localhost:8080/chat/sidebar/${user.userId}`);
         setChats(response.data);
       } catch (error) {
         console.error("Lỗi khi lấy danh sách chat:", error);
       }
     };
-
+  
     fetchChats();
   }, []);
+  
+  
 
   const handleSelectChat = (chat) => {
     onSelectChat(chat);  // Truyền chat vào Messenger
