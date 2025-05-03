@@ -12,33 +12,42 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage }) => {
   const handleSendMessage = async () => {
     if (!newMessage.trim() && !media) return;
 
-    let mediaUrl = null;
+    let mediaList = [];
 
     // Nếu có file ảnh, upload lên /upload
     if (media) {
       const formData = new FormData();
       formData.append("file", media);
-
+    
       try {
         const uploadRes = await axios.post("http://localhost:8080/upload", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-
-        mediaUrl = uploadRes.data.url; // Đường dẫn ảnh từ server
+    
+        const mediaUrl = uploadRes.data.url; // Đường dẫn ảnh từ server
+    
+        // Push vào mediaList
+        mediaList.push({
+          mediaURL: mediaUrl,
+          mediaType: "image", // hoặc để trống để backend tự đoán
+        });
       } catch (error) {
         console.error("Lỗi upload ảnh:", error);
         return;
       }
     }
-
-    // Tạo dữ liệu tin nhắn
+    
+    const storedUser = localStorage.getItem("currentUser");
+    const user = storedUser ? JSON.parse(storedUser) : null;
+    
     const messagePayload = {
-      senderId: 1, // Có thể lấy từ user thực tế
+      senderId: user?.id || 0, // fallback = 0 nếu không có user
       receiverId: selectedChat?.chatBoxID,
       chatBoxId: selectedChat?.chatBoxID,
       text: newMessage,
-      media: mediaUrl ? [mediaUrl] : [],
+      mediaList: mediaList,
     };
+    
 
     try {
       // Gửi qua WebSocket
@@ -88,24 +97,27 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage }) => {
     <div className="w-1/2 bg-white p-4 flex flex-col">
       {selectedChat ? (
         <>
-          <h2 className="text-lg font-bold mb-2">
+         <div className="bg-blue-100 text-blue-800 text-2xl font-bold px-6 py-3 rounded mb-4 shadow">
             {selectedChat.chatBoxName || `Chatbox ID: ${selectedChat.chatBoxID}`}
-          </h2>
+          </div>
+
+
 
           <div className="flex-1 border p-2 h-[70vh] overflow-auto">
             {messages.length > 0 ? (
               messages.map((msg, idx) => (
                 <div key={idx} className="mb-2">
                   <strong>{msg.senderName || "Bạn"}:</strong> {msg.text}
-                  {msg.media && msg.media.length > 0 && (
+                  {msg.mediaList && msg.mediaList.length > 0 && (
                     <div className="mt-1">
-                      {msg.media.map((url, i) => (
+                      {msg.mediaList.map((media, i) => (
+                        
                         <img
-                          key={url || i}
-                          src={url}
-                          alt="Media"
-                          className="max-w-xs mt-1 rounded"
-                        />
+        key={media.mediaURL || i}
+        src={media.mediaURL}
+        alt="Media"
+        className="max-w-xs mt-1 rounded"
+      />
                       ))}
                     </div>
                   )}
