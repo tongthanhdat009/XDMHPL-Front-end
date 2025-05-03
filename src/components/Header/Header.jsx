@@ -265,7 +265,7 @@ const Header = () => {
           ref={notificationRef}
           className="relative"
         >
-          <Badge badgeContent={5} color="error">
+          <Badge badgeContent={notifications.length} color="error">
             <NotificationsSharpIcon
               sx={{ width: 40, height: 40 }}
               className="icon cursor-pointer p-2 hover:bg-gray-200 rounded-full"
@@ -297,7 +297,7 @@ const Header = () => {
               {/* Lời mời kết bạn */}
               <div className="px-4 py-2">
                 <div className="flex justify-between items-center mb-2">
-                  <h3 className="font-medium">Lời mời kết bạn</h3>
+                  <h3 className="font-medium">Mới nhất</h3>
                   <a href="#" className="text-blue-500 text-sm">Xem tất cả</a>
                 </div>
 
@@ -343,7 +343,7 @@ const Header = () => {
                 </div>
 
                 {notificationsTest.filter(n => n.type === 'mention').map(notification => (
-                  <div key={notification.id} className="flex items-start space-x-2 mb-3 relative">
+                  <div key={notification.notificationID} className="flex items-start space-x-2 mb-3 relative">
                     <div className="relative">
                       <Avatar src={notification.user.avatar} className="w-10 h-10" />
                       <div className="absolute -bottom-1 -right-1 bg-green-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">

@@ -3,6 +3,7 @@ import { FaUserPlus, FaComments } from 'react-icons/fa';
 import axios from 'axios';
 import { useLocation, useNavigate } from 'react-router-dom';
 import authService from '../LoginPage/LoginProcess/ValidateLogin';
+import { useAuth } from '../LoginPage/LoginProcess/AuthProvider';
 
 const ProfileHeader = ({ selectedTab, setSelectedTab }) => {
     const location = useLocation();
@@ -33,8 +34,8 @@ const ProfileHeader = ({ selectedTab, setSelectedTab }) => {
                 setUserData(result.data); // Giả sử API trả về data trong trường này
             } else {
                 // Nếu đang xem profile người khác, cần fetch lại thông tin của họ
-                const profileData = await authService.getUserById(profileUserId);
-                setUserData(profileData);
+                const profileData = await authService.getUserByIdFromDB(profileUserId);
+                setUserData(profileData.data);
             }
         } catch (error) {
             console.error("Error updating current user:", error);
@@ -95,13 +96,36 @@ const ProfileHeader = ({ selectedTab, setSelectedTab }) => {
         navigate('/messages');
     };
 
+    const {stompClient } = useAuth();
+    const sendFriendRequest = async (currentId, profileId) => {
+        const data = {
+            senderId: currentId,
+            receiverId: profileId
+        };
+        console.log(data)
+        try {
+            const result = await authService.sentFriendRequest({data, sendNotifyFriendRequestToServer})
+            console.log(result)
+        } catch (error) {
+            console.error("Error in form submission:", error);
+        }
+
+    };
+
+    const sendNotifyFriendRequestToServer = (newMessage) => {
+        if (stompClient && newMessage) {
+        console.log("📤 Sending message:", newMessage);
+        stompClient.send(`/app/friendRequest/notification`, {}, JSON.stringify(newMessage));
+        }
+    };
+
     const handleFriendAction = async () => {
         const currentUser = JSON.parse(localStorage.getItem("currentUser"));
         const currentId = parseInt(currentUser?.userID);
         const profileId = parseInt(location.pathname.split('/').pop());
         try {
             if (friendStatus === "kết bạn") {
-                await axios.post(`http://localhost:8080/friendrequests/${currentId}/${profileId}`);
+                sendFriendRequest(currentId, profileId);
                 setFriendStatus("đang chờ");
             }
             else if (friendStatus === "đang chờ") {

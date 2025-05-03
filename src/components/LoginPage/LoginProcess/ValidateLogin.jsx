@@ -467,6 +467,19 @@ const authService = {
     return users ? JSON.parse(users) : null;
   },
 
+  getUserByIdFromDB: async (id) => {
+    try {
+      const response = await api.get(`/users/${id}`);
+      return { 
+        success: true,
+        data: response.data
+      };
+    } catch (error) {
+      console.error("Login error:", error);
+      return { success: false, error: error.response?.data };
+    }
+  },
+
   getRememberMe: () => localStorage.getItem("rememberMe") === "true"
 };
 
