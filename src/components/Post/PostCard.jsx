@@ -18,7 +18,7 @@ import CreateSharePostModal from '../CreatePost/CreateSharePostModal';
 import PostModal from './PostModal';
 import EditPostModal from '../EditPost/EditPostModal';
 import { useAuth } from '../LoginPage/LoginProcess/AuthProvider';
-const PostCard = ({ item, userPost, updatePosts, allUsers,  updateUsers, updateCurentUser }) => {
+const PostCard = ({ item, userPost, updatePosts, allUsers,  updateUsers, updateCurentUser, commentID }) => {
 
     const currentUser = authService.getCurrentUser();
     // console.log(currentUser);
@@ -326,6 +326,15 @@ const sendNotifyLikeToServer = (newMessage) => {
     const handleCancelDelete = () => {
         setShowConfirmModal(false);
     };
+
+
+
+    useEffect(() => {
+        if (commentID) {
+          setShowPostModal(true); 
+        }
+    }, [commentID]); // Chỉ chạy khi commentID thay đổi
+
     return (
         <div className="bg-white rounded-lg shadow-sm">
             {/* Header */}

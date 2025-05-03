@@ -405,7 +405,6 @@ const authService = {
     try {
       const response = await api.get(`/users`);
       localStorage.setItem("users", JSON.stringify(response.data));
-      console.log("ALL", localStorage.getItem("users"));
       return {
         success: true,
         data: response.data

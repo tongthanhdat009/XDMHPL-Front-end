@@ -20,7 +20,7 @@ import SharepostModal from './SharepostModal';
 import EditSharePostModal from '../EditPost/EditSharePostModal';
 import { useAuth } from '../LoginPage/LoginProcess/AuthProvider';
 // import PostModal from './PostModal';
-const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updatePosts, allUsers, updateUsers, updateCurentUser }) => {
+const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updatePosts, allUsers, updateUsers, updateCurentUser, commentID }) => {
     const currentUser = authService.getCurrentUser();
 
     dayjs.extend(relativeTime);
@@ -319,6 +319,13 @@ const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updateP
     const handleOpenEditPostModal = () => {
         setOpenEditPostModal(true);
     }
+
+
+    useEffect(() => {
+            if (commentID) {
+              setShowPostModal(true); 
+            }
+    }, [commentID]); 
     return (
         <div className="bg-white rounded-lg shadow-sm">
             {/* Header của người share post */}

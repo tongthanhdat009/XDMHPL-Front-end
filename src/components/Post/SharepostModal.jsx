@@ -15,13 +15,19 @@ import authService from '../LoginPage/LoginProcess/ValidateLogin';
 import { data, useNavigate } from 'react-router-dom';
 import CommentItem from './CommentItem';
 import { useAuth } from '../LoginPage/LoginProcess/AuthProvider';
+import LikesModal from './LikeModal';
 // SharepostModal component
 
 const SharepostModal = ({ isOpen, handleClose, post, userPost, originalPost, userOriginalPost, updatePosts, allUsers, handleOpenCreatePostModal }) => {
     const currentUser = authService.getCurrentUser();
     const [newComment, setNewComment] = React.useState('');
     const navigate = useNavigate();
-    const {stompClient } = useAuth();
+    const { stompClient } = useAuth();
+    // State for likes modal
+    const [showLikesModal, setShowLikesModal] = useState(false);
+    const openLikesModal = () => {
+        setShowLikesModal(true);
+    };
     // Format date/time
     dayjs.extend(relativeTime);
     dayjs.locale('vi');
@@ -34,7 +40,7 @@ const SharepostModal = ({ isOpen, handleClose, post, userPost, originalPost, use
                 postId: post.postID,
                 userId: currentUser.userID
             }
-            const result = await authService.likePost({Like, sendNotifyLikeToServer});
+            const result = await authService.likePost({ Like, sendNotifyLikeToServer });
             if (result.success) {
                 await updatePosts();
             } else {
@@ -46,47 +52,47 @@ const SharepostModal = ({ isOpen, handleClose, post, userPost, originalPost, use
     };
 
     // Handle creating comment
-  const handleCreateComment = async () => {
-    if (!newComment.trim()) return;
+    const handleCreateComment = async () => {
+        if (!newComment.trim()) return;
 
-    const comment = {
-      postId: post.postID,
-      userId: currentUser.userID,
-      data: {
-        content: newComment
-      }
+        const comment = {
+            postId: post.postID,
+            userId: currentUser.userID,
+            data: {
+                content: newComment
+            }
 
+        };
+
+        try {
+            const result = await authService.commentPost({ comment, sendNotifyCommentToServer });
+            console.log(result)
+            if (result.success) {
+                // Gọi callback để cập nhật danh sách bài viết
+                await updatePosts();
+            } else {
+                // Xử lý lỗi
+                console.error("Error comment post:", result.error);
+            }
+        } catch (error) {
+            console.error("Error in form submission:", error);
+        }
+
+        setNewComment('');
     };
 
-    try {
-      const result = await authService.commentPost({comment, sendNotifyCommentToServer});
-      console.log(result)
-      if (result.success) {
-        // Gọi callback để cập nhật danh sách bài viết
-        await updatePosts();
-      } else {
-        // Xử lý lỗi
-        console.error("Error comment post:", result.error);
-      }
-    } catch (error) {
-      console.error("Error in form submission:", error);
-    }
 
-    setNewComment('');
-  };
-
-
-  const sendNotifyCommentToServer = (newMessage) => {
-    if (stompClient && newMessage) {
-      console.log("📤 Sending message:", newMessage);
-      stompClient.send(`/app/comment/notification`, {}, JSON.stringify(newMessage));
-    }
-};
+    const sendNotifyCommentToServer = (newMessage) => {
+        if (stompClient && newMessage) {
+            console.log("📤 Sending message:", newMessage);
+            stompClient.send(`/app/comment/notification`, {}, JSON.stringify(newMessage));
+        }
+    };
 
     const sendNotifyLikeToServer = (newMessage) => {
         if (stompClient && newMessage) {
-        console.log("📤 Sending message:", newMessage);
-        stompClient.send(`/app/like/notification`, {}, JSON.stringify(newMessage));
+            console.log("📤 Sending message:", newMessage);
+            stompClient.send(`/app/like/notification`, {}, JSON.stringify(newMessage));
         }
     };
 
@@ -347,8 +353,8 @@ const SharepostModal = ({ isOpen, handleClose, post, userPost, originalPost, use
                             </Typography>
                         </div>
                     )
-                
-                }
+
+                    }
 
                     {/* Media Modal for viewing images/videos */}
                     <MediaModal
@@ -357,6 +363,13 @@ const SharepostModal = ({ isOpen, handleClose, post, userPost, originalPost, use
                         mediaList={originalPost?.mediaList || []}
                         currentIndex={currentMediaIndex}
                         setCurrentIndex={setCurrentMediaIndex}
+                    />
+
+                    {/* Likes Modal */}
+                    <LikesModal
+                        isOpen={showLikesModal}
+                        handleClose={() => setShowLikesModal(false)}
+                        likes={post.likes || []}
                     />
 
                     {/* Interaction counts */}
@@ -370,7 +383,18 @@ const SharepostModal = ({ isOpen, handleClose, post, userPost, originalPost, use
                             borderColor: 'grey.300'
                         }}
                     >
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            onClick={openLikesModal}
+                            sx={{
+                                cursor: 'pointer',
+                                '&:hover': {
+                                    textDecoration: 'underline',
+                                    color: 'primary.main'
+                                }
+                            }}
+                        >
                             {post.likeCount} thích
                         </Typography>
                         <Box sx={{ display: 'flex', gap: 2 }}>
@@ -478,12 +502,12 @@ const SharepostModal = ({ isOpen, handleClose, post, userPost, originalPost, use
                             const commentUser = allUsers.find((user) => user.userID === comment.userID);
                             return (
                                 <CommentItem
-                                key={comment.commentID}
-                                comment={comment}
-                                user={commentUser}
-                                currentUser={currentUser}
-                                updatePosts={updatePosts}
-                              />
+                                    key={comment.commentID}
+                                    comment={comment}
+                                    user={commentUser}
+                                    currentUser={currentUser}
+                                    updatePosts={updatePosts}
+                                />
                             );
                         })}
                     </Box>

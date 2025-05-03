@@ -14,66 +14,6 @@ import { useAuth } from "../LoginPage/LoginProcess/AuthProvider";
 import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
 import PersonIcon from '@mui/icons-material/Person';
 const Header = () => {
-  const notificationsTest = [
-    {
-      id: 1,
-      type: 'friend_request',
-      user: {
-        name: 'Huyền Ngọc Lê',
-        avatar: 'https://via.placeholder.com/40',
-        followersCount: null
-      },
-      time: '1 ngày',
-      isRead: false
-    },
-    {
-      id: 2,
-      type: 'friend_request',
-      user: {
-        name: 'Ne Ri',
-        avatar: 'https://via.placeholder.com/40',
-        followersCount: 739
-      },
-      time: '5 ngày',
-      isRead: false
-    },
-    {
-      id: 3,
-      type: 'mention',
-      user: {
-        name: 'Zeus De Prince',
-        avatar: 'https://via.placeholder.com/40',
-        followersCount: null
-      },
-      content: 'đã nhắc đến bạn và những người khác ở một bình luận trong Ổ Béo Phì.',
-      time: '3 ngày',
-      isRead: false
-    },
-    {
-      id: 4,
-      type: 'mention',
-      user: {
-        name: 'Zeus De Prince',
-        avatar: 'https://via.placeholder.com/40',
-        followersCount: null
-      },
-      content: 'đã nhắc đến bạn và những người khác ở một bình luận trong Ổ Béo Phì.',
-      time: '4 ngày',
-      isRead: false
-    },
-    {
-      id: 5,
-      type: 'friend_request',
-      user: {
-        name: 'No Muối Tám',
-        avatar: 'https://via.placeholder.com/40',
-        followersCount: 1400
-      },
-      time: '5 ngày',
-      isRead: false
-    }
-  ];
-  
   const { notifications, markNotificationAsRead} = useAuth();
   console.log(notifications);
   // Hàm để tính thời gian tương đối
@@ -97,6 +37,9 @@ const Header = () => {
     return `${diffInDays} ngày trước`;
   };
 
+  // Thêm state để theo dõi việc lọc thông báo
+  const [filterType, setFilterType] = useState("all"); // "all" hoặc "unread"
+
   // Lọc thông báo trong 24 giờ qua
   const filterRecentNotifications = (notifications) => {
     const oneDayAgo = new Date();
@@ -105,7 +48,7 @@ const Header = () => {
     return notifications.filter(notification => {
       const creationDate = new Date(notification.creationDate);
       return creationDate >= oneDayAgo && notification.type!=="MESSAGE";
-    } );
+    });
   };
 
   const filterPreviousotifications = (notifications) => {
@@ -115,9 +58,15 @@ const Header = () => {
     return notifications.filter(notification => {
       const creationDate = new Date(notification.creationDate);
       return creationDate < oneDayAgo && notification.type!=="MESSAGE";
-    } );
+    });
   };
 
+  // Lọc tất cả thông báo chưa đọc
+  const filterUnreadNotifications = (notifications) => {
+    return notifications.filter(notification => 
+      notification.isReadFlag === 0 && notification.type !== "MESSAGE"
+    );
+  };
 
   const getNotificationIcon = (type) => {
     switch (type) {
@@ -143,10 +92,10 @@ const Header = () => {
         navigate(`/profile/${notification.senderID}`);
         break;
       case "LIKE":
-        navigate(`/post/${notification.postId}`);
+        navigate(`/post/${notification.postID}`);
         break;
       case "COMMENT":
-        navigate(`/post/${notification.postId}`);
+        navigate(`/post/${notification.postID}?commentId=${notification.commentID}`);
         break;
       default:
         break;
@@ -235,9 +184,6 @@ const Header = () => {
     }
   }
 
-
-
-
   //Thông báo
   // Thêm state để theo dõi việc click
   const [showNotifications, setShowNotifications] = useState(false);
@@ -247,6 +193,11 @@ const Header = () => {
   // Xử lý khi click vào biểu tượng thông báo
   const handleNotificationClick = () => {
     setShowNotifications(prevState => !prevState);
+  };
+
+  // Hàm xử lý khi nhấn nút filter
+  const handleFilterChange = (type) => {
+    setFilterType(type);
   };
 
   // Xử lý khi click ra ngoài
@@ -269,6 +220,7 @@ const Header = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+  
   return (
     <div className="sticky top-0 z-50 bg-white flex items-center p-2 lg:px-5 shadow-md justify-between">
       {/* Left */}
@@ -301,10 +253,6 @@ const Header = () => {
         {isSearchActive && (
           <div className="absolute top-full left-0 w-full bg-white shadow-lg rounded-lg mt-2 border">
             <div className="p-4">
-              {/* <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold">Mới đây</h3>
-            <button className="text-blue-500">Chỉnh sửa</button>
-          </div> */}
               {recentSearches.length === 0 ? (
                 <div className="text-gray-500">Xin mời nhập tìm kiếm</div>
               ) : (
@@ -344,7 +292,7 @@ const Header = () => {
           ref={notificationRef}
           className="relative"
         >
-          <Badge badgeContent={notifications.length} color="error">
+          <Badge badgeContent={filterUnreadNotifications(notifications).length} color="error">
             <NotificationsSharpIcon
               sx={{ width: 40, height: 40 }}
               className="icon cursor-pointer p-2 hover:bg-gray-200 rounded-full"
@@ -365,151 +313,161 @@ const Header = () => {
               </div>
 
               <div className="flex space-x-2 px-4 pb-2">
-                <button className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium">
+                <button 
+                  className={`${filterType === "all" ? "bg-blue-100 text-blue-600" : "hover:bg-gray-100"} px-3 py-1 rounded-full text-sm font-medium`}
+                  onClick={() => handleFilterChange("all")}
+                >
                   Tất cả
                 </button>
-                <button className="hover:bg-gray-100 px-3 py-1 rounded-full text-sm font-medium">
+                <button 
+                  className={`${filterType === "unread" ? "bg-blue-100 text-blue-600" : "hover:bg-gray-100"} px-3 py-1 rounded-full text-sm font-medium`}
+                  onClick={() => handleFilterChange("unread")}
+                >
                   Chưa đọc
                 </button>
               </div>
 
-              {/* Lời mời kết bạn */}
-              <div className="px-4 py-2">
-                <div className="flex justify-between items-center mb-2">
-                  <h3 className="font-medium">Mới nhất</h3>
-                </div>
-
-                {recentNotifications.slice(0, 3).map(notification => {
-                  // Lấy thông tin user từ danh sách users dựa vào senderID
-                  const sender = allUsers.find(user => user.userID === notification.senderID);
-
-                  // Xác định nội dung thông báo
-                  let content = notification.content;
-
-                  return (
-                    <div key={notification.notificationID} className="flex items-start space-x-2 mb-3 p-2 relative cursor-pointer hover:bg-gray-200 hover:rounded-2xl" onClick={() => handleNotificationItemClick(notification)}>
-                      <div className="relative">
-                        <Avatar src={sender?.avatarURL ? `http://localhost:8080/uploads${sender.avatarURL}` : "http://localhost:8080/uploads/avatars/default.jpg"} className="w-10 h-10" />
-                        <div className={`absolute -bottom-1 -right-1 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs p-3 ${ notification.type === "COMMENT" ? "bg-green-500" : "bg-blue-500"}`}>
-                          {getNotificationIcon(notification.type)}
-                        </div>
+              {/* Hiển thị thông báo theo loại lọc đã chọn */}
+              {filterType === "all" ? (
+                <>
+                  {/* Phần hiển thị thông báo mới nhất khi chọn "Tất cả" */}
+                  {recentNotifications.length > 0 && (
+                    <div className="px-4 py-2">
+                      <div className="flex justify-between items-center mb-2">
+                        <h3 className="font-medium">Mới nhất</h3>
                       </div>
-                      <div className="flex-1">
-                        <p className="text-sm">
-                          <span className="font-semibold">{sender?.fullName || "Người dùng"}</span>{" "}
-                          {notification.type === "FRIEND_REQUEST" && content}
-                          {notification.type === "LIKE" && content}
-                          {notification.type === "COMMENT" && content}
-                        </p>
-                        <p className="text-xs text-gray-500">{getRelativeTime(notification.creationDate)}</p>
 
-                        {/* {notification.type === "FRIEND_REQUEST" && (
-                          <div className="flex space-x-2 mt-2">
-                            <button className="bg-blue-500 text-white px-4 py-1 rounded text-sm font-medium">
-                              Xác nhận
-                            </button>
-                            <button className="bg-gray-200 text-black px-4 py-1 rounded text-sm font-medium">
-                              Xóa
-                            </button>
+                      {recentNotifications.slice(0, 3).map(notification => {
+                        // Lấy thông tin user từ danh sách users dựa vào senderID
+                        const sender = allUsers.find(user => user.userID === notification.senderID);
+
+                        // Xác định nội dung thông báo
+                        let content = notification.content;
+
+                        return (
+                          <div key={notification.notificationID} className="flex items-start space-x-2 mb-3 p-2 relative cursor-pointer hover:bg-gray-200 hover:rounded-2xl" onClick={() => handleNotificationItemClick(notification)}>
+                            <div className="relative">
+                              <Avatar src={sender?.avatarURL ? `http://localhost:8080/uploads${sender.avatarURL}` : "http://localhost:8080/uploads/avatars/default.jpg"} className="w-10 h-10" />
+                              <div className={`absolute -bottom-1 -right-1 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs p-3 ${ notification.type === "COMMENT" ? "bg-green-500" : "bg-blue-500"}`}>
+                                {getNotificationIcon(notification.type)}
+                              </div>
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-sm">
+                                <span className="font-semibold">{sender?.fullName || "Người dùng"}</span>{" "}
+                                {notification.type === "FRIEND_REQUEST" && content}
+                                {notification.type === "LIKE" && content}
+                                {notification.type === "COMMENT" && content}
+                              </p>
+                              <p className="text-xs text-gray-500">{getRelativeTime(notification.creationDate)}</p>
+                            </div>
+                            {notification.isReadFlag === 0 && (
+                              <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-3 h-3 bg-blue-500 rounded-full"></div>
+                            )}
                           </div>
-                        )} */}
-                      </div>
-                      {notification.isReadFlag === 0 && (
-                        <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-3 h-3 bg-blue-500 rounded-full"></div>
-                      )}
+                        )
+                      })}
                     </div>
-                  )
-                })}
-              </div>
+                  )}
 
-              <Divider />
+                  {(recentNotifications.length > 0 && previousNotifications.length > 0) && <Divider />}
 
-              {/* Trước đó */}
-              <div className="px-4 py-2">
-                <div className="flex justify-between items-center mb-2">
-                  <h3 className="font-medium">Trước đó</h3>
-                </div>
-
-                {previousNotifications.slice(0, 4).map(notification => {
-                  // Lấy thông tin user từ danh sách users dựa vào senderID
-                  const sender = allUsers.find(user => user.userID === notification.senderID);
-
-                  // Xác định nội dung thông báo
-                  let content = notification.content;
-
-                  return (
-                    <div key={notification.notificationID} className="flex items-start space-x-2 mb-3 relative cursor-pointer p-2 hover:bg-gray-200 hover:rounded-2xl">
-                      <div className="relative">
-                        <Avatar src={sender?.avatarURL ? `http://localhost:8080/uploads${sender.avatarURL}` : "http://localhost:8080/uploads/avatars/default.jpg"} className="w-10 h-10" />
-                        <div className={`absolute -bottom-1 -right-1 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs p-3 ${ notification.type === "COMMENT" ? "bg-green-500" : "bg-blue-500"}`}>
-                          {getNotificationIcon(notification.type)}
-                        </div>
+                  {/* Phần hiển thị thông báo trước đó khi chọn "Tất cả" */}
+                  {previousNotifications.length > 0 && (
+                    <div className="px-4 py-2">
+                      <div className="flex justify-between items-center mb-2">
+                        <h3 className="font-medium">Trước đó</h3>
                       </div>
-                      <div className="flex-1">
-                        <p className="text-sm">
-                          <span className="font-semibold">{sender?.fullName || "Người dùng"}</span>{" "}
-                          {notification.type === "FRIEND_REQUEST" && content}
-                          {notification.type === "LIKE" && content}
-                          {notification.type === "COMMENT" && content}
-                        </p>
-                        <p className="text-xs text-gray-500">{getRelativeTime(notification.creationDate)}</p>
 
-                        {/* {notification.type === "FRIEND_REQUEST" && (
-                          <div className="flex space-x-2 mt-2">
-                            <button className="bg-blue-500 text-white px-4 py-1 rounded text-sm font-medium">
-                              Xác nhận
-                            </button>
-                            <button className="bg-gray-200 text-black px-4 py-1 rounded text-sm font-medium">
-                              Xóa
-                            </button>
+                      {previousNotifications.slice(0, 4).map(notification => {
+                        // Lấy thông tin user từ danh sách users dựa vào senderID
+                        const sender = allUsers.find(user => user.userID === notification.senderID);
+
+                        // Xác định nội dung thông báo
+                        let content = notification.content;
+
+                        return (
+                          <div key={notification.notificationID} className="flex items-start space-x-2 mb-3 relative cursor-pointer p-2 hover:bg-gray-200 hover:rounded-2xl" onClick={() => handleNotificationItemClick(notification)}>
+                            <div className="relative">
+                              <Avatar src={sender?.avatarURL ? `http://localhost:8080/uploads${sender.avatarURL}` : "http://localhost:8080/uploads/avatars/default.jpg"} className="w-10 h-10" />
+                              <div className={`absolute -bottom-1 -right-1 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs p-3 ${ notification.type === "COMMENT" ? "bg-green-500" : "bg-blue-500"}`}>
+                                {getNotificationIcon(notification.type)}
+                              </div>
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-sm">
+                                <span className="font-semibold">{sender?.fullName || "Người dùng"}</span>{" "}
+                                {notification.type === "FRIEND_REQUEST" && content}
+                                {notification.type === "LIKE" && content}
+                                {notification.type === "COMMENT" && content}
+                              </p>
+                              <p className="text-xs text-gray-500">{getRelativeTime(notification.creationDate)}</p>
+                            </div>
+                            {notification.isReadFlag === 0 && (
+                              <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-3 h-3 bg-blue-500 rounded-full"></div>
+                            )}
                           </div>
-                        )} */}
-                      </div>
-                      {notification.isReadFlag === 0 && (
-                        <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-3 h-3 bg-blue-500 rounded-full"></div>
-                      )}
+                        )
+                      })}
                     </div>
-                  )
-                })}
+                  )}
+                </>
+              ) : (
+                /* Hiển thị tất cả thông báo chưa đọc khi chọn "Chưa đọc" */
+                <>
+                  {filterUnreadNotifications(notifications).length > 0 ? (
+                    <div className="px-4 py-2">
+                      {filterUnreadNotifications(notifications).map(notification => {
+                        // Lấy thông tin user từ danh sách users dựa vào senderID
+                        const sender = allUsers.find(user => user.userID === notification.senderID);
 
-                {/* Thêm lời mời kết bạn vào phần "Trước đó" */}
-                {/* {notificationsTest.filter(n => n.type === 'friend_request').slice(3).map(notification => (
-                  <div key={notification.id} className="flex items-start space-x-2 mb-3 relative">
-                    <div className="relative">
-                      <Avatar src={notification.user.avatar} className="w-10 h-10" />
-                      <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                        <i className="fas fa-user-plus"></i>
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm">
-                        <span className="font-semibold">{notification.user.name}</span> đã gửi cho bạn lời mời kết bạn.
-                      </p>
-                      <p className="text-xs text-gray-500">{notification.time}</p>
-                      {notification.user.followersCount && (
-                        <p className="text-xs text-gray-500">Có {notification.user.followersCount} người theo dõi</p>
-                      )}
-                      <div className="flex space-x-2 mt-2">
-                        <button className="bg-blue-500 text-white px-4 py-1 rounded text-sm font-medium">
-                          Xác nhận
-                        </button>
-                        <button className="bg-gray-200 text-black px-4 py-1 rounded text-sm font-medium">
-                          Xóa
-                        </button>
-                      </div>
-                    </div>
-                    {!notification.isRead && (
-                      <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-3 h-3 bg-blue-500 rounded-full"></div>
-                    )}
-                  </div>
-                ))} */}
-              </div>
+                        // Xác định nội dung thông báo
+                        let content = notification.content;
 
-              <div className="p-3">
-                <button className="w-full bg-gray-200 hover:bg-gray-300 py-2 rounded text-sm font-medium">
-                  Xem thông báo trước đó
-                </button>
-              </div>
+                        return (
+                          <div key={notification.notificationID} className="flex items-start space-x-2 mb-3 p-2 relative cursor-pointer hover:bg-gray-200 hover:rounded-2xl" onClick={() => handleNotificationItemClick(notification)}>
+                            <div className="relative">
+                              <Avatar src={sender?.avatarURL ? `http://localhost:8080/uploads${sender.avatarURL}` : "http://localhost:8080/uploads/avatars/default.jpg"} className="w-10 h-10" />
+                              <div className={`absolute -bottom-1 -right-1 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs p-3 ${ notification.type === "COMMENT" ? "bg-green-500" : "bg-blue-500"}`}>
+                                {getNotificationIcon(notification.type)}
+                              </div>
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-sm">
+                                <span className="font-semibold">{sender?.fullName || "Người dùng"}</span>{" "}
+                                {notification.type === "FRIEND_REQUEST" && content}
+                                {notification.type === "LIKE" && content}
+                                {notification.type === "COMMENT" && content}
+                              </p>
+                              <p className="text-xs text-gray-500">{getRelativeTime(notification.creationDate)}</p>
+                            </div>
+                            <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-3 h-3 bg-blue-500 rounded-full"></div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <div className="px-4 py-6 text-center">
+                      <p className="text-gray-500">Không có thông báo chưa đọc</p>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Hiển thị thông báo khi không có thông báo nào cả */}
+              {filterType === "all" && recentNotifications.length === 0 && previousNotifications.length === 0 && (
+                <div className="px-4 py-6 text-center">
+                  <p className="text-gray-500">Không có thông báo</p>
+                </div>
+              )}
+
+              {filterType === "all" && previousNotifications.length > 0 && (
+                <div className="p-3">
+                  <button className="w-full bg-gray-200 hover:bg-gray-300 py-2 rounded text-sm font-medium">
+                    Xem thông báo trước đó
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

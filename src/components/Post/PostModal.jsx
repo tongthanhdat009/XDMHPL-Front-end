@@ -14,12 +14,15 @@ import VideoThumbnail from './VideoThumbnail';
 import authService from '../LoginPage/LoginProcess/ValidateLogin';
 import { useAuth } from '../LoginPage/LoginProcess/AuthProvider';
 import CommentItem from './CommentItem';
+import LikesModal from './LikeModal';
 
 // PostModal component
 const PostModal = ({ isOpen, handleClose, post, userPost, updatePosts, allUsers, handleOpenCreatePostModal }) => {
   const currentUser = authService.getCurrentUser();
-  const [newComment, setNewComment] = React.useState('');
-  const {stompClient } = useAuth();
+  const [newComment, setNewComment] = useState('');
+  const { stompClient } = useAuth();
+  // State for likes modal
+  const [showLikesModal, setShowLikesModal] = useState(false);
 
   // Format date/time
   dayjs.extend(relativeTime);
@@ -29,28 +32,27 @@ const PostModal = ({ isOpen, handleClose, post, userPost, updatePosts, allUsers,
   // Handle liking post
   const handleLikePost = async () => {
     try {
-        const Like = {
-            postId: post.postID,
-            userId: currentUser.userID
-        }
-        const result = await authService.likePost({Like, sendNotifyLikeToServer});
-        if (result.success) {
-            await updatePosts();
-        } else {
-            console.error("Error liking post:", result.error);
-        }
+      const Like = {
+        postId: post.postID,
+        userId: currentUser.userID
+      }
+      const result = await authService.likePost({ Like, sendNotifyLikeToServer });
+      if (result.success) {
+        await updatePosts();
+      } else {
+        console.error("Error liking post:", result.error);
+      }
     } catch (error) {
-        console.error("Error in form submission:", error);
+      console.error("Error in form submission:", error);
     }
-};
+  };
 
-
-const sendNotifyLikeToServer = (newMessage) => {
+  const sendNotifyLikeToServer = (newMessage) => {
     if (stompClient && newMessage) {
-    console.log("📤 Sending message:", newMessage);
-    stompClient.send(`/app/like/notification`, {}, JSON.stringify(newMessage));
+      console.log("📤 Sending message:", newMessage);
+      stompClient.send(`/app/like/notification`, {}, JSON.stringify(newMessage));
     }
-};
+  };
 
   // Handle creating comment
   const handleCreateComment = async () => {
@@ -62,11 +64,10 @@ const sendNotifyLikeToServer = (newMessage) => {
       data: {
         content: newComment
       }
-
     };
 
     try {
-      const result = await authService.commentPost({comment, sendNotifyCommentToServer});
+      const result = await authService.commentPost({ comment, sendNotifyCommentToServer });
       console.log(result)
       if (result.success) {
         // Gọi callback để cập nhật danh sách bài viết
@@ -82,24 +83,31 @@ const sendNotifyLikeToServer = (newMessage) => {
     setNewComment('');
   };
 
-
   const sendNotifyCommentToServer = (newMessage) => {
     if (stompClient && newMessage) {
       console.log("📤 Sending message:", newMessage);
       stompClient.send(`/app/comment/notification`, {}, JSON.stringify(newMessage));
     }
-};
+  };
 
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [showMediaModal, setShowMediaModal] = useState(false);
+  
   // Hàm để mở modal với ảnh/video được chọn
   const openMediaModal = (index) => {
     setCurrentMediaIndex(index);
     setShowMediaModal(true);
   };
-  const isLikedByCurrentUser = post.likes.some(
+  
+  // Hàm để mở modal hiển thị danh sách người đã thích
+  const openLikesModal = () => {
+    setShowLikesModal(true);
+  };
+
+  const isLikedByCurrentUser = post?.likes?.some(
     (like) => like.userId === currentUser.userID
   );
+  
   if (!isOpen || !post) return null;
 
   return (
@@ -229,6 +237,13 @@ const sendNotifyLikeToServer = (newMessage) => {
             setCurrentIndex={setCurrentMediaIndex}
           />
 
+          {/* Likes Modal */}
+          <LikesModal
+            isOpen={showLikesModal}
+            handleClose={() => setShowLikesModal(false)}
+            likes={post.likes || []}
+          />
+
           {/* Interaction counts */}
           <Box sx={{
             display: 'flex',
@@ -238,7 +253,18 @@ const sendNotifyLikeToServer = (newMessage) => {
             borderBottom: '1px solid',
             borderColor: 'divider'
           }}>
-            <Typography variant="body2" color="text.secondary">
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              onClick={openLikesModal}
+              sx={{ 
+                cursor: 'pointer',
+                '&:hover': { 
+                  textDecoration: 'underline',
+                  color: 'primary.main'
+                }
+              }}
+            >
               {post.likeCount} thích
             </Typography>
             <Box sx={{ display: 'flex', gap: 2 }}>
@@ -296,13 +322,12 @@ const sendNotifyLikeToServer = (newMessage) => {
               p: 1,
               '&:hover': { bgcolor: 'action.hover', borderRadius: 1 },
               cursor: 'pointer'
-            }}  onClick={handleOpenCreatePostModal}>
+            }} onClick={handleOpenCreatePostModal}>
               <IconButton size="small">
                 <ShareIcon />
               </IconButton>
               <Typography variant="body2" sx={{ ml: 0.5 }}>Chia sẻ</Typography>
             </Box>
-
           </Box>
 
           {/* Comments section */}
@@ -323,7 +348,7 @@ const sendNotifyLikeToServer = (newMessage) => {
                   currentUser={currentUser}
                   updatePosts={updatePosts}
                 />
-              )
+              );
             })}
           </Box>
         </Box>
@@ -382,4 +407,4 @@ const sendNotifyLikeToServer = (newMessage) => {
   );
 };
 
-export default PostModal
+export default PostModal;
