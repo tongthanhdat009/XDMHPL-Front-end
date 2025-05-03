@@ -9,6 +9,7 @@ import UserSignin from "./pages/LoginPage/User/UserSignin.jsx";
 import authService from "./components/LoginPage/LoginProcess/ValidateLogin.jsx";
 import FriendPage from "./pages/FriendPage/FriendPage.jsx";
 import ProfilePage from "./pages/ProfilePage/ProfilePage.jsx";
+import AdminLogin from "./pages/LoginPage/Admin/AdminLogin.jsx";
 // PrivateRoute component to protect routes
 const PrivateRoute = ({ children }) => {
   const location = useLocation();
@@ -33,7 +34,12 @@ function App() {
       {/* Public Routes */}
       <Route path="/login/*" element={<UserLogin />} />
       <Route path="/signin/*" element={<UserSignin />} />
-
+      <Route path="/admin/login/*" element={<AdminLogin />} />
+      <Route 
+        path="/admin/*"
+        element={
+          <AdminPage />
+        } />
       {/* Protected Routes */}
       <Route
         path="/*"
@@ -68,7 +74,7 @@ function App() {
         }
       />
       <Route
-        path="/admin/*"
+        path="/admin/dashboard/*"
         element={
           <PrivateRoute>
             <AdminPage />
