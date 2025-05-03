@@ -11,6 +11,9 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useNavigate } from "react-router-dom";
 import authService from "../LoginPage/LoginProcess/ValidateLogin";
 import { useAuth } from "../LoginPage/LoginProcess/AuthProvider";
+import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
+import PersonIcon from '@mui/icons-material/Person';
+import { notification } from "antd";
 const Header = () => {
   const notificationsTest = [
     {
@@ -71,10 +74,70 @@ const Header = () => {
       isRead: false
     }
   ];
-  const {notifications } = useAuth();
-
-  console.log(notifications);
   
+  const { notifications } = useAuth();
+  console.log(notifications);
+  // Hàm để tính thời gian tương đối
+  const getRelativeTime = (dateString) => {
+    const now = new Date();
+    const creationDate = new Date(dateString);
+    const diffInMs = now - creationDate;
+
+    // Chuyển đổi mili giây thành phút
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+
+    if (diffInMinutes < 1) return "Vừa xong";
+    if (diffInMinutes < 60) return `${diffInMinutes} phút trước`;
+
+    // Chuyển đổi thành giờ
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours} giờ trước`;
+
+    // Chuyển đổi thành ngày
+    const diffInDays = Math.floor(diffInHours / 24);
+    return `${diffInDays} ngày trước`;
+  };
+
+  // Lọc thông báo trong 24 giờ qua
+  const filterRecentNotifications = (notifications) => {
+    const oneDayAgo = new Date();
+    oneDayAgo.setHours(oneDayAgo.getHours() - 24);
+
+    return notifications.filter(notification => {
+      const creationDate = new Date(notification.creationDate);
+      return creationDate >= oneDayAgo && notification.type!=="MESSAGE";
+    } );
+  };
+
+  const filterPreviousotifications = (notifications) => {
+    const oneDayAgo = new Date();
+    oneDayAgo.setHours(oneDayAgo.getHours() - 24);
+
+    return notifications.filter(notification => {
+      const creationDate = new Date(notification.creationDate);
+      return creationDate < oneDayAgo && notification.type!=="MESSAGE";
+    } );
+  };
+
+
+  const getNotificationIcon = (type) => {
+    switch (type) {
+      case "FRIEND_REQUEST":
+        return <PersonIcon className="text-white" fontSize="small" />;
+      case "LIKE":
+        return <ThumbUpAltIcon className="text-white" fontSize="small" />;
+      case "COMMENT":
+        return <ChatBubbleIcon className="text-white"  fontSize="small"/>;
+      default:
+        return null;
+    }
+  };
+
+  // Trong component của bạn:
+  const recentNotifications = filterRecentNotifications(notifications);
+
+  const previousNotifications = filterPreviousotifications(notifications);
+
   const navigate = useNavigate();
   const [search, setSearch] = React.useState("")
 
@@ -149,10 +212,10 @@ const Header = () => {
     const filteredUsers = allUsers.filter(user => user.fullName.toLowerCase().includes(value.toLowerCase()));
 
     if (filteredUsers.length > 0) {
-        // Lấy danh sách fullName từ các user đã lọc
-        setRecentSearches(filteredUsers.map(user => user.fullName));
+      // Lấy danh sách fullName từ các user đã lọc
+      setRecentSearches(filteredUsers.map(user => user.fullName));
     } else {
-        setRecentSearches([value]); // Đặt recentSearches thành mảng rỗng nếu không có kết quả
+      setRecentSearches([value]); // Đặt recentSearches thành mảng rỗng nếu không có kết quả
     }
   }
 
@@ -301,36 +364,47 @@ const Header = () => {
                   <a href="#" className="text-blue-500 text-sm">Xem tất cả</a>
                 </div>
 
-                {notifications.filter(n => n.type === 'friend_request').slice(0, 3).map(notification => (
-                  <div key={notification.id} className="flex items-start space-x-2 mb-3 relative">
-                    <div className="relative">
-                      <Avatar src={notification.user.avatar} className="w-10 h-10" />
-                      <div className="absolute -bottom-1 -right-1 bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                        <i className="fas fa-user-plus"></i>
+                {recentNotifications.slice(0, 3).map(notification => {
+                  // Lấy thông tin user từ danh sách users dựa vào senderID
+                  const sender = allUsers.find(user => user.userID === notification.senderID);
+
+                  // Xác định nội dung thông báo
+                  let content = notification.content;
+
+                  return (
+                    <div key={notification.notificationID} className="flex items-start space-x-2 mb-3 relative">
+                      <div className="relative">
+                        <Avatar src={sender?.avatarURL ? `http://localhost:8080/uploads${sender.avatarURL}` : "http://localhost:8080/uploads/avatars/default.jpg"} className="w-10 h-10" />
+                        <div className={`absolute -bottom-1 -right-1 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs p-3 ${ notification.type === "COMMENT" ? "bg-green-500" : "bg-blue-500"}`}>
+                          {getNotificationIcon(notification.type)}
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm">
-                        <span className="font-semibold">{notification.user.name}</span> đã gửi cho bạn lời mời kết bạn.
-                      </p>
-                      <p className="text-xs text-gray-500">{notification.time}</p>
-                      {notification.user.followersCount && (
-                        <p className="text-xs text-gray-500">Có {notification.user.followersCount} người theo dõi</p>
+                      <div className="flex-1">
+                        <p className="text-sm">
+                          <span className="font-semibold">{sender?.fullName || "Người dùng"}</span>{" "}
+                          {notification.type === "FRIEND_REQUEST" && content}
+                          {notification.type === "LIKE" && content}
+                          {notification.type === "COMMENT" && content}
+                        </p>
+                        <p className="text-xs text-gray-500">{getRelativeTime(notification.creationDate)}</p>
+
+                        {/* {notification.type === "FRIEND_REQUEST" && (
+                          <div className="flex space-x-2 mt-2">
+                            <button className="bg-blue-500 text-white px-4 py-1 rounded text-sm font-medium">
+                              Xác nhận
+                            </button>
+                            <button className="bg-gray-200 text-black px-4 py-1 rounded text-sm font-medium">
+                              Xóa
+                            </button>
+                          </div>
+                        )} */}
+                      </div>
+                      {notification.isReadFlag === 0 && (
+                        <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-3 h-3 bg-blue-500 rounded-full"></div>
                       )}
-                      <div className="flex space-x-2 mt-2">
-                        <button className="bg-blue-500 text-white px-4 py-1 rounded text-sm font-medium">
-                          Xác nhận
-                        </button>
-                        <button className="bg-gray-200 text-black px-4 py-1 rounded text-sm font-medium">
-                          Xóa
-                        </button>
-                      </div>
                     </div>
-                    {!notification.isRead && (
-                      <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-3 h-3 bg-blue-500 rounded-full"></div>
-                    )}
-                  </div>
-                ))}
+                  )
+                })}
               </div>
 
               <Divider />
@@ -342,28 +416,50 @@ const Header = () => {
                   <a href="#" className="text-blue-500 text-sm">Xem tất cả</a>
                 </div>
 
-                {notificationsTest.filter(n => n.type === 'mention').map(notification => (
-                  <div key={notification.notificationID} className="flex items-start space-x-2 mb-3 relative">
-                    <div className="relative">
-                      <Avatar src={notification.user.avatar} className="w-10 h-10" />
-                      <div className="absolute -bottom-1 -right-1 bg-green-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                        <i className="fas fa-comment"></i>
+                {previousNotifications.slice(0, 7).map(notification => {
+                  // Lấy thông tin user từ danh sách users dựa vào senderID
+                  const sender = allUsers.find(user => user.userID === notification.senderID);
+
+                  // Xác định nội dung thông báo
+                  let content = notification.content;
+
+                  return (
+                    <div key={notification.notificationID} className="flex items-start space-x-2 mb-3 relative">
+                      <div className="relative">
+                        <Avatar src={sender?.avatarURL ? `http://localhost:8080/uploads${sender.avatarURL}` : "http://localhost:8080/uploads/avatars/default.jpg"} className="w-10 h-10" />
+                        <div className={`absolute -bottom-1 -right-1 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs p-3 ${ notification.type === "COMMENT" ? "bg-green-500" : "bg-blue-500"}`}>
+                          {getNotificationIcon(notification.type)}
+                        </div>
                       </div>
+                      <div className="flex-1">
+                        <p className="text-sm">
+                          <span className="font-semibold">{sender?.fullName || "Người dùng"}</span>{" "}
+                          {notification.type === "FRIEND_REQUEST" && content}
+                          {notification.type === "LIKE" && content}
+                          {notification.type === "COMMENT" && content}
+                        </p>
+                        <p className="text-xs text-gray-500">{getRelativeTime(notification.creationDate)}</p>
+
+                        {/* {notification.type === "FRIEND_REQUEST" && (
+                          <div className="flex space-x-2 mt-2">
+                            <button className="bg-blue-500 text-white px-4 py-1 rounded text-sm font-medium">
+                              Xác nhận
+                            </button>
+                            <button className="bg-gray-200 text-black px-4 py-1 rounded text-sm font-medium">
+                              Xóa
+                            </button>
+                          </div>
+                        )} */}
+                      </div>
+                      {notification.isReadFlag === 0 && (
+                        <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-3 h-3 bg-blue-500 rounded-full"></div>
+                      )}
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm">
-                        <span className="font-semibold">{notification.user.name}</span> {notification.content}
-                      </p>
-                      <p className="text-xs text-gray-500">{notification.time}</p>
-                    </div>
-                    {!notification.isRead && (
-                      <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-3 h-3 bg-blue-500 rounded-full"></div>
-                    )}
-                  </div>
-                ))}
+                  )
+                })}
 
                 {/* Thêm lời mời kết bạn vào phần "Trước đó" */}
-                {notificationsTest.filter(n => n.type === 'friend_request').slice(3).map(notification => (
+                {/* {notificationsTest.filter(n => n.type === 'friend_request').slice(3).map(notification => (
                   <div key={notification.id} className="flex items-start space-x-2 mb-3 relative">
                     <div className="relative">
                       <Avatar src={notification.user.avatar} className="w-10 h-10" />
@@ -392,7 +488,7 @@ const Header = () => {
                       <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-3 h-3 bg-blue-500 rounded-full"></div>
                     )}
                   </div>
-                ))}
+                ))} */}
               </div>
 
               <div className="p-3">
