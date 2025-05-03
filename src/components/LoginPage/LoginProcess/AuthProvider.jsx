@@ -374,14 +374,14 @@ export const AuthProvider = ({ children }) => {
     setNotify(prev => 
       prev.map(notification => 
         notification.notificationID === notificationId 
-          ? { ...notification, read: true } 
+          ? { ...notification, isReadFlag: true } 
           : notification
       )
     );
     
     // Gửi cập nhật tới server nếu cần
     if (stompClient && connected && user) {
-      const payload = { userId: user.userID, notificationId: notificationId };
+      const payload = { UserID: user.userID, notificationID: notificationId };
       stompClient.send('/app/status/mark-notification-read', {}, JSON.stringify(payload));
     }
   };

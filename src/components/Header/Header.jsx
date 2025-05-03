@@ -140,7 +140,7 @@ const Header = () => {
     }
     switch (notification.type) {
       case "FRIEND_REQUEST":
-        navigate(`/profile/${notification.user.id}`);
+        navigate(`/profile/${notification.senderID}`);
         break;
       case "LIKE":
         navigate(`/post/${notification.postId}`);
@@ -387,7 +387,7 @@ const Header = () => {
                   let content = notification.content;
 
                   return (
-                    <div key={notification.notificationID} className="flex items-start space-x-2 mb-3 p-2 relative cursor-pointer hover:bg-gray-200 hover:rounded-2xl">
+                    <div key={notification.notificationID} className="flex items-start space-x-2 mb-3 p-2 relative cursor-pointer hover:bg-gray-200 hover:rounded-2xl" onClick={() => handleNotificationItemClick(notification)}>
                       <div className="relative">
                         <Avatar src={sender?.avatarURL ? `http://localhost:8080/uploads${sender.avatarURL}` : "http://localhost:8080/uploads/avatars/default.jpg"} className="w-10 h-10" />
                         <div className={`absolute -bottom-1 -right-1 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs p-3 ${ notification.type === "COMMENT" ? "bg-green-500" : "bg-blue-500"}`}>
