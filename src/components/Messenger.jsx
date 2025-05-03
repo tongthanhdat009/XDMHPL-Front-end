@@ -1,39 +1,94 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ChatList from "./ChatList.jsx";
 import ChatWindow from "./ChatWindow.jsx";
 import RightMenu from "./RightMenu.jsx";
+import axios from "axios";
 
 const Messenger = () => {
   const [selectedChat, setSelectedChat] = useState(null);
+  const [chats, setChats] = useState([]);
+  const [messages, setMessages] = useState([]);
 
-  const [chats, setChats] = useState([
-    { id: 1, name: "Nhóm 1", avatar: "/images/group1.jpg", lastMessage: "Xin chào!", lastMessageTime: "10:00 AM", sentImages: [] },
-    { id: 2, name: "Nhóm 2", avatar: "/images/group2.jpg", lastMessage: "Hẹn gặp lại!", lastMessageTime: "12:30 PM", sentImages: [] }
-  ]);
+  const currentUserId = 1; // TODO: Lấy từ AuthContext hoặc props nếu có
 
-  const messages = selectedChat
-    ? [
-        { sender: "Alice", text: "Hello!" },
-        { sender: "You", text: "Hi Alice!" },
-      ]
-    : [];
+  // Hàm lấy danh sách chat
+  const fetchChats = async () => {
+    try {
+      const res = await axios.get(`http://localhost:8080/chat/sidebar/${currentUserId}`);
+      setChats(res.data);
+    } catch (error) {
+      console.error("Lỗi khi lấy danh sách chat:", error);
+    }
+  };
 
-    const handleSelectChat = (chat) => {
-      setSelectedChat(chat);
-    };
-  
-    const handleUpdateChat = (updatedChat) => {
-      setChats((prevChats) =>
-        prevChats.map((chat) => (chat.id === updatedChat.id ? updatedChat : chat))
-      );
+  // Hàm lấy tin nhắn theo chatbox ID
+  const fetchMessages = async (chatBoxID) => {
+    if (!chatBoxID) return;
+    try {
+      const res = await axios.get(`http://localhost:8080/messages/${chatBoxID}`);
+      setMessages(res.data);
+    } catch (error) {
+      console.error("Lỗi khi lấy tin nhắn:", error);
+    }
+  };
+
+  // Gọi khi mount
+  useEffect(() => {
+    fetchChats();
+  }, []);
+
+  // Gọi khi chọn chat mới
+  useEffect(() => {
+    if (selectedChat?.chatBoxID) {
+      fetchMessages(selectedChat.chatBoxID);
+    }
+  }, [selectedChat]);
+
+  // Kiểm tra selectedChat có còn tồn tại trong danh sách chats
+  useEffect(() => {
+    if (selectedChat && !chats.find(c => c.chatBoxID === selectedChat.chatBoxID)) {
+      setSelectedChat(null);
+      setMessages([]);
+    }
+  }, [chats]);
+
+  const handleSelectChat = (chat) => {
+    setSelectedChat(chat);
+    setMessages([]); // Reset tin nhắn khi chọn chat mới
+  };
+
+  const handleUpdateChat = (updatedChat) => {
+    setChats(prevChats =>
+      prevChats.map(chat =>
+        chat.chatBoxID === updatedChat.chatBoxID ? updatedChat : chat
+      )
+    );
+
+    if (selectedChat?.chatBoxID === updatedChat.chatBoxID) {
       setSelectedChat(updatedChat);
-    };
+    }
+  };
+
+  const handleAddMessage = (newMsg) => {
+    setMessages(prev => [...prev, newMsg]);
+  };
 
   return (
     <div className="flex h-screen">
-    <ChatList chats={chats} onSelectChat={handleSelectChat} />
-      <ChatWindow selectedChat={selectedChat} messages={messages} />
-      <RightMenu selectedChat={selectedChat} onUpdateChat={handleUpdateChat} />
+      <ChatList
+        chats={chats}
+        onSelectChat={handleSelectChat}
+      />
+      <ChatWindow
+        selectedChat={selectedChat}
+        messages={messages}
+        onAddMessage={handleAddMessage}
+      />
+      <RightMenu
+        selectedChat={selectedChat}
+        onUpdateChat={handleUpdateChat}
+        currentUserId={currentUserId}
+      />
     </div>
   );
 };
