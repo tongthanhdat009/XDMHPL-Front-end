@@ -156,9 +156,7 @@ const PostManagement = () => {
   // --- Hàm xử lý xóa bình luận ---
   const handleDeleteComment = async (postId, commentId) => {
     try {
-      // Giả sử API endpoint là DELETE /comments/{commentId}
-      // Hoặc có thể là /posts/{postId}/comments/{commentId}
-      await axios.delete(`http://localhost:8080/comments/${commentId}`); // <-- Điều chỉnh endpoint nếu cần
+      await axios.delete(`http://localhost:8080/posts-management/delete-comment/${commentId}`); 
 
       // Cập nhật state sau khi xóa thành công
       const updateCommentList = (post) => {
@@ -178,7 +176,6 @@ const PostManagement = () => {
       alert(err.response?.data?.message || 'Đã xảy ra lỗi khi xóa bình luận.');
     }
   };
-  // ---
 
   return (
     <div className="p-6 bg-white h-fit rounded-lg shadow-md">

@@ -256,7 +256,7 @@ const CardPostDetail = ({ post, onClose, onDelete, onToggleVisibility, onDeleteC
                     {/* --- Phần hiển thị bình luận --- */}
                     <div className="border-t border-gray-200 p-4">
                         {/* ... (giữ nguyên) ... */}
-                         <h4 className="font-semibold text-sm mb-3 flex items-center">
+                         <h4 className="font-semibold text-sm mb-3 flex items-center text-gray-800">
                             <FaCommentAlt className="mr-2 text-gray-600"/> Bình luận ({commentsToDisplay.length})
                         </h4>
                         {loadingUsers && <p className="text-sm text-gray-500">Đang tải thông tin người dùng...</p>}
@@ -271,7 +271,7 @@ const CardPostDetail = ({ post, onClose, onDelete, onToggleVisibility, onDeleteC
                                             <div className="flex-grow bg-gray-100 rounded-xl px-3 py-2 relative">
                                                 <p className="font-semibold text-gray-800">{commentUser?.name || `User ID: ${comment.userID}`}</p>
                                                 <p className="text-gray-700 whitespace-pre-wrap">{comment.content || comment.text}</p>
-                                                <p className="text-xs text-gray-500 mt-1">{formatTime(comment.createdAt)}</p>
+                                                <p className="text-xs text-gray-500 mt-1">{formatTime(comment.creationDate)}</p>
 
                                                 {onDeleteComment && currentCommentId && (
                                                     <button
