@@ -118,8 +118,8 @@ const HomeRight = () => {
     setCurrentChat(null);
   };
 
-  const contactsUsers = onlineUsers.length > 0 
-  ? allUsers.filter(user => onlineUsers.includes(user.userID)) 
+  const contactsUsers = allUsers.length > 0 
+  ? allUsers.filter(user => currentUser.userID !== user.userID) 
   : [];
 
   return (
