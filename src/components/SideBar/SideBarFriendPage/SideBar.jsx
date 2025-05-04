@@ -29,7 +29,6 @@ const SideBar = ({ activeSection, setActiveSection }) => {
         <SideBarItem 
           icon={<PersonAddIcon />}
           title="Lời mời kết bạn"
-          count="25"
           active={activeSection === 'requests'}
           hasMore={true}
           onClick={() => setActiveSection('requests')}

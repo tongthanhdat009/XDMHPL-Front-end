@@ -103,9 +103,7 @@ const CommentItem = ({ comment, user, currentUser, updatePosts }) => {
 
     return (
         <Box sx={{ display: 'flex', gap: 1 }}>
-            <Avatar sx={{ width: 32, height: 32, fontSize: '0.8rem' }}>
-                {user.avatarURL || user.fullName?.[0]}
-            </Avatar>
+            <Avatar sx={{ width: 32, height: 32, fontSize: '0.8rem' }} src={user.avatarURL ? 'http://localhost:8080/uploads' + user.avatarURL : "http://localhost:8080/uploads/avatars/default.jpg"}/>
 
             <Box sx={{ flex: 1, minWidth: 0 }}>
                 {isEditing ? (

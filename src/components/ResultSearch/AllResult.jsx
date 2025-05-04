@@ -4,6 +4,7 @@ import PostCard from '../Post/PostCard';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import authService from '../LoginPage/LoginProcess/ValidateLogin';
 import SharepostCard from '../Post/SharepostCard';
+import { name } from 'dayjs/locale/vi';
 
 const AllResult = () => {
     const location = useLocation();
@@ -14,6 +15,7 @@ const AllResult = () => {
     const currentUser = authService.getCurrentUser();
     const [posts, setPosts] = useState([]); // Khai báo state cho posts
     const [allUsers, setAllUsers] = useState([]);
+
     useEffect(() => {
         const fetchDatas = async () => {
             try {
@@ -32,39 +34,39 @@ const AllResult = () => {
     const PostSearch = posts.filter((post) => post.content.toLowerCase().includes(queryValue.toLowerCase()));
     const UsersSearch = allUsers.filter(
         (user) =>
-            user.fullName.toLowerCase().includes(queryValue.toLowerCase()) 
+            user.fullName.toLowerCase().includes(queryValue.toLowerCase())
         // && user.userID !== currentUser.userID 
     );
     const updatePosts = async () => {
         try {
-          const result = await authService.getAllPostsFormDB();
-          if (result.success) {
-            setPosts(result.data); // Cập nhật danh sách bài viết
-          }
+            const result = await authService.getAllPostsFormDB();
+            if (result.success) {
+                setPosts(result.data); // Cập nhật danh sách bài viết
+            }
         } catch (error) {
-          console.error("Error updating posts:", error);
+            console.error("Error updating posts:", error);
         }
-      };
-    
-      const updateUsers = async () => {
+    };
+
+    const updateUsers = async () => {
         try {
-          const result = await authService.getAllUsersFormDB();
-          if (result.success) {
-            setAllUsers(result.data); // Cập nhật danh sách bài viết
-          }
+            const result = await authService.getAllUsersFormDB();
+            if (result.success) {
+                setAllUsers(result.data); // Cập nhật danh sách bài viết
+            }
         } catch (error) {
-          console.error("Error updating posts:", error);
+            console.error("Error updating posts:", error);
         }
-      };
-    
-      const updateCurentUser = async () => {
+    };
+
+    const updateCurentUser = async () => {
         try {
-          const currentUser=authService.getCurrentUser();
-          const result = await authService.getCurrentUserFormDB(currentUser.userID);
+            const currentUser = authService.getCurrentUser();
+            const result = await authService.getCurrentUserFormDB(currentUser.userID);
         } catch (error) {
-          console.error("Error updating posts:", error);
+            console.error("Error updating posts:", error);
         }
-      }
+    }
 
     return (
         <div className="flex-grow bg-gray-100 p-4 overflow-y-auto scrollbar ">
@@ -77,11 +79,11 @@ const AllResult = () => {
                                 const isSent = currentUser.friends.some(
                                     (friend) => friend.userID === person.userID && friend.status === "PENDING"
                                 );
-                            
+
                                 const isReceived = currentUser.friendOf.some(
                                     (friend) => friend.userID === person.userID && friend.status === "PENDING"
                                 );
-                            
+
                                 const isFriend = currentUser.friends.some(
                                     (friend) => friend.userID === person.userID && friend.status === "ACCEPTED"
                                 ) || currentUser.friendOf.some(
@@ -100,7 +102,7 @@ const AllResult = () => {
                                     <div key={index} className="flex items-center mb-4 justify-between">
                                         <div className="flex items-center space-x-3">
                                             <Avatar
-                                                src={`/api/placeholder/50/50?text=${person.fullName.charAt(0)}`}
+                                                src={person.avatarURL ? 'http://localhost:8080/uploads' + person.avatarURL : "http://localhost:8080/uploads/avatars/default.jpg"}
                                                 alt={person.fullName}
                                                 className="w-16 h-16"
                                             />
@@ -112,32 +114,12 @@ const AllResult = () => {
                                             </div>
                                         </div>
                                         {
-                                            isSent ? (
-                                                <>
-                                                    <button className="text-blue-600 font-semibold text-sm border border-blue-600 rounded-md px-3 py-1.5">
-                                                        Hủy lời mời
-                                                    </button>
-                                                </>
-                                            ) : isReceived ? (
-                                                <>
-                                                    <button className="text-blue-600 font-semibold text-sm border border-blue-600 rounded-md px-3 py-1.5">
-                                                        Xác nhận lời mời
-                                                    </button>
-                                                </>
-                                            ) : isFriend ? (
-                                                <>
-                                                    <button className="text-blue-600 font-semibold text-sm border border-blue-600 rounded-md px-3 py-1.5">
-                                                        Nhắn tin
-                                                    </button>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <button className="text-blue-600 font-semibold text-sm border border-blue-600 rounded-md px-3 py-1.5">
-                                                        Xem trang cá nhân
-                                                    </button>
-                                                </>
-                                            )
-                                        }                                      
+                                            <>
+                                                <button className="text-blue-600 font-semibold text-sm border border-blue-600 rounded-md px-3 py-1.5 cursor-pointer" onClick={() => navigate(`/profile/${person.userID}`)}>
+                                                    Xem trang cá nhân
+                                                </button>
+                                            </>
+                                        }
                                     </div>
                                 )
                             })}
@@ -179,7 +161,7 @@ const AllResult = () => {
                                 } else {
                                     // Truyền item và userPost vào PostCard
                                     return <PostCard key={item.postID} item={item} userPost={userPost} updatePosts={updatePosts} allUsers={allUsers} updateUsers={updateUsers}
-                                    updateCurentUser={updateCurentUser} />;
+                                        updateCurentUser={updateCurentUser} />;
                                 }
                             })}
                         </div>
@@ -221,74 +203,54 @@ const AllResult = () => {
                     <div className="bg-white rounded-lg p-2">
                         <h2 className="text-xl font-bold mb-4">Mọi người</h2>
                         {UsersSearch.map((person, index) => {
-                                const isSent = currentUser.friends.some(
-                                    (friend) => friend.userID === person.userID && friend.status === "PENDING"
-                                );
-                            
-                                const isReceived = currentUser.friendOf.some(
-                                    (friend) => friend.userID === person.userID && friend.status === "PENDING"
-                                );
-                            
-                                const isFriend = currentUser.friends.some(
-                                    (friend) => friend.userID === person.userID && friend.status === "ACCEPTED"
-                                ) || currentUser.friendOf.some(
-                                    (friend) => friend.userID === person.userID && friend.status === "ACCEPTED"
-                                );
+                            const isSent = currentUser.friends.some(
+                                (friend) => friend.userID === person.userID && friend.status === "PENDING"
+                            );
 
-                                const totalFriends = person.friends.filter(
-                                    (friend) => friend.status === "ACCEPTED"
-                                ).length + person.friendOf.filter(
-                                    (friend) => friend.status === "ACCEPTED"
-                                ).length;
-                                
-                                // console.log('isSent', isSent);
-                                // console.log('isReceived', isReceived);
-                                // console.log('isFriend', isFriend);
-                                return (
-                                    <div key={index} className="flex items-center mb-4 justify-between">
-                                        <div className="flex items-center space-x-3">
-                                            <Avatar
-                                                src={`/api/placeholder/50/50?text=${person.fullName.charAt(0)}`}
-                                                alt={person.fullName}
-                                                className="w-16 h-16"
-                                            />
-                                            <div>
-                                                <div className="flex items-center space-x-1">
-                                                    <p className="font-semibold">{person.fullName}</p>
-                                                </div>
-                                                <p className="text-sm text-gray-500">{totalFriends} người bạn</p>
+                            const isReceived = currentUser.friendOf.some(
+                                (friend) => friend.userID === person.userID && friend.status === "PENDING"
+                            );
+
+                            const isFriend = currentUser.friends.some(
+                                (friend) => friend.userID === person.userID && friend.status === "ACCEPTED"
+                            ) || currentUser.friendOf.some(
+                                (friend) => friend.userID === person.userID && friend.status === "ACCEPTED"
+                            );
+
+                            const totalFriends = person.friends.filter(
+                                (friend) => friend.status === "ACCEPTED"
+                            ).length + person.friendOf.filter(
+                                (friend) => friend.status === "ACCEPTED"
+                            ).length;
+
+                            // console.log('isSent', isSent);
+                            // console.log('isReceived', isReceived);
+                            // console.log('isFriend', isFriend);
+                            return (
+                                <div key={index} className="flex items-center mb-4 justify-between">
+                                    <div className="flex items-center space-x-3">
+                                        <Avatar
+                                            src={person.avatarURL ? 'http://localhost:8080/uploads' + person.avatarURL : "http://localhost:8080/uploads/avatars/default.jpg"}
+                                            alt={person.fullName}
+                                            className="w-16 h-16"
+                                        />
+                                        <div>
+                                            <div className="flex items-center space-x-1">
+                                                <p className="font-semibold">{person.fullName}</p>
                                             </div>
+                                            <p className="text-sm text-gray-500">{totalFriends} người bạn</p>
                                         </div>
-                                        {
-                                            isSent ? (
-                                                <>
-                                                    <button className="text-blue-600 font-semibold text-sm border border-blue-600 rounded-md px-3 py-1.5">
-                                                        Hủy lời mời
-                                                    </button>
-                                                </>
-                                            ) : isReceived ? (
-                                                <>
-                                                    <button className="text-blue-600 font-semibold text-sm border border-blue-600 rounded-md px-3 py-1.5">
-                                                        Xác nhận lời mời
-                                                    </button>
-                                                </>
-                                            ) : isFriend ? (
-                                                <>
-                                                    <button className="text-blue-600 font-semibold text-sm border border-blue-600 rounded-md px-3 py-1.5">
-                                                        Nhắn tin
-                                                    </button>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <button className="text-blue-600 font-semibold text-sm border border-blue-600 rounded-md px-3 py-1.5">
-                                                        Xem trang cá nhân
-                                                    </button>
-                                                </>
-                                            )
-                                        }                                      
                                     </div>
-                                )
-                            })}
+                                    {
+                                        <>
+                                            <button className="text-blue-600 font-semibold text-sm border border-blue-600 rounded-md px-3 py-1.5 cursor-pointer" onClick={() => navigate(`/profile/${person.userID}`)}>
+                                                Xem trang cá nhân
+                                            </button>
+                                        </>
+                                    }
+                                </div>
+                            )
+                        })}
                     </div>
                 )}
 

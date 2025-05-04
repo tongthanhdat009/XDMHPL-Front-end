@@ -64,7 +64,7 @@ const LikesModal = ({ isOpen, handleClose, likes }) => {
                   '&:hover': { bgcolor: 'action.hover' },
                 }}>
                   <ListItemAvatar>
-                    <Avatar src={like.avatarURL ? 'http://localhost:8080' + like.avatarURL : null}>
+                    <Avatar src={like.avatarURL ? 'http://localhost:8080/uploads' + like.avatarURL : "http://localhost:8080/uploads/avatars/default.jpg"}>
                       {!like.avatarURL && like.fullName ? like.fullName.charAt(0) : 'U'}
                     </Avatar>
                   </ListItemAvatar>

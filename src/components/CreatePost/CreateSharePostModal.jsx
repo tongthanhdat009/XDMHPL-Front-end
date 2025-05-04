@@ -57,9 +57,9 @@ const CreateSharePostModal = ({ open, handleClose, shareModalRef, item, userPost
                     </div>
 
                     <div className="flex items-center space-x-3 mb-4">
-                        <Avatar />
+                        <Avatar src={currentUser?.avatarURL ? 'http://localhost:8080/uploads' + currentUser?.avatarURL :"http://localhost:8080/uploads/avatars/default.jpg"} />
                         <div>
-                            <Typography className="font-semibold">{userPost.fullName}</Typography>
+                            <Typography className="font-semibold">{currentUser.fullName}</Typography>
                         </div>
                     </div>
 

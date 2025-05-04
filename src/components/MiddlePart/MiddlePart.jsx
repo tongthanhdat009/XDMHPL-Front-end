@@ -11,6 +11,7 @@ import SharepostCard from '../Post/SharepostCard';
 const MiddlePart = () => {
   const [openCreatePostModal, setOpenCreatePostModal] = React.useState(false);
   const handleCloseCreatePostModal = () => setOpenCreatePostModal(false);
+  const currentUser=authService.getCurrentUser();
   const handleOpenCreatePostModal = () => {
     setOpenCreatePostModal(true);
   }
@@ -56,7 +57,6 @@ const MiddlePart = () => {
 
   const updateCurentUser = async () => {
     try {
-      const currentUser=authService.getCurrentUser();
       const result = await authService.getCurrentUserFormDB(currentUser.userID);
     } catch (error) {
       console.error("Error updating posts:", error);
@@ -75,6 +75,7 @@ const MiddlePart = () => {
           <div className="flex items-center p-3 space-x-3">
             <Avatar
               className='w-10 h-10 rounded-full'
+              src={currentUser?.avatarURL ? 'http://localhost:8080/uploads' + currentUser?.avatarURL :"http://localhost:8080/uploads/avatars/default.jpg"}
             />
             <input
               onClick={handleOpenCreatePostModal}

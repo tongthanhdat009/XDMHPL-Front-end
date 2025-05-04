@@ -19,10 +19,15 @@ import CreateSharePostModal from '../CreatePost/CreateSharePostModal';
 import SharepostModal from './SharepostModal';
 import EditSharePostModal from '../EditPost/EditSharePostModal';
 import { useAuth } from '../LoginPage/LoginProcess/AuthProvider';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 // import PostModal from './PostModal';
 const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updatePosts, allUsers, updateUsers, updateCurentUser, commentID }) => {
     const currentUser = authService.getCurrentUser();
-
+    const totalFriends = userPost.friends.filter(
+        (friend) => friend.status === "ACCEPTED"
+    ).length + userPost.friendOf.filter(
+        (friend) => friend.status === "ACCEPTED"
+    ).length;
     dayjs.extend(relativeTime);
     dayjs.locale('vi');
     const totalShares = item.shareCount;
@@ -339,6 +344,7 @@ const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updateP
                     >
                         <Avatar
                             className="w-10 h-10 rounded-full cursor-pointer"
+                            src={userPost.avatarURL ? 'http://localhost:8080/uploads' + userPost.avatarURL : "http://localhost:8080/uploads/avatars/default.jpg"}
                         />
                     </div>
                     <div>
@@ -413,6 +419,7 @@ const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updateP
                                     <div onClick={() => navigate(`/profile/${originalPost.userID}`)}>
                                         <Avatar
                                             className="w-8 h-8 rounded-full cursor-pointer"
+                                            src={userOriginalPost.avatarURL ? 'http://localhost:8080/uploads' + userOriginalPost.avatarURL : "http://localhost:8080/uploads/avatars/default.jpg"}
                                         />
                                     </div>
                                     <div>
@@ -525,6 +532,7 @@ const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updateP
                             <div className="flex items-center space-x-3 mb-2">
                                 <Avatar
                                     className="w-12 h-12 rounded-full"
+                                    src={userPost.avatarURL ? 'http://localhost:8080/uploads' + userPost.avatarURL :"http://localhost:8080/uploads/avatars/default.jpg"}
                                 />
                                 <div>
                                     <div className="font-semibold">
@@ -538,16 +546,16 @@ const SharepostCard = ({ item, userPost, originalPost, userOriginalPost, updateP
                                     <PersonIcon fontSize="small" />
                                 </span>
                                 <span>
-                                    36 bạn chung bao gồm Song Anh và Phạm Thư
+                                    {totalFriends} người bạn
                                 </span>
                             </div>
 
                             <div className="text-sm text-gray-600 flex items-center mb-3">
                                 <span className="mr-2">
-                                    <HomeIcon fontSize="small" />
+                                    <AutoFixHighIcon fontSize="small" />
                                 </span>
                                 <span>
-                                    Sống tại Biên Hòa
+                                    {userPost.bio}
                                 </span>
                             </div>
 

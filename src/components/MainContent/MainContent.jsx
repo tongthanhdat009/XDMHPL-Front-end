@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import FriendCard from "../ResultFriend/FriendCard";
 import authService from '../LoginPage/LoginProcess/ValidateLogin';
+import { useAuth } from '../LoginPage/LoginProcess/AuthProvider';
 
 const MainContent = ({ activeSection, setActiveSection }) => {
+  const {stompClient } = useAuth();
 
   // State for loading more items
   const [requestsVisible, setRequestsVisible] = useState(14);
@@ -32,27 +34,33 @@ const MainContent = ({ activeSection, setActiveSection }) => {
     }
   }
   const sendFriendRequest = async (senderId, receiverId) => {
-    const reqData = {
+    const data = {
       senderId: senderId,
       receiverId: receiverId
-    };
+  };
 
-    try {
-      const result = await authService.sentFriendRequest(reqData)
+  try {
+      const result = await authService.sentFriendRequest({data, sendNotifyFriendRequestToServer})
       console.log(result)
       if (result.success) {
-        // Gọi callback để cập nhật danh sách bài viết
-        await updateCurentUser();
-        await updateUsers();
+          // Gọi callback để cập nhật danh sách bài viết
+          await updateCurentUser();
+          await updateUsers();
       } else {
-        // Xử lý lỗi
-        console.error("Error liking post:", result.error);
+          // Xử lý lỗi
+          console.error("Error liking post:", result.error);
       }
-    } catch (error) {
+  } catch (error) {
       console.error("Error in form submission:", error);
-    }
-
+  }
   };
+
+  const sendNotifyFriendRequestToServer = (newMessage) => {
+    if (stompClient && newMessage) {
+    console.log("📤 Sending message:", newMessage);
+    stompClient.send(`/app/friendRequest/notification`, {}, JSON.stringify(newMessage));
+    }
+};
 
   const deleteFriend = async (friendId) => {
     const inFriendOf = currentUser.friendOf.find(
@@ -122,14 +130,19 @@ const MainContent = ({ activeSection, setActiveSection }) => {
   // Mock data for the different lists
   const requestsData = currentUser.friendOf
     .filter((user) => user.status === "PENDING") // Lọc chỉ những user có status là "PENDING"
-    .map((user, i) => ({
+    .map((user, i) => {
+      const totalFriends = user.friends.filter(
+        (friend) => friend.status === "ACCEPTED"
+    ).length + user.friendOf.filter(
+        (friend) => friend.status === "ACCEPTED"
+    ).length;
+      return {
       id: user.userID,
       name: user.fullName,
-      mutualFriends: null,
-      followers: null,
-      isAvatar: user.avatarURL ? user.avatarURL : null,
+      mutualFriends: totalFriends + ' người bạn',
+      isAvatar: user.avatarURL ? 'http://localhost:8080/uploads' + user.avatarURL : "http://localhost:8080/uploads/avatars/default.jpg",
       type: "pending"
-    }));
+    }});
 
   const suggestionsData = allUsers
     .filter((user) => {
@@ -137,14 +150,20 @@ const MainContent = ({ activeSection, setActiveSection }) => {
       const isInFriendOf = currentUser.friendOf.some((friend) => friend.userID === user.userID);
       return !isInFriends && !isInFriendOf && user.userID !== currentUser.userID; // Loại bỏ chính user hiện tại
     })
-    .map((user, i) => ({
-      id: user.userID,
-      name: user.fullName,
-      mutualFriends: i % 4 === 0 ? `${i + 3} bạn chung` : null,
-      followers: i % 6 === 0 ? `Có ${i * 15 + 200} người theo dõi` : null,
-      isAvatar: user.avatarURL ? user.avatarURL : null,
-      type: "suggesting"
-    }));
+    .map((user, i) => {
+      const totalFriends = user.friends.filter(
+        (friend) => friend.status === "ACCEPTED"
+    ).length + user.friendOf.filter(
+        (friend) => friend.status === "ACCEPTED"
+    ).length;
+      return {
+        id: user.userID,
+        name: user.fullName,
+        mutualFriends: totalFriends + ' người bạn',
+        isAvatar: user.avatarURL ? 'http://localhost:8080/uploads' + user.avatarURL : "http://localhost:8080/uploads/avatars/default.jpg",
+        type: "suggesting"
+      }
+});
 
   const allFriendsData = allUsers
     .filter((user) => {
@@ -152,15 +171,21 @@ const MainContent = ({ activeSection, setActiveSection }) => {
       const isInFriendOf = currentUser.friendOf.some((friend) => friend.userID === user.userID && friend.status === "ACCEPTED");
       return (isInFriends || isInFriendOf)
     })
-    .map((user, i) => ({
+    .map((user, i) => {
+      const totalFriends = user.friends.filter(
+        (friend) => friend.status === "ACCEPTED"
+    ).length + user.friendOf.filter(
+        (friend) => friend.status === "ACCEPTED"
+    ).length;
+      return {
       id: user.userID,
       name: user.fullName,
-      mutualFriends: i % 4 === 0 ? `${i + 3} bạn chung` : null,
-      followers: i % 6 === 0 ? `Có ${i * 15 + 200} người theo dõi` : null,
-      image: user.avatarURL ? user.avatarURL : null,
-      isAvatar: i % 13 === 0,
+      mutualFriends: totalFriends + ' người bạn',
+      image: user.avatarURL ? 'http://localhost:8080/uploads' + user.avatarURL : "http://localhost:8080/uploads/avatars/default.jpg",
+      isAvatar: user.avatarURL ? 'http://localhost:8080/uploads' + user.avatarURL : "http://localhost:8080/uploads/avatars/default.jpg",
       type: "suggesting"
-    }));
+    }
+  });
 
   // Handler functions
   const handleApplyFriend = () => {
@@ -206,9 +231,9 @@ const MainContent = ({ activeSection, setActiveSection }) => {
               return (
                 <FriendCard
                   key={friend.id}
+                  id={friend.id}
                   name={friend.name}
                   mutualFriends={friend.mutualFriends}
-                  followers={friend.followers}
                   isAvatar={friend.isAvatar}
                   type={friend.type}
                   onClick1={() => acceptFriend(friend.id, currentUser.userID)}
@@ -250,10 +275,10 @@ const MainContent = ({ activeSection, setActiveSection }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2">
             {suggestionsData.slice(0, suggestionsVisible).map((friend) => (
               <FriendCard
-                key={friend.id}
+                key={friend.id} 
+                id={friend.id}
                 name={friend.name}
                 mutualFriends={friend.mutualFriends}
-                followers={friend.followers}
                 isAvatar={friend.isAvatar}
                 type={friend.type}
                 onClick1={() => sendFriendRequest(currentUser.userID, friend.id)}
@@ -286,10 +311,10 @@ const MainContent = ({ activeSection, setActiveSection }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2">
             {allFriendsData.slice(0, allFriendsVisible).map((friend) => (
               <FriendCard
-                key={friend.id}
+                key={friend.id} 
+                id={friend.id}
                 name={friend.name}
                 mutualFriends={friend.mutualFriends}
-                followers={friend.followers}
                 isAvatar={friend.isAvatar}
                 type="friend"
                 onClick1={() => console.log("Nhắn tin")}

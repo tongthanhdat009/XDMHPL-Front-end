@@ -166,11 +166,9 @@ const PostModal = ({ isOpen, handleClose, post, userPost, updatePosts, allUsers,
         >
           {/* Post header */}
           <Box sx={{ display: 'flex', alignItems: 'center', p: 2 }}>
-            <Avatar sx={{ mr: 1 }}>
-              {userPost.avatarURL}
-            </Avatar>
+            <Avatar sx={{ mr: 1 }} src={userPost.avatarURL ? 'http://localhost:8080/uploads' + userPost.avatarURL : "http://localhost:8080/uploads/avatars/default.jpg"}  />
             <Box>
-              <Typography variant="subtitle2">
+              <Typography variant="subtitle2" fontWeight={'bold'}>
                 {userPost.fullName}
               </Typography>
               <Typography variant="caption" color="text.secondary">
@@ -364,9 +362,7 @@ const PostModal = ({ isOpen, handleClose, post, userPost, updatePosts, allUsers,
           zIndex: 1,
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Avatar sx={{ width: 32, height: 32, fontSize: '0.8rem' }}>
-              {/* {auth.user.firstName?.[0]} */}
-            </Avatar>
+            <Avatar sx={{ width: 32, height: 32, fontSize: '0.8rem' }} src={currentUser.avatarURL ? 'http://localhost:8080/uploads' + currentUser.avatarURL : "http://localhost:8080/uploads/avatars/default.jpg"}/>
             <TextField
               fullWidth
               size="small"

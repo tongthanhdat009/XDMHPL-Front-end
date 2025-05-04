@@ -152,7 +152,7 @@ const SharepostModal = ({ isOpen, handleClose, post, userPost, originalPost, use
                         id="post-modal-title"
                         variant="h6"
                         component="h2"
-                        sx={{ fontWeight: 'medium', fontSize: '1rem' }}
+                        sx={{ fontWeight: 'bold', fontSize: '1rem' }}
                     >
                         Bài viết của {userPost?.fullName}
                     </Typography>
@@ -193,12 +193,13 @@ const SharepostModal = ({ isOpen, handleClose, post, userPost, originalPost, use
                             <Avatar
                                 sx={{ width: 40, height: 40, mr: 1.5 }}
                                 alt={userPost?.fullName}
+                                src={userPost?.avatarURL ? 'http://localhost:8080/uploads' + userPost?.avatarURL :"http://localhost:8080/uploads/avatars/default.jpg"}
                             />
                             <Box>
                                 <Typography
                                     variant="subtitle1"
                                     sx={{
-                                        fontWeight: 500,
+                                        fontWeight: 'bold',
                                         fontSize: '0.9rem',
                                         '&:hover': { textDecoration: 'underline' }
                                     }}
@@ -262,12 +263,13 @@ const SharepostModal = ({ isOpen, handleClose, post, userPost, originalPost, use
                                     <Avatar
                                         sx={{ width: 32, height: 32, mr: 1.5 }}
                                         alt={userOriginalPost?.fullName}
+                                        src={userOriginalPost?.avatarURL ? 'http://localhost:8080/uploads' + userOriginalPost?.avatarURL :"http://localhost:8080/uploads/avatars/default.jpg"}
                                     />
                                     <Box>
                                         <Typography
                                             variant="subtitle2"
                                             sx={{
-                                                fontWeight: 500,
+                                                fontWeight: 'bold',
                                                 fontSize: '0.85rem',
                                                 '&:hover': { textDecoration: 'underline' }
                                             }}
@@ -532,9 +534,10 @@ const SharepostModal = ({ isOpen, handleClose, post, userPost, originalPost, use
                                 height: 36,
                                 fontSize: '0.9rem'
                             }}
-                        >
-                            {currentUser.fullName?.[0]}
-                        </Avatar>
+
+                            src={currentUser.avatarURL ? 'http://localhost:8080/uploads' + currentUser.avatarURL : "http://localhost:8080/uploads/avatars/default.jpg"}
+                        />
+
                         <TextField
                             fullWidth
                             size="small"
