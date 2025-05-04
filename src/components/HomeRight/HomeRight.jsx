@@ -4,13 +4,18 @@ import MoreHorizRoundedIcon from '@mui/icons-material/MoreHorizRounded';
 import Contact from './Contact';
 import ChatBox from './ChatBox.';
 import authService from '../LoginPage/LoginProcess/ValidateLogin';
+import { useAuth } from '../LoginPage/LoginProcess/AuthProvider';
+import { all } from 'axios';
 
 const HomeRight = () => {
   const [currentChat, setCurrentChat] = useState(null);
   const [allUsers, setAllUsers] = useState([]);
   const [chatboxes, setChatboxes] = useState([]);
   const currentUser = authService.getCurrentUser();
+  const { onlineUsers } = useAuth();
 
+  console.log(onlineUsers);
+  
   // Fetch users và chatboxes khi component được mount
   useEffect(() => {
     const fetchData = async () => {
@@ -113,15 +118,9 @@ const HomeRight = () => {
     setCurrentChat(null);
   };
 
-  // Lọc danh sách bạn bè đã kết nối
-  const acceptedFriends = allUsers.length > 0 ? [
-    ...currentUser.friends
-        .filter((friend) => friend.status === "ACCEPTED")
-        .map((friend) => allUsers.find((user) => user.userID === friend.userID)),
-    ...currentUser.friendOf
-        .filter((friend) => friend.status === "ACCEPTED")
-        .map((friend) => allUsers.find((user) => user.userID === friend.userID))
-  ].filter(Boolean) : [];
+  const contactsUsers = onlineUsers.length > 0 
+  ? allUsers.filter(user => onlineUsers.includes(user.userID)) 
+  : [];
 
   return (
     <div className='hidden lg:flex flex-col w-60 p-2 mt-5'>
@@ -133,7 +132,7 @@ const HomeRight = () => {
           </div>
       </div>
 
-      {acceptedFriends.map((contact) => (
+      {contactsUsers.map((contact) => (
         <Contact 
           key={contact.userID} 
           contact={contact}

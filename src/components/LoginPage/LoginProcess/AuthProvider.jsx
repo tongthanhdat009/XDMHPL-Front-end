@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }) => {
     }
   });
   const [subscriptions, setSubscriptions] = useState({});
-  
+
   // Tự động kết nối/ngắt kết nối khi user thay đổi
   useEffect(() => {
     if (user) {
@@ -182,11 +182,7 @@ export const AuthProvider = ({ children }) => {
         }
       }
 
-      // Đăng ký nhận cập nhật trạng thái người dùng
-      console.log(`Đăng ký nhận thông báo tại: /topic/status/${user.username}`);
-      
       const statusSub = client.subscribe(`/topic/status/${user.username}`, (message) => {
-        console.log("📥 Đã nhận tin nhắn trạng thái:", message);
         try {
           const response = JSON.parse(message.body);
           console.log("📥 Nhận cập nhật trạng thái:", response);
@@ -194,12 +190,12 @@ export const AuthProvider = ({ children }) => {
           // Xử lý thông báo trạng thái người dùng
           if (response.userId && response.online !== undefined) {
             setOnlineUsers(prev => {
-              const newSet = new Set(Array.from(prev));
+              const newSet = new Set(prev); // Tạo bản sao của Set hiện tại
 
               if (response.online) {
-                newSet.add(response.userId);
+                newSet.add(response.userId); // Chỉ thêm userId
               } else {
-                newSet.delete(response.userId);
+                newSet.delete(response.userId); // Chỉ xóa userId
               }
 
               return newSet;
@@ -207,9 +203,12 @@ export const AuthProvider = ({ children }) => {
           }
 
           // Xử lý danh sách người dùng online
-          if (response.onlineFriends) {
-            setOnlineUsers(new Set(response.onlineFriends));
-            console.log("Đã cập nhật danh sách người dùng online:", response.onlineFriends);
+          if (response.onlineUsers && Array.isArray(response.onlineUsers)) {
+            const onlineUserIds = response.onlineUsers
+              .filter(user => user.online) // Chỉ lấy user online
+              .map(user => user.userId); // Lấy danh sách userId
+            setOnlineUsers(new Set(onlineUserIds));
+            console.log("Đã cập nhật danh sách người dùng online:", onlineUserIds);
           }
         } catch (e) {
           console.error("Lỗi khi xử lý trạng thái:", e);
@@ -239,13 +238,11 @@ export const AuthProvider = ({ children }) => {
         }
       }
 
-      console.log(`Đăng ký nhận thông báo tại: /topic/notifications/${user.username}`);
-      
       const notifySub = client.subscribe(`/topic/notifications/${user.username}`, (message) => {
         console.log("📥 Đã nhận thông báo:", message);
         try {
           const response = JSON.parse(message.body);
-          
+
           // Kiểm tra xem response có phải là mảng không
           if (Array.isArray(response)) {
             // Nếu là mảng (phản hồi từ requestNotificationsList), thay thế toàn bộ
@@ -371,14 +368,14 @@ export const AuthProvider = ({ children }) => {
 
   // Đánh dấu thông báo đã đọc
   const markNotificationAsRead = (notificationId) => {
-    setNotify(prev => 
-      prev.map(notification => 
-        notification.notificationID === notificationId 
-          ? { ...notification, isReadFlag: true } 
+    setNotify(prev =>
+      prev.map(notification =>
+        notification.notificationID === notificationId
+          ? { ...notification, isReadFlag: true }
           : notification
       )
     );
-    
+
     // Gửi cập nhật tới server nếu cần
     if (stompClient && connected && user) {
       const payload = { UserID: user.userID, notificationID: notificationId };
