@@ -19,6 +19,25 @@ const ProfileHeader = ({ selectedTab, setSelectedTab }) => {
     const [previewCoverImage, setPreviewCoverImage] = useState(null); // Ảnh preview bìa
     const currentUser = authService.getCurrentUser();
     const [allUsers, setAllUsers] = useState([]);
+
+    const updateUsers = async () => {
+        try {
+          const result = await authService.getAllUsersFormDB();
+          if (result.success) {
+            setAllUsers(result.data); // Cập nhật danh sách bài viết
+          }
+        } catch (error) {
+          console.error("Error updating posts:", error);
+        }
+      };
+    
+    const updateCurentUser = async () => {
+        try {
+          const result = await authService.getCurrentUserFormDB(currentUser.userID);
+        } catch (error) {
+          console.error("Error updating posts:", error);
+        }
+    }
     
     // Sửa hàm updateCurrentUser
     const updateCurrentUser = async () => {
@@ -260,8 +279,9 @@ const ProfileHeader = ({ selectedTab, setSelectedTab }) => {
                 coverPhotoUrl: response.data // Cập nhật ảnh bìa mới
             }));
             setIsCoverModalOpen(false); // Đóng modal sau khi lưu ảnh
-        }).then((response) => {
-            window.location.reload(); // Reload trang để cập nhật avatar mới
+        }).then( async(response) => {
+            await updateCurentUser();
+            await updateUsers();
         })
         .catch((err) => {
             console.error("Lỗi khi lưu ảnh bìa:", err);
@@ -302,11 +322,12 @@ const ProfileHeader = ({ selectedTab, setSelectedTab }) => {
             // Cập nhật avatar sau khi lưu thành công
             setUserData((prevData) => ({
                 ...prevData,
-                avatar: response.data.avatar // Cập nhật avatar mới từ response
+                avatarURL: response.data // Cập nhật avatar mới từ response
             }));
             setIsModalOpen(false); // Đóng modal sau khi lưu
-        }).then((response) => {
-            window.location.reload(); // Reload trang để cập nhật avatar mới
+        }).then(async (response) => {
+            await updateCurentUser();
+            await updateUsers();
         })
         .catch((err) => {
             console.error("Lỗi khi lưu avatar:", err);
