@@ -282,7 +282,7 @@ const Header = () => {
 
       {/* Right */}
       <div className="flex items-center space-x-4">
-        <HomeIcon sx={{ width: 40, height: 40 }} className="icon cursor-pointer p-2 hover:bg-gray-200 rounded-full" />
+        <HomeIcon sx={{ width: 40, height: 40 }} onClick={() => navigate("/")} className="icon cursor-pointer p-2 hover:bg-gray-200 rounded-full" />
         <ChatBubbleIcon
           sx={{ width: 40, height: 40 }}
           className="icon cursor-pointer p-2 hover:bg-gray-200 rounded-full"
