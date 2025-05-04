@@ -10,6 +10,8 @@ import authService from "./components/LoginPage/LoginProcess/ValidateLogin.jsx";
 import FriendPage from "./pages/FriendPage/FriendPage.jsx";
 import ProfilePage from "./pages/ProfilePage/ProfilePage.jsx";
 import AdminLogin from "./pages/LoginPage/Admin/AdminLogin.jsx";
+import ForgotPasswordForm from "./components/ForgotPassword/ForgotPasswordForm.jsx";
+import ResetPasswordForm from "./components/ResetPassword/ResetPasswordForm.jsx";
 // PrivateRoute component to protect routes
 const PrivateRoute = ({ children }) => {
   const location = useLocation();
@@ -35,6 +37,8 @@ function App() {
       <Route path="/login/*" element={<UserLogin />} />
       <Route path="/signin/*" element={<UserSignin />} />
       <Route path="/admin/login/*" element={<AdminLogin />} />
+      <Route path="/forgot-password" element={<ForgotPasswordForm />} />
+      <Route path="/reset-password/:token" element={<ResetPasswordForm />} />
       <Route 
         path="/admin/*"
         element={
