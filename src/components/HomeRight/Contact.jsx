@@ -9,7 +9,7 @@ const Contact = ({ contact, onClick }) => {
     <div className='flex items-center space-x-3 mb-2 relative hover:bg-gray-200 cursor-pointer p-2 rounded-xl' onClick={onClick}>
       <Avatar
         className='rounded-full'
-        src={contact.avatar || `/api/placeholder/50/50?text=${contact.fullName.charAt(0)}`}
+        src={contact.avatarURL ? 'http://localhost:8080/uploads' + contact.avatarURL :"http://localhost:8080/uploads/avatars/default.jpg"}
         width={50}
         height={50}
         alt={contact.fullName}

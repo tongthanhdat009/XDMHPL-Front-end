@@ -5,9 +5,11 @@ const ChatBox = ({ contact, onClose, chatBoxID }) => {
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState([]);
     const messagesEndRef = useRef(null);
-    const { stompClient } = useAuth();
+    const { stompClient, onlineUsers } = useAuth();
     const currentUser = authService.getCurrentUser();
 
+    const isOnline = onlineUsers.includes(contact.userID);
+    console.log(contact);
     // Fetch messages khi chatbox được mở
     useEffect(() => {
       const fetchMessages = async () => {
@@ -148,14 +150,14 @@ const ChatBox = ({ contact, onClose, chatBoxID }) => {
             <div className="flex justify-between items-center p-3 bg-gray-100 rounded-t-lg">
                 <div className="flex items-center space-x-2">
                     <img
-                        src={contact.avatar || `/api/placeholder/50/50?text=${contact.fullName.charAt(0)}`}
+                        src={contact.avatarURL ? 'http://localhost:8080/uploads' + contact.avatarURL :"http://localhost:8080/uploads/avatars/default.jpg"}
                         alt={contact.fullName}
                         className="w-10 h-10 rounded-full"
                     />
                     <div>
                         <div className="font-semibold">{contact.fullName}</div>
                         <div className="text-xs text-green-500">
-                          {contact.isOnline ? 'Đang hoạt động' : 'Không hoạt động'}
+                          {isOnline ? 'Đang hoạt động' : 'Không hoạt động'}
                         </div>
                     </div>
                 </div>
@@ -172,7 +174,7 @@ const ChatBox = ({ contact, onClose, chatBoxID }) => {
                     <div className='relative'>
                         <img 
                           className='rounded-full w-20 h-20 object-cover' 
-                          src={contact.avatar || `/api/placeholder/50/50?text=${contact.fullName.charAt(0)}`}
+                          src={contact.avatarURL ? 'http://localhost:8080/uploads' + contact.avatarURL :"http://localhost:8080/uploads/avatars/default.jpg"}
                           alt={contact.fullName} 
                         />
                         {contact.isOnline && (
