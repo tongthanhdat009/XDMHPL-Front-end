@@ -17,7 +17,7 @@ const RightMenu = ({ selectedChat, onUpdateChat, currentUserId }) => {
   const fetchChatDetails = async () => {
     try {
       const response = await axios.get(
-        `http://localhost:8080/chat/info/${selectedChat.chatBoxID}/${currentUserId}`
+        `http://localhost:8080/chatbox/info/${selectedChat.chatBoxID}/${currentUserId}`
       );
       const chatData = response.data;
       setBoxChatName(chatData.chatBoxName || "Nhóm đã bị khóa");
@@ -32,7 +32,7 @@ const RightMenu = ({ selectedChat, onUpdateChat, currentUserId }) => {
   const fetchChatImages = async () => {
     try {
       const response = await axios.get(
-        `http://localhost:8080/chat/images/${selectedChat.chatBoxID}`
+        `http://localhost:8080/chatbox/images/${selectedChat.chatBoxID}`
       );
   
       console.log("Dữ liệu ảnh trả về:", response.data); // Xem dữ liệu gốc
@@ -81,7 +81,7 @@ const RightMenu = ({ selectedChat, onUpdateChat, currentUserId }) => {
 
     try {
       const response = await axios.post(
-        `http://localhost:8080/chat/update/${selectedChat.chatBoxID}`,
+        `http://localhost:8080/chatbox/update/${selectedChat.chatBoxID}`,
         new URLSearchParams({
           name: boxChatName,
           imageUrl: boxChatImage,

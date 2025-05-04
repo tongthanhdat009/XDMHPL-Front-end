@@ -10,12 +10,12 @@ const ChatList = ({ onSelectChat }) => {
         const storedUser = localStorage.getItem("currentUser");
         const user = storedUser ? JSON.parse(storedUser) : null;
   
-        if (!user || !user.userId) {
+        if (!user || !user.userID) {
           console.warn("Không tìm thấy userId trong localStorage");
           return;
         }
   
-        const response = await axios.get(`http://localhost:8080/chat/sidebar/${user.userId}`);
+        const response = await axios.get(`http://localhost:8080/chatbox/sidebar/${user.userID}`);
         setChats(response.data);
       } catch (error) {
         console.error("Lỗi khi lấy danh sách chat:", error);

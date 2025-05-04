@@ -14,7 +14,7 @@ const Messenger = () => {
   // Hàm lấy danh sách chat
   const fetchChats = async () => {
     try {
-      const res = await axios.get(`http://localhost:8080/chat/sidebar/${currentUserId}`);
+      const res = await axios.get(`http://localhost:8080/chatbox/sidebar/${currentUserId}`);
       setChats(res.data);
     } catch (error) {
       console.error("Lỗi khi lấy danh sách chat:", error);
