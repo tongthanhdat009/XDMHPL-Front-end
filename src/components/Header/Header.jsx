@@ -309,7 +309,12 @@ const Header = () => {
             >
               <div className="flex justify-between items-center p-4">
                 <h2 className="text-2xl font-bold">Thông báo</h2>
-                <div className="text-gray-600 cursor-pointer">...</div>
+                <button
+                  onClick={() => navigate("/notification")}
+                  className="text-sm text-blue-500 hover:underline cursor-pointer"
+                >
+                  Xem tất cả
+                </button>
               </div>
 
               <div className="flex space-x-2 px-4 pb-2">

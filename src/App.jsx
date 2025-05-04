@@ -13,6 +13,7 @@ import AdminLogin from "./pages/LoginPage/Admin/AdminLogin.jsx";
 import PostDetailPage from "./pages/PostDetailPage/PostDetailPage.jsx";
 import ForgotPasswordForm from "./components/ForgotPassword/ForgotPasswordForm.jsx";
 import ResetPasswordForm from "./components/ResetPassword/ResetPasswordForm.jsx";
+import NotificationPage from "./pages/NotificationPage/NotificationPage.jsx";
 // PrivateRoute component to protect routes
 const PrivateRoute = ({ children }) => {
   const location = useLocation();
@@ -100,6 +101,16 @@ function App() {
         element={
           <PrivateRoute>
             <PostDetailPage />
+          </PrivateRoute>
+        }
+      />
+
+
+      <Route
+        path="/notification"
+        element={
+          <PrivateRoute>
+            <NotificationPage />
           </PrivateRoute>
         }
       />
