@@ -254,9 +254,10 @@ const ProfileHeader = ({ selectedTab, setSelectedTab }) => {
         })
         .then((response) => {
             // Cập nhật ảnh bìa mới từ response
+            console.log(response.data);
             setUserData((prevData) => ({
                 ...prevData,
-                coverPhotoURL: response.data.coverPhotoURL // Cập nhật ảnh bìa mới
+                coverPhotoUrl: response.data // Cập nhật ảnh bìa mới
             }));
             setIsCoverModalOpen(false); // Đóng modal sau khi lưu ảnh
         }).then((response) => {
