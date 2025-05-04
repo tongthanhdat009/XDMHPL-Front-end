@@ -20,15 +20,16 @@ const AdminSlideMenu = ({ isOpen, setIsOpen, navigate }) => {
     return (
         <motion.div
             animate={{ width: isOpen ? "250px" : "60px" }}
-            // Thêm sticky top-0 và đảm bảo z-index đủ cao (ví dụ z-20)
-            className="bg-gray-200 h-screen p-4 overflow-hidden relative transition-all duration-300 flex flex-col justify-between
-                      sm:w-[200px] md:w-[250px] sticky top-0 z-20" // Thêm sticky top-0 z-20
+            // Thay đổi sticky thành fixed
+            className="bg-gray-200 h-auto p-4 overflow-hidden relative transition-all duration-300 flex flex-col justify-between
+                      sm:w-[200px] md:w-[250px] fixed top-0 left-0 z-20" // Thay sticky thành fixed, thêm left-0
         >
-            <div className='h-screen'> {/* Bao bọc phần trên */}
+            {/* Phần còn lại của component giữ nguyên */}
+            <div className='flex-grow size-auto'>
                 {/* Header Sidebar */}
                 <div className="flex justify-between items-center mb-4 relative">
                     {isOpen && (
-                        <p className="text-lg md:text-2xl font-bold flex items-center gap-2 cursor-pointer" onClick={()=>navigate("/admin")}> {/* Thêm cursor-pointer và onClick */}
+                        <p className="text-lg md:text-2xl font-bold flex items-center gap-2 cursor-pointer" onClick={()=>navigate("/admin")}>
                             <FaFacebook className="text-blue-600" /> Admin Page
                         </p>
                     )}
@@ -37,7 +38,7 @@ const AdminSlideMenu = ({ isOpen, setIsOpen, navigate }) => {
                     <button
                         onClick={() => setIsOpen(!isOpen)}
                         className={`p-1.5 text-sm bg-blue-500 text-white rounded absolute z-10 transition-all duration-300 focus:outline-none
-                                    ${isOpen ? "right-[-15px] top-1/2 -translate-y-1/2" : "right-2 top-2"}`} // Điều chỉnh vị trí nút
+                                    ${isOpen ? "right-[-15px] top-1/2 -translate-y-1/2" : "right-2 top-2"}`}
                     >
                         {isOpen ? "←" : "→"}
                     </button>
@@ -45,7 +46,7 @@ const AdminSlideMenu = ({ isOpen, setIsOpen, navigate }) => {
 
                 {/* Sidebar Menu */}
                 {isOpen && (
-                    <ul className="space-y-2 mt-8"> {/* Thêm mt-8 */}
+                    <ul className="space-y-2 mt-8">
                         <li
                             className="p-2 bg-gray-300 rounded cursor-pointer hover:bg-gray-400 flex items-center gap-2 transition-colors"
                             onClick={() => navigate("/admin/user")}
@@ -63,24 +64,22 @@ const AdminSlideMenu = ({ isOpen, setIsOpen, navigate }) => {
                 )}
             </div>
 
-            {/* Nút Đăng xuất (luôn hiển thị hoặc chỉ khi isOpen) */}
-            {isOpen && ( // Chỉ hiển thị nút Đăng xuất khi menu mở
-                <div className="mt-auto"> {/* Đẩy nút xuống dưới cùng */}
+            {/* Nút Đăng xuất */}
+            {isOpen ? (
+                <div className="mt-auto">
                     <button
-                        className="w-full p-2 bg-red-500 text-white rounded cursor-pointer hover:bg-red-600 flex items-center justify-center gap-2 transition-colors" // Thêm justify-center
-                        onClick={handleLogout} // Gọi hàm handleLogout khi click
+                        className="w-full p-2 bg-red-500 text-white rounded cursor-pointer hover:bg-red-600 flex items-center justify-center gap-2 transition-colors"
+                        onClick={handleLogout}
                     >
                         <FaSignOutAlt /> Đăng xuất
                     </button>
                 </div>
-            )}
-             {/* Hoặc nếu muốn icon đăng xuất hiển thị cả khi đóng */}
-             {!isOpen && (
+            ) : (
                  <div className="mt-auto flex justify-center">
                      <button
                          className="p-2 text-red-500 hover:text-red-700"
                          onClick={handleLogout}
-                         title="Đăng xuất" // Tooltip khi hover
+                         title="Đăng xuất"
                      >
                          <FaSignOutAlt size={24} />
                      </button>
