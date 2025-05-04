@@ -15,6 +15,8 @@ import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
 import PersonIcon from '@mui/icons-material/Person';
 const Header = () => {
   const { notifications, markNotificationAsRead} = useAuth();
+  const currentUser = authService.getCurrentUser();
+
   console.log(notifications);
   // Hàm để tính thời gian tương đối
   const getRelativeTime = (dateString) => {
@@ -150,6 +152,10 @@ const Header = () => {
     setAnchorEl(null);
 
   };
+
+  const handleProfile = () => {
+    navigate(`/profile/${currentUser.userID}`);
+  }
 
   const handleLogout = () => {
     authService.logout();
@@ -490,8 +496,7 @@ const Header = () => {
             'aria-labelledby': 'basic-button',
           }}
         >
-          <MenuItem onClick={handleClose}>Profile</MenuItem>
-          <MenuItem onClick={handleClose}>My account</MenuItem>
+          <MenuItem onClick={handleProfile}>Profile</MenuItem>
           <MenuItem onClick={handleLogout}>Logout</MenuItem>
         </Menu>
       </div>
