@@ -84,21 +84,51 @@ const HomeRight = () => {
     });
   };
 
+  // const handleOpenChat = async (contact) => {
+  //   // Nếu đã mở chat với người này rồi, không làm gì cả
+  //   if (currentChat && currentChat.userID === contact.userID) {
+  //     return;
+  //   }
+
+  //   // Tìm chatbox hiện có giữa currentUser và contact
+  //   const existingChatbox = findExistingChatbox(currentUser.userID, contact.userID);
+    
+  //   if (existingChatbox) {
+  //     // Nếu đã có chatbox, mở nó lên
+  //     setCurrentChat({
+  //       ...contact,
+  //       chatBoxID: existingChatbox.chatBoxID
+  //     });
+  //   } else {
+  //     // Nếu chưa có chatbox, tạo mới
+  //     const newChatbox = await createNewChatbox(currentUser.userID, contact.userID);
+      
+  //     if (newChatbox) {
+  //       // Cập nhật danh sách chatboxes
+  //       setChatboxes([...chatboxes, newChatbox]);
+        
+  //       // Mở chatbox mới
+  //       setCurrentChat({
+  //         ...contact,
+  //         chatBoxID: newChatbox.chatBoxID
+  //       });
+  //     }
+  //   }
+  // };
+
+
   const handleOpenChat = async (contact) => {
     // Nếu đã mở chat với người này rồi, không làm gì cả
-    if (currentChat && currentChat.userID === contact.userID) {
-      return;
-    }
+    // if (currentChat && currentChat.userID === contact.userID) {
+    //   return;
+    // }
 
     // Tìm chatbox hiện có giữa currentUser và contact
     const existingChatbox = findExistingChatbox(currentUser.userID, contact.userID);
     
     if (existingChatbox) {
       // Nếu đã có chatbox, mở nó lên
-      setCurrentChat({
-        ...contact,
-        chatBoxID: existingChatbox.chatBoxID
-      });
+      naviagte(`/messages`);
     } else {
       // Nếu chưa có chatbox, tạo mới
       const newChatbox = await createNewChatbox(currentUser.userID, contact.userID);
@@ -106,19 +136,20 @@ const HomeRight = () => {
       if (newChatbox) {
         // Cập nhật danh sách chatboxes
         setChatboxes([...chatboxes, newChatbox]);
+        naviagte(`/messages`);
         
         // Mở chatbox mới
-        setCurrentChat({
-          ...contact,
-          chatBoxID: newChatbox.chatBoxID
-        });
+        // setCurrentChat({
+        //   ...contact,
+        //   chatBoxID: newChatbox.chatBoxID
+        // });
       }
     }
   };
 
-  const handleCloseChat = () => {
-    setCurrentChat(null);
-  };
+  // const handleCloseChat = () => {
+  //   setCurrentChat(null);
+  // };
 
   const contactsUsers = allUsers.length > 0 
   ? allUsers.filter(user => currentUser.userID !== user.userID) 
@@ -138,8 +169,8 @@ const HomeRight = () => {
         <Contact 
           key={contact.userID} 
           contact={contact}
-          // onClick={() => handleOpenChat(contact)}
-          onClick={() => naviagte(`/messages`)}
+          onClick={() => handleOpenChat(contact)}
+          // onClick={() => naviagte(`/messages`)}
         />
       ))}
 
