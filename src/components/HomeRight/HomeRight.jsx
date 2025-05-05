@@ -7,6 +7,7 @@ import authService from '../LoginPage/LoginProcess/ValidateLogin';
 import { useAuth } from '../LoginPage/LoginProcess/AuthProvider';
 import { all } from 'axios';
 import { useNavigate } from 'react-router-dom';
+import ChatBotBox from './ChatBotBox';
 
 const HomeRight = () => {
   const [currentChat, setCurrentChat] = useState(null);
@@ -15,9 +16,16 @@ const HomeRight = () => {
   const currentUser = authService.getCurrentUser();
   const { onlineUsers } = useAuth();
 
-  const naviagte=useNavigate();
-  console.log(onlineUsers);
+  const navigate = useNavigate();
   
+  // Thêm chatbot vào danh sách contacts
+  const chatbotContact = {
+    userID: 'chatbot',
+    fullName: 'Chat Bot',
+    avatarURL: '/avatars/chatbot.jpg',
+    isBot: true // Thêm flag để nhận biết đây là bot
+  };
+
   // Fetch users và chatboxes khi component được mount
   useEffect(() => {
     const fetchData = async () => {
@@ -52,6 +60,17 @@ const HomeRight = () => {
 
   // Hàm tạo chatbox mới giữa hai người dùng
   const createNewChatbox = async (userId1, userId2) => {
+    // Nếu là chatbot, không cần tạo chatbox thực sự trong DB
+    if (userId2 === 'chatbot') {
+      return {
+        chatBoxID: 'virtual-chatbot-id',
+        chatBoxDetails: [
+          { userID: userId1 },
+          { userID: 'chatbot' }
+        ]
+      };
+    }
+
     try {
       // Thay thế bằng API call thực tế của bạn
       const response = await fetch('http://localhost:8080/chatbox/create', {
@@ -77,115 +96,101 @@ const HomeRight = () => {
 
   // Hàm tìm chatbox hiện có giữa hai người dùng
   const findExistingChatbox = (userId1, userId2) => {
+    // Nếu là chatbot, trả về chatbox ảo
+    if (userId2 === 'chatbot') {
+      return {
+        chatBoxID: 'virtual-chatbot-id',
+        chatBoxDetails: [
+          { userID: userId1 },
+          { userID: 'chatbot' }
+        ]
+      };
+    }
+
     return chatboxes.find(chatbox => {
       // Kiểm tra xem chatbox có chứa cả hai userID không
-      // Giả sử mỗi chatbox có thuộc tính chatBoxDetails chứa thông tin về các thành viên
       const userIds = chatbox.chatBoxDetails.map(detail => detail.userID);
       return userIds.includes(userId1) && userIds.includes(userId2);
     });
   };
 
-  // const handleOpenChat = async (contact) => {
-  //   // Nếu đã mở chat với người này rồi, không làm gì cả
-  //   if (currentChat && currentChat.userID === contact.userID) {
-  //     return;
-  //   }
-
-  //   // Tìm chatbox hiện có giữa currentUser và contact
-  //   const existingChatbox = findExistingChatbox(currentUser.userID, contact.userID);
-    
-  //   if (existingChatbox) {
-  //     // Nếu đã có chatbox, mở nó lên
-  //     setCurrentChat({
-  //       ...contact,
-  //       chatBoxID: existingChatbox.chatBoxID
-  //     });
-  //   } else {
-  //     // Nếu chưa có chatbox, tạo mới
-  //     const newChatbox = await createNewChatbox(currentUser.userID, contact.userID);
-      
-  //     if (newChatbox) {
-  //       // Cập nhật danh sách chatboxes
-  //       setChatboxes([...chatboxes, newChatbox]);
-        
-  //       // Mở chatbox mới
-  //       setCurrentChat({
-  //         ...contact,
-  //         chatBoxID: newChatbox.chatBoxID
-  //       });
-  //     }
-  //   }
-  // };
-
-
   const handleOpenChat = async (contact) => {
-    // Nếu đã mở chat với người này rồi, không làm gì cả
-    // if (currentChat && currentChat.userID === contact.userID) {
-    //   return;
-    // }
-
-    // Tìm chatbox hiện có giữa currentUser và contact
-    const existingChatbox = findExistingChatbox(currentUser.userID, contact.userID);
-    
-    if (existingChatbox) {
-      // Nếu đã có chatbox, mở nó lên
-      naviagte(`/messages`);
+    console.log(contact);
+    // Xử lý đặc biệt cho chatbot
+    if (contact.isBot) {
+      // Luôn mở chatbox trực tiếp với chatbot
+      setCurrentChat(contact);
     } else {
-      // Nếu chưa có chatbox, tạo mới
-      const newChatbox = await createNewChatbox(currentUser.userID, contact.userID);
+      // Đối với người dùng thường, chuyển hướng đến trang messages
+      const existingChatbox = findExistingChatbox(currentUser.userID, contact.userID);
       
-      if (newChatbox) {
-        // Cập nhật danh sách chatboxes
-        setChatboxes([...chatboxes, newChatbox]);
-        naviagte(`/messages`);
+      if (existingChatbox) {
+        // Nếu đã có chatbox, chuyển hướng đến trang messages
+        navigate(`/messages`);
+      } else {
+        // Nếu chưa có chatbox, tạo mới trước rồi chuyển hướng
+        const newChatbox = await createNewChatbox(currentUser.userID, contact.userID);
         
-        // Mở chatbox mới
-        // setCurrentChat({
-        //   ...contact,
-        //   chatBoxID: newChatbox.chatBoxID
-        // });
+        if (newChatbox) {
+          // Cập nhật danh sách chatboxes
+          setChatboxes([...chatboxes, newChatbox]);
+          navigate(`/messages`);
+        }
       }
     }
   };
 
-  // const handleCloseChat = () => {
-  //   setCurrentChat(null);
-  // };
+  const handleCloseChat = () => {
+    setCurrentChat(null);
+  };
 
   const contactsUsers = allUsers.length > 0 
-  ? allUsers.filter(user => currentUser.userID !== user.userID) 
-  : [];
+    ? allUsers.filter(user => currentUser.userID !== user.userID) 
+    : [];
 
   return (
     <div className='hidden lg:flex flex-col w-60 p-2 mt-5'>
       <div className='flex justify-between items-center text-gray-500 mb-5'>
-          <h2 className='text-xl'>Contacts</h2>
-          <div className='flex space-x-2'>
-              {/* <SearchRoundedIcon className='h-6' /> */}
-              {/* <MoreHorizRoundedIcon className='h-6' /> */}
-          </div>
+        <h2 className='text-xl'>Contacts</h2>
+        <div className='flex space-x-2'>
+          {/* <SearchRoundedIcon className='h-6' /> */}
+          {/* <MoreHorizRoundedIcon className='h-6' /> */}
+        </div>
       </div>
 
+      {/* Hiển thị ChatBot đầu tiên */}
+      <Contact 
+        key="chatbot" 
+        contact={chatbotContact}
+        onClick={() => handleOpenChat(chatbotContact)}
+      />
+
+      {/* Hiển thị danh sách người dùng thông thường */}
       {contactsUsers.map((contact) => (
         <Contact 
           key={contact.userID} 
           contact={contact}
           onClick={() => handleOpenChat(contact)}
-          // onClick={() => naviagte(`/messages`)}
         />
       ))}
 
-      {/* <div className="fixed bottom-0 right-4">
+      {/* Hiển thị ChatBox nếu đang có chat đang mở */}
+      <div className="fixed bottom-0 right-4">
         {currentChat && (
-          <ChatBox 
-            contact={currentChat} 
-            onClose={handleCloseChat} 
-            chatBoxID={currentChat.chatBoxID}
-          />
+          currentChat.isBot ? (
+            // Sử dụng ChatBotBox cho chatbot
+            <ChatBotBox
+              contact={currentChat}
+              onClose={handleCloseChat}
+            />
+          ) : (
+            // Sử dụng ChatBox thông thường cho người dùng khác
+            <></>
+          )
         )}
-      </div> */}
+      </div>
     </div>
   );
-}
+};
 
 export default HomeRight
