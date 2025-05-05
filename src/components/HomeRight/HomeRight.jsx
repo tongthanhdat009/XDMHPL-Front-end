@@ -23,7 +23,8 @@ const HomeRight = () => {
     const fetchData = async () => {
       try {
         const users = await authService.getAllUsers();
-        setAllUsers(users);
+        const usersWithoutAdmin = users.filter(user => user.role !== 'admin');
+        setAllUsers(usersWithoutAdmin);
         
         // Fetch thông tin các chatbox của người dùng hiện tại
         const userChatboxes = await fetchUserChatboxes(currentUser.userID);
