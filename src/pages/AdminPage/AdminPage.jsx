@@ -4,6 +4,7 @@ import AdminSlideMenu from "../../components/AdminSlideMenu/AdminSlideMenu";
 import UserManagement from "./Dashboard/UserManagement";
 import PostManagement from "./Dashboard/PostManagement";
 import authService from "../../components/LoginPage/LoginProcess/ValidateLogin";
+import ChatBot from "./Dashboard/ChatBot";
 
 const AdminPage = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -37,6 +38,7 @@ const AdminPage = () => {
                     <Route path="/" element={<h2 className="text-2xl">Admin Dashboard</h2>} />
                     <Route path="user" element={<UserManagement />} />
                     <Route path="posts" element={<PostManagement />} />
+                    <Route path="chat-bot" element={<ChatBot/>} />
                 </Routes>
             </div>
         </div>
