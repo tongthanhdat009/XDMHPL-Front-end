@@ -179,7 +179,6 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
               />
               <div className="ml-3">
                 <h2 className="font-semibold">{selectedChat.chatBoxName || `Chat ${selectedChat.chatBoxID}`}</h2>
-                <p className="text-xs text-gray-500">Đang hoạt động</p>
               </div>
             </div>
             <div className="flex space-x-2">

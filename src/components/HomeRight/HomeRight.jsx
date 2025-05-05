@@ -6,6 +6,7 @@ import ChatBox from './ChatBox.';
 import authService from '../LoginPage/LoginProcess/ValidateLogin';
 import { useAuth } from '../LoginPage/LoginProcess/AuthProvider';
 import { all } from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const HomeRight = () => {
   const [currentChat, setCurrentChat] = useState(null);
@@ -14,6 +15,7 @@ const HomeRight = () => {
   const currentUser = authService.getCurrentUser();
   const { onlineUsers } = useAuth();
 
+  const naviagte=useNavigate();
   console.log(onlineUsers);
   
   // Fetch users và chatboxes khi component được mount
@@ -136,11 +138,12 @@ const HomeRight = () => {
         <Contact 
           key={contact.userID} 
           contact={contact}
-          onClick={() => handleOpenChat(contact)}
+          // onClick={() => handleOpenChat(contact)}
+          onClick={() => naviagte(`/messages`)}
         />
       ))}
 
-      <div className="fixed bottom-0 right-4">
+      {/* <div className="fixed bottom-0 right-4">
         {currentChat && (
           <ChatBox 
             contact={currentChat} 
@@ -148,7 +151,7 @@ const HomeRight = () => {
             chatBoxID={currentChat.chatBoxID}
           />
         )}
-      </div>
+      </div> */}
     </div>
   );
 }

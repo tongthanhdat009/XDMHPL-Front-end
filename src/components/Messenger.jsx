@@ -4,6 +4,7 @@ import ChatWindow from "./ChatWindow.jsx";
 import RightMenu from "./RightMenu.jsx";
 import axios from "axios";
 import authService from "./LoginPage/LoginProcess/ValidateLogin.jsx";
+import Header from "./Header/Header.jsx";
 
 const Messenger = () => {
   const [selectedChat, setSelectedChat] = useState(null);
@@ -104,25 +105,28 @@ const Messenger = () => {
     });
   };
   return (
-    <div className="flex h-screen">
-      <ChatList
-        chats={chats}
-        selectedChat={selectedChat}
-        onSelectChat={handleSelectChat}
-        loading={loading}
-      />
-      <ChatWindow
-        selectedChat={selectedChat}
-        messages={messages}
-        onAddMessage={handleAddMessage}
-        currentUserId={currentUserId}
-        messagesEndRef={messagesEndRef}
-      />
-      <RightMenu
-        selectedChat={selectedChat}
-        onUpdateChat={handleUpdateChat}
-        currentUserId={currentUserId}
-      />
+    <div className="h-screen bg-gray-100 overflow-hidden">
+      <Header />
+      <div className="flex h-screen">
+        <ChatList
+          chats={chats}
+          selectedChat={selectedChat}
+          onSelectChat={handleSelectChat}
+          loading={loading}
+        />
+        <ChatWindow
+          selectedChat={selectedChat}
+          messages={messages}
+          onAddMessage={handleAddMessage}
+          currentUserId={currentUserId}
+          messagesEndRef={messagesEndRef}
+        />
+        <RightMenu
+          selectedChat={selectedChat}
+          onUpdateChat={handleUpdateChat}
+          currentUserId={currentUserId}
+        />
+      </div>
     </div>
   );
 };
