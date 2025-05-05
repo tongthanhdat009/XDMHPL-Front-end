@@ -118,7 +118,8 @@ const Header = () => {
     const fetchDatas = async () => {
       try {
         const users = await authService.getAllUsers();
-        setAllUsers(users);
+        const usersWithoutAdmin = users.filter(user => user.role !== 'admin');
+        setAllUsers(usersWithoutAdmin);
       } catch (error) {
         console.error("Error fetching posts:", error);
       }

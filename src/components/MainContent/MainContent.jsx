@@ -131,6 +131,7 @@ const MainContent = ({ activeSection, setActiveSection }) => {
   // Mock data for the different lists
   const requestsData = currentUser.friendOf
     .filter((user) => user.status === "PENDING") // Lọc chỉ những user có status là "PENDING"
+    .filter((user) => user.role !== "admin")
     .map((user, i) => {
       const totalFriends = user.friends.filter(
         (friend) => friend.status === "ACCEPTED"
@@ -151,6 +152,7 @@ const MainContent = ({ activeSection, setActiveSection }) => {
       const isInFriendOf = currentUser.friendOf.some((friend) => friend.userID === user.userID);
       return !isInFriends && !isInFriendOf && user.userID !== currentUser.userID; // Loại bỏ chính user hiện tại
     })
+    .filter((user) => user.role !== "admin")
     .map((user, i) => {
       const totalFriends = user.friends.filter(
         (friend) => friend.status === "ACCEPTED"
@@ -172,6 +174,7 @@ const MainContent = ({ activeSection, setActiveSection }) => {
       const isInFriendOf = currentUser.friendOf.some((friend) => friend.userID === user.userID && friend.status === "ACCEPTED");
       return (isInFriends || isInFriendOf)
     })
+    .filter((user) => user.role !== "admin")
     .map((user, i) => {
       const totalFriends = user.friends.filter(
         (friend) => friend.status === "ACCEPTED"

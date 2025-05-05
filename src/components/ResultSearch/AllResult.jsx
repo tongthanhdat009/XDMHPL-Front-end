@@ -21,7 +21,8 @@ const AllResult = () => {
             try {
                 const fetchedPosts = await authService.getAllPosts();
                 const users = await authService.getAllUsers();
-                setAllUsers(users);
+                const usersWithoutAdmin = users.filter(user => user.role !== 'admin');
+                setAllUsers(usersWithoutAdmin);
                 setPosts(fetchedPosts); // Cập nhật state với dữ liệu bài viết
             } catch (error) {
                 console.error("Error fetching posts:", error);
