@@ -136,6 +136,7 @@ const Messenger = () => {
           onAddMessage={handleAddMessage}
           currentUserId={currentUserId}
           messagesEndRef={messagesEndRef}
+          updateChat={fetchChats}
         />
         <RightMenu
           selectedChat={selectedChat}

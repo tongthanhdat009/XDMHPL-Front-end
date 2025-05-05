@@ -5,7 +5,7 @@ import { Stomp } from "@stomp/stompjs";
 import {Send, Paperclip, Info, X } from 'lucide-react';
 import { useNavigate } from "react-router-dom";
 import authService from "./LoginPage/LoginProcess/ValidateLogin";
-const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messagesEndRef }) => {
+const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messagesEndRef,updateChat }) => {
   console.log(messages);
   const [newMessage, setNewMessage] = useState("");
   const [media, setMedia] = useState(null);
@@ -39,6 +39,7 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
       // Check if this is related to current chat
       if (msg.chatBoxId === selectedChat?.chatBoxID) {
         onAddMessage(msg);
+        updateChat();
       }
     } catch (error) {
       console.error("Error processing websocket message:", error);
