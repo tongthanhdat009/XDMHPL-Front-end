@@ -3,6 +3,8 @@ import axios from "axios";
 import SockJS from "sockjs-client";
 import { Stomp } from "@stomp/stompjs";
 import {Send, Paperclip, Info, X } from 'lucide-react';
+import { useNavigate } from "react-router-dom";
+import authService from "./LoginPage/LoginProcess/ValidateLogin";
 const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messagesEndRef }) => {
   console.log(messages);
   const [newMessage, setNewMessage] = useState("");
@@ -11,7 +13,23 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
   const [connected, setConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef(null);
+  const [allUsers, setAllUsers] = useState([]);
+
+  useEffect(() => {
+    const fetchDatas = async () => {
+      try {
+        const users = await authService.getAllUsers();
+        setAllUsers(users);
+      } catch (error) {
+        console.error("Error fetching posts:", error);
+      }
+    };
+
+    fetchDatas();
+  }, []);
+
   
+  const navigate = useNavigate();
   // Process messages received via WebSocket
   const handleWebSocketMessage = (messageOutput) => {
     try {
@@ -194,12 +212,14 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
               groupedMessages.map((group, groupIndex) => {
                 const isCurrentUser = group.userId === currentUserId;
               
+                const user = allUsers.find(user => user.userID === group.userId);
                 return (
                   <div key={groupIndex} className={`flex mb-4 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
                     {!isCurrentUser && (
                       <img
-                        src={"http://localhost:8080/assets/default-avatar.jpg"}
-                        className="w-8 h-8 rounded-full mt-1"
+                        src={user.avatarURL ? 'http://localhost:8080/uploads' + user.avatarURL :"http://localhost:8080/uploads/avatars/default.jpg"}
+                        className="w-8 h-8 rounded-full mt-1 cursor-pointer"
+                        onClick={()=> navigate(`/profile/${group.userId}`)}
                       />
                     )}
                     <div className={`flex flex-col max-w-[70%] ${isCurrentUser ? 'items-end' : 'items-start ml-2'}`}>
