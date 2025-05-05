@@ -3,48 +3,61 @@ import ChatList from "./ChatList.jsx";
 import ChatWindow from "./ChatWindow.jsx";
 import RightMenu from "./RightMenu.jsx";
 import axios from "axios";
+import authService from "./LoginPage/LoginProcess/ValidateLogin.jsx";
 
 const Messenger = () => {
   const [selectedChat, setSelectedChat] = useState(null);
   const [chats, setChats] = useState([]);
   const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const messagesEndRef = useRef(null);
 
-  const currentUserId = 1; 
+  const currentUserId = authService.getCurrentUser();
 
-  // Hàm lấy danh sách chat
+  // Fetch chat list
   const fetchChats = async () => {
+    setLoading(true);
     try {
-      const res = await axios.get(`http://localhost:8080/chatbox/sidebar/${currentUserId}`);
+      const res = await axios.get(`http://localhost:8080/chatbox/sidebar/${currentUserId.userID}`);
       setChats(res.data);
     } catch (error) {
-      console.error("Lỗi khi lấy danh sách chat:", error);
+      console.error("Error fetching chats:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Hàm lấy tin nhắn theo chatbox ID
+  // Fetch messages by chatbox ID
   const fetchMessages = async (chatBoxID) => {
     if (!chatBoxID) return;
+    setLoading(true);
     try {
       const res = await axios.get(`http://localhost:8080/messages/${chatBoxID}`);
-      setMessages(res.data);
+      // Process messages to ensure no duplicates based on messageId
+      const uniqueMessages = Array.from(
+        new Map(res.data.map(msg => [msg.messageId || `${msg.senderId}-${msg.timestamp}`, msg])).values()
+      );
+      setMessages(uniqueMessages);
     } catch (error) {
-      console.error("Lỗi khi lấy tin nhắn:", error);
+      console.error("Error fetching messages:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Gọi khi mount
+  // Initial load
   useEffect(() => {
     fetchChats();
   }, []);
 
-  // Gọi khi chọn chat mới
+  // Load messages when chat selected
   useEffect(() => {
     if (selectedChat?.chatBoxID) {
       fetchMessages(selectedChat.chatBoxID);
     }
   }, [selectedChat]);
 
-  // Kiểm tra selectedChat có còn tồn tại trong danh sách chats
+  // Check if selectedChat still exists in chats list
   useEffect(() => {
     if (selectedChat && !chats.find(c => c.chatBoxID === selectedChat.chatBoxID)) {
       setSelectedChat(null);
@@ -52,9 +65,14 @@ const Messenger = () => {
     }
   }, [chats]);
 
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
   const handleSelectChat = (chat) => {
     setSelectedChat(chat);
-    setMessages([]); // Reset tin nhắn khi chọn chat mới
+    setMessages([]); // Reset messages when selecting new chat
   };
 
   const handleUpdateChat = (updatedChat) => {
@@ -70,9 +88,19 @@ const Messenger = () => {
   };
 
   const handleAddMessage = (newMsg) => {
-    setMessages(prev => [...prev, newMsg]);
+    // Check if message already exists to prevent duplicates
+    setMessages(prev => {
+      const msgId = newMsg.messageId || `${newMsg.senderId}-${newMsg.timestamp}`;
+      const exists = prev.some(m => 
+        (m.messageId && m.messageId === newMsg.messageId) || 
+        (m.senderId === newMsg.senderId && m.text === newMsg.text && 
+         m.timestamp === newMsg.timestamp)
+      );
+      
+      if (exists) return prev;
+      return [...prev, newMsg];
+    });
   };
-
   return (
     <div className="flex h-screen">
       <ChatList

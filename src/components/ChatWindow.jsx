@@ -80,7 +80,7 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage }) => {
       // Subscribe tới topic chung
       client.subscribe("/topic/messages/"+selectedChat.chatBoxID, (messageOutput) => {
         const msg = JSON.parse(messageOutput.body);
-
+        console.log("Tin nhân:", msg);
         // Chỉ xử lý nếu là tin nhắn của box đang chọn
         if (msg.chatBoxId === selectedChat.chatBoxID) {
           onAddMessage(msg);
