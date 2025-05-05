@@ -25,6 +25,29 @@ const ChatList = ({ chats, selectedChat, onSelectChat, loading }) => {
     (chat.chatBoxName || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  function formatTime(timeString) {
+    const now = new Date();
+    const time = new Date(timeString);
+    const diff = Math.floor((now - time) / 1000); // chênh lệch giây
+  
+    if (diff < 60) return 'Vừa xong';
+    if (diff < 3600) return `${Math.floor(diff / 60)} phút trước`;
+  
+    const isToday = now.toDateString() === time.toDateString();
+    if (isToday) {
+      return time.toLocaleTimeString('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      });
+    }
+  
+    return time.toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+    });
+  }
+
   return (
     <div className="w-1/4 border-r border-gray-300 bg-white flex flex-col">
       <div className="p-4 border-b border-gray-300 flex justify-between items-center">
@@ -84,11 +107,11 @@ const ChatList = ({ chats, selectedChat, onSelectChat, loading }) => {
                   <span className={`font-semibold ${chat.unread ? 'text-black' : 'text-gray-700'}`}>
                     {chat.chatBoxName || `Chat ${chat.chatBoxID}`}
                   </span>
-                  <span className="text-xs text-gray-500">{chat.lastMessageTime || '1 phút'}</span>
+                  <span className="text-xs text-gray-500">{chat.lastMessage ? formatTime(chat.lastMessage.time) : ''}</span>
                 </div>
                 <div className="flex items-center text-sm">
                   <span className={`truncate ${chat.unread ? 'font-medium text-black' : 'text-gray-500'}`}>
-                    {chat.lastMessage || 'Bắt đầu cuộc trò chuyện'}
+                    {chat.lastMessage ? chat.lastMessage.text : 'Bắt đầu cuộc trò chuyện'}
                   </span>
                 </div>
               </div>
