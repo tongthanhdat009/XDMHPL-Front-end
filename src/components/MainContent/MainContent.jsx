@@ -5,7 +5,7 @@ import { useAuth } from '../LoginPage/LoginProcess/AuthProvider';
 import { useNavigate } from 'react-router-dom';
 
 const MainContent = ({ activeSection, setActiveSection }) => {
-  const {stompClient } = useAuth();
+  const { stompClient } = useAuth();
   const navigate = useNavigate();
   // State for loading more items
   const [requestsVisible, setRequestsVisible] = useState(14);
@@ -28,7 +28,7 @@ const MainContent = ({ activeSection, setActiveSection }) => {
 
   const updateCurentUser = async () => {
     try {
-      const currentUser=authService.getCurrentUser();
+      const currentUser = authService.getCurrentUser();
       const result = await authService.getCurrentUserFormDB(currentUser.userID);
     } catch (error) {
       console.error("Error updating posts:", error);
@@ -38,30 +38,30 @@ const MainContent = ({ activeSection, setActiveSection }) => {
     const data = {
       senderId: senderId,
       receiverId: receiverId
-  };
+    };
 
-  try {
-      const result = await authService.sentFriendRequest({data, sendNotifyFriendRequestToServer})
+    try {
+      const result = await authService.sentFriendRequest({ data, sendNotifyFriendRequestToServer })
       console.log(result)
       if (result.success) {
-          // Gọi callback để cập nhật danh sách bài viết
-          await updateCurentUser();
-          await updateUsers();
+        // Gọi callback để cập nhật danh sách bài viết
+        await updateCurentUser();
+        await updateUsers();
       } else {
-          // Xử lý lỗi
-          console.error("Error liking post:", result.error);
+        // Xử lý lỗi
+        console.error("Error liking post:", result.error);
       }
-  } catch (error) {
+    } catch (error) {
       console.error("Error in form submission:", error);
-  }
+    }
   };
 
   const sendNotifyFriendRequestToServer = (newMessage) => {
     if (stompClient && newMessage) {
-    console.log("📤 Sending message:", newMessage);
-    stompClient.send(`/app/friendRequest/notification`, {}, JSON.stringify(newMessage));
+      console.log("📤 Sending message:", newMessage);
+      stompClient.send(`/app/friendRequest/notification`, {}, JSON.stringify(newMessage));
     }
-};
+  };
 
   const deleteFriend = async (friendId) => {
     const inFriendOf = currentUser.friendOf.find(
@@ -128,23 +128,24 @@ const MainContent = ({ activeSection, setActiveSection }) => {
     fetchDatas();
   }, []);
 
+  console.log(currentUser);
+
   // Mock data for the different lists
   const requestsData = currentUser.friendOf
     .filter((user) => user.status === "PENDING") // Lọc chỉ những user có status là "PENDING"
     .filter((user) => user.role !== "admin")
     .map((user, i) => {
-      const totalFriends = user.friends.filter(
-        (friend) => friend.status === "ACCEPTED"
-    ).length + user.friendOf.filter(
-        (friend) => friend.status === "ACCEPTED"
-    ).length;
+      const totalFriends =
+        (user.friends?.filter(friend => friend.status === "ACCEPTED").length || 0) +
+        (user.friendOf?.filter(friend => friend.status === "ACCEPTED").length || 0);
       return {
-      id: user.userID,
-      name: user.fullName,
-      mutualFriends: totalFriends + ' người bạn',
-      isAvatar: user.avatarURL ? 'http://localhost:8080/uploads' + user.avatarURL : "http://localhost:8080/uploads/avatars/default.jpg",
-      type: "pending"
-    }});
+        id: user.userID,
+        name: user.fullName,
+        mutualFriends: totalFriends + ' người bạn',
+        isAvatar: user.avatarURL ? 'http://localhost:8080/uploads' + user.avatarURL : "http://localhost:8080/uploads/avatars/default.jpg",
+        type: "pending"
+      }
+    });
 
   const suggestionsData = allUsers
     .filter((user) => {
@@ -156,9 +157,9 @@ const MainContent = ({ activeSection, setActiveSection }) => {
     .map((user, i) => {
       const totalFriends = user.friends.filter(
         (friend) => friend.status === "ACCEPTED"
-    ).length + user.friendOf.filter(
+      ).length + user.friendOf.filter(
         (friend) => friend.status === "ACCEPTED"
-    ).length;
+      ).length;
       return {
         id: user.userID,
         name: user.fullName,
@@ -166,7 +167,7 @@ const MainContent = ({ activeSection, setActiveSection }) => {
         isAvatar: user.avatarURL ? 'http://localhost:8080/uploads' + user.avatarURL : "http://localhost:8080/uploads/avatars/default.jpg",
         type: "suggesting"
       }
-});
+    });
 
   const allFriendsData = allUsers
     .filter((user) => {
@@ -178,18 +179,18 @@ const MainContent = ({ activeSection, setActiveSection }) => {
     .map((user, i) => {
       const totalFriends = user.friends.filter(
         (friend) => friend.status === "ACCEPTED"
-    ).length + user.friendOf.filter(
+      ).length + user.friendOf.filter(
         (friend) => friend.status === "ACCEPTED"
-    ).length;
+      ).length;
       return {
-      id: user.userID,
-      name: user.fullName,
-      mutualFriends: totalFriends + ' người bạn',
-      image: user.avatarURL ? 'http://localhost:8080/uploads' + user.avatarURL : "http://localhost:8080/uploads/avatars/default.jpg",
-      isAvatar: user.avatarURL ? 'http://localhost:8080/uploads' + user.avatarURL : "http://localhost:8080/uploads/avatars/default.jpg",
-      type: "suggesting"
-    }
-  });
+        id: user.userID,
+        name: user.fullName,
+        mutualFriends: totalFriends + ' người bạn',
+        image: user.avatarURL ? 'http://localhost:8080/uploads' + user.avatarURL : "http://localhost:8080/uploads/avatars/default.jpg",
+        isAvatar: user.avatarURL ? 'http://localhost:8080/uploads' + user.avatarURL : "http://localhost:8080/uploads/avatars/default.jpg",
+        type: "suggesting"
+      }
+    });
 
   // Handler functions
   const handleApplyFriend = () => {
@@ -279,7 +280,7 @@ const MainContent = ({ activeSection, setActiveSection }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2">
             {suggestionsData.slice(0, suggestionsVisible).map((friend) => (
               <FriendCard
-                key={friend.id} 
+                key={friend.id}
                 id={friend.id}
                 name={friend.name}
                 mutualFriends={friend.mutualFriends}
@@ -315,7 +316,7 @@ const MainContent = ({ activeSection, setActiveSection }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2">
             {allFriendsData.slice(0, allFriendsVisible).map((friend) => (
               <FriendCard
-                key={friend.id} 
+                key={friend.id}
                 id={friend.id}
                 name={friend.name}
                 mutualFriends={friend.mutualFriends}
