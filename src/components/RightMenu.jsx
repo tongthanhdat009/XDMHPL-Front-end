@@ -1,11 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import {Info, X, Edit } from 'lucide-react';
 
 const RightMenu = ({ selectedChat, onUpdateChat, currentUserId }) => {
-  const [boxChatName, setBoxChatName] = useState(selectedChat?.chatBoxName || "Tên nhóm");
-  const [boxChatImage, setBoxChatImage] = useState("/assets/default-avatar.jpg");
+  const [chatInfo, setChatInfo] = useState({
+    name: "",
+    image: "/assets/default-avatar.jpg" 
+  });
+  console.log(currentUserId);
   const [sentImages, setSentImages] = useState([]);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [isExpanded, setIsExpanded] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (selectedChat?.chatBoxID && currentUserId) {
@@ -15,30 +23,40 @@ const RightMenu = ({ selectedChat, onUpdateChat, currentUserId }) => {
   }, [selectedChat, currentUserId]);
 
   const fetchChatDetails = async () => {
+    if (!selectedChat) return;
+    
+    setIsLoading(true);
     try {
       const response = await axios.get(
         `http://localhost:8080/chatbox/info/${selectedChat.chatBoxID}/${currentUserId}`
       );
       const chatData = response.data;
-      setBoxChatName(chatData.chatBoxName || "Nhóm đã bị khóa");
-      // Đảm bảo rằng URL hình ảnh đúng với thư mục public/assets/
-      setBoxChatImage(chatData.chatBoxImage || "/assets/default-avatar.jpg");
+      
+      setChatInfo({
+        name: chatData.chatBoxName || "Nhóm đã bị khóa",
+        image: chatData.chatBoxImage || "/assets/default-avatar.jpg"
+      });
+      
+      setNewName(chatData.chatBoxName || "");
     } catch (error) {
-      console.error("Lỗi khi lấy thông tin nhóm:", error);
-      alert("Không thể kết nối tới máy chủ để lấy thông tin nhóm!");
+      console.error("Error fetching group info:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const fetchChatImages = async () => {
+    if (!selectedChat) return;
+    
+    setIsLoading(true);
     try {
       const response = await axios.get(
         `http://localhost:8080/chatbox/images/${selectedChat.chatBoxID}`
       );
-  
-      console.log("Dữ liệu ảnh trả về:", response.data); // Xem dữ liệu gốc
-  
-      const fixedMedia = (response.data || []).map((media) => {
+      
+      const processedImages = (response.data || []).map((media) => {
         try {
+          // Try to parse as JSON first
           const parsed = JSON.parse(media.mediaURL);
           if (parsed.fileName) {
             return {
@@ -47,44 +65,43 @@ const RightMenu = ({ selectedChat, onUpdateChat, currentUserId }) => {
               mediaURL: `http://localhost:8080/assets/${parsed.fileName}`
             };
           } else if (parsed.url) {
-            const fileNameFromUrl = parsed.url.split("/").pop();
             return {
               ...media,
-              fileName: fileNameFromUrl,
+              fileName: parsed.url.split("/").pop(),
               mediaURL: parsed.url
             };
           }
         } catch (e) {
-          // Không phải JSON, lấy từ mediaURL bình thường
-          const fileName = media.mediaURL.split("/").pop();
+          // Not JSON, use mediaURL directly
           return {
             ...media,
-            fileName: fileName,
+            fileName: media.mediaURL.split("/").pop(),
             mediaURL: media.mediaURL
           };
         }
       });
-  
-      setSentImages(fixedMedia);
+      
+      setSentImages(processedImages);
     } catch (error) {
-      console.error("Lỗi khi lấy ảnh của nhóm:", error);
+      console.error("Error fetching chat images:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
-  
-  
 
   const handleNameChange = async () => {
-    if (boxChatName.trim() === "") {
+    if (!newName.trim()) {
       alert("Tên nhóm không được để trống!");
       return;
     }
-
+    
+    setIsLoading(true);
     try {
       const response = await axios.post(
         `http://localhost:8080/chatbox/update/${selectedChat.chatBoxID}`,
         new URLSearchParams({
-          name: boxChatName,
-          imageUrl: boxChatImage,
+          name: newName,
+          imageUrl: chatInfo.image,
         }),
         {
           headers: {
@@ -94,148 +111,191 @@ const RightMenu = ({ selectedChat, onUpdateChat, currentUserId }) => {
       );
 
       if (response.status === 200) {
+        setChatInfo({
+          ...chatInfo,
+          name: newName
+        });
+        
         onUpdateChat({
           ...selectedChat,
-          chatBoxName: boxChatName,
-          chatBoxImage: boxChatImage,
+          chatBoxName: newName,
+          chatBoxImage: chatInfo.image,
         });
-        alert("Cập nhật thành công!");
+        
         setIsEditMode(false);
       }
     } catch (error) {
-      console.error("Lỗi khi cập nhật:", error.response?.data || error.message);
+      console.error("Error updating:", error.response?.data || error.message);
       alert("Cập nhật thất bại!");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleImageChange = async (event) => {
     const file = event.target.files?.[0];
-    if (file) {
-      // Tạo form data để gửi ảnh lên server
-      const formData = new FormData();
-      formData.append("file", file);
-  
-      try {
-        // Gửi ảnh lên server (ví dụ endpoint là /upload)
-        const response = await axios.post('http://localhost:8080/uploads', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
-  
-        // Giả sử server trả về tên ảnh (ví dụ: "400ffa2c-673d-4e85-ab1e-92f75657631c.jpg")
-        const imageName = response.data.fileName;
-  
-        // Cập nhật URL hình ảnh với tên ảnh trả về từ server
-        setBoxChatImage(`/assets/${imageName}`);
-      } catch (error) {
-        console.error("Lỗi khi tải ảnh lên:", error);
-      }
+    if (!file) return;
+    
+    setIsLoading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await axios.post('http://localhost:8080/uploads', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      const imageName = response.data.fileName;
+      const imageUrl = `/assets/${imageName}`;
+      
+      setChatInfo({
+        ...chatInfo,
+        image: imageUrl
+      });
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      alert("Không thể tải ảnh lên!");
+    } finally {
+      setIsLoading(false);
     }
   };
-  
-
-  const handleNameInputChange = (e) => {
-    setBoxChatName(e.target.value);
-  };
-
-  const isFormValid = boxChatName.trim() !== "";
 
   const handleCancelEdit = () => {
     setIsEditMode(false);
-    setBoxChatName(selectedChat?.chatBoxName || "Tên nhóm");
-    setBoxChatImage(selectedChat?.chatBoxImage || "/assets/default-avatar.jpg");
+    setNewName(chatInfo.name);
   };
 
+  const handleImageClick = () => {
+    fileInputRef.current.click();
+  };
+
+  if (!selectedChat) {
+    return null;
+  }
+
   return (
-    <div className="w-1/4 bg-gray-100 p-6 border-l border-gray-300">
-      {selectedChat ? (
-        <>
-          <h2 className="text-center text-lg font-bold pb-3 border-b border-gray-300">Thông tin nhóm</h2>
-          <div className="flex flex-col items-center mt-4">
+    <div className="w-1/4 bg-white border-l border-gray-300 flex flex-col">
+      <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+        <h3 className="font-semibold text-gray-800">Thông tin và kênh</h3>
+        <button 
+          className="text-gray-500 hover:bg-gray-100 p-1 rounded-full"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          {isExpanded ? <X size={18} /> : <Info size={18} />}
+        </button>
+      </div>
+
+      {isExpanded && (
+        <div className="flex-1 overflow-y-auto">
+          <div className="flex flex-col items-center p-4 border-b border-gray-200">
+            {isEditMode && (
+              <div className="absolute right-4 top-20 bg-white p-1 rounded-full shadow-md">
+                <button 
+                  className="p-1 bg-blue-500 rounded-full text-white"
+                  onClick={handleImageClick}
+                >
+                  <Edit size={16} />
+                </button>
+              </div>
+            )}
+            
             <img
-              src={boxChatImage}
-              alt="avatar"
-              className="w-20 h-20 rounded-full border shadow-lg"
-            />
-            <div className="mt-3">
-              <span className="text-lg font-semibold">{boxChatName}</span>
-            </div>
-          </div>
-
-          {isEditMode ? (
-            <>
-              <div className="mt-4">
-                <input
-                  type="text"
-                  placeholder="Nhập tên mới..."
-                  value={boxChatName}
-                  onChange={handleNameInputChange}
-                  className="border p-2 w-full rounded"
-                />
-              </div>
-
-              <div className="mt-4">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="border p-2 w-full"
-                />
-              </div>
-
-              <div className="mt-4 flex justify-between">
-                <button
-                  onClick={handleCancelEdit}
-                  className="bg-gray-400 text-white px-4 py-2 rounded w-1/3"
-                >
-                  Hủy
-                </button>
-                <button
-                  onClick={handleNameChange}
-                  disabled={!isFormValid}
-                  className={`mt-2 ${!isFormValid ? 'bg-gray-400' : 'bg-green-500'} text-white px-4 py-2 rounded w-1/3`}
-                >
-                  Cập nhật
-                </button>
-              </div>
-            </>
-          ) : (
-            <div className="mt-4">
-              <button
-                onClick={() => setIsEditMode(true)}
-                className="bg-blue-500 text-white px-4 py-2 rounded w-full"
-              >
-                Chỉnh sửa
-              </button>
-            </div>
-          )}
-
-          <div className="mt-6">
-            <h3 className="text-lg font-semibold border-b pb-2">Ảnh đã gửi</h3>
-            <div className="grid grid-cols-3 gap-2 mt-2">
-                    {sentImages.length > 0 ? (
-          sentImages.map((img, index) => {
-          
-            return (
-              <img
-              key={index}
-              src={img.mediaURL}
-              alt="sent"
-              className="w-full h-20 object-cover rounded"
+              src={chatInfo.image}
+              alt="Group Avatar"
+              className="w-24 h-24 rounded-full border shadow-sm object-cover cursor-pointer"
+              onClick={isEditMode ? handleImageClick : undefined}
             />
             
-            );
-          })
-        ) : (
-          <p className="text-sm text-gray-500 col-span-3">Chưa có ảnh nào.</p>
-        )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="hidden"
+            />
 
+            {isEditMode ? (
+              <div className="mt-3 w-full">
+                <input
+                  type="text"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  className="w-full px-3 py-2 border rounded text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Nhập tên nhóm..."
+                />
+                
+                <div className="flex mt-3 space-x-2">
+                  <button
+                    onClick={handleCancelEdit}
+                    className="flex-1 py-2 bg-gray-200 text-gray-800 rounded font-medium"
+                    disabled={isLoading}
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    onClick={handleNameChange}
+                    className="flex-1 py-2 bg-blue-500 text-white rounded font-medium flex justify-center items-center"
+                    disabled={isLoading || !newName.trim()}
+                  >
+                    {isLoading ? (
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    ) : (
+                      "Lưu"
+                    )}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <h3 className="mt-3 text-lg font-semibold">{chatInfo.name}</h3>
+                <button
+                  onClick={() => setIsEditMode(true)}
+                  className="mt-3 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-full text-sm font-medium flex items-center"
+                >
+                  <Edit size={16} className="mr-1" /> Chỉnh sửa
+                </button>
+              </>
+            )}
+          </div>
+
+          <div className="p-4 border-b border-gray-200">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-gray-800">Ảnh đã chia sẻ</h3>
+              {sentImages.length > 0 && (
+                <button className="text-blue-500 text-sm">Xem tất cả</button>
+              )}
+            </div>
+            
+            {isLoading ? (
+              <div className="flex justify-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+              </div>
+            ) : sentImages.length > 0 ? (
+              <div className="grid grid-cols-3 gap-1">
+                {sentImages.slice(0, 9).map((img, index) => (
+                  <div key={index} className="aspect-square overflow-hidden">
+                    <img
+                      src={img.mediaURL}
+                      alt="Shared media"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-sm py-2">Chưa có ảnh nào được chia sẻ</p>
+            )}
+          </div>
+          
+          <div className="p-4">
+            <h3 className="font-semibold text-gray-800 mb-2">File và liên kết</h3>
+            <div className="py-2 px-3 bg-gray-50 rounded-lg">
+              <p className="text-gray-500 text-sm">Chưa có file nào được chia sẻ</p>
             </div>
           </div>
-        </>
-      ) : (
-        <p className="text-center">Chọn nhóm để xem thông tin</p>
+        </div>
       )}
     </div>
   );

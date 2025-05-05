@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import ChatList from "./ChatList.jsx";
 import ChatWindow from "./ChatWindow.jsx";
 import RightMenu from "./RightMenu.jsx";
@@ -12,13 +12,14 @@ const Messenger = () => {
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
-  const currentUserId = authService.getCurrentUser();
+  const currentUser = authService.getCurrentUser();
+  const currentUserId = currentUser.userID;
 
   // Fetch chat list
   const fetchChats = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`http://localhost:8080/chatbox/sidebar/${currentUserId.userID}`);
+      const res = await axios.get(`http://localhost:8080/chatbox/sidebar/${currentUserId}`);
       setChats(res.data);
     } catch (error) {
       console.error("Error fetching chats:", error);
@@ -105,12 +106,16 @@ const Messenger = () => {
     <div className="flex h-screen">
       <ChatList
         chats={chats}
+        selectedChat={selectedChat}
         onSelectChat={handleSelectChat}
+        loading={loading}
       />
       <ChatWindow
         selectedChat={selectedChat}
         messages={messages}
         onAddMessage={handleAddMessage}
+        currentUserId={currentUserId}
+        messagesEndRef={messagesEndRef}
       />
       <RightMenu
         selectedChat={selectedChat}

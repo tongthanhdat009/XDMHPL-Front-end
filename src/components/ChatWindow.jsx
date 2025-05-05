@@ -1,21 +1,74 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import SockJS from "sockjs-client";
 import { Stomp } from "@stomp/stompjs";
-
-const ChatWindow = ({ selectedChat, messages, onAddMessage }) => {
+import {Send, Paperclip, Info, X } from 'lucide-react';
+const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messagesEndRef }) => {
   const [newMessage, setNewMessage] = useState("");
   const [media, setMedia] = useState(null);
   const [stompClient, setStompClient] = useState(null);
   const [connected, setConnected] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const fileInputRef = useRef(null);
+  
+  // Process messages received via WebSocket
+  const handleWebSocketMessage = (messageOutput) => {
+    try {
+      const msg = JSON.parse(messageOutput.body);
+      console.log("Received message:", msg);
+      
+      // Check if this is related to current chat
+      if (msg.chatBoxId === selectedChat?.chatBoxID) {
+        onAddMessage(msg);
+      }
+    } catch (error) {
+      console.error("Error processing websocket message:", error);
+    }
+  };
+
+  // Setup WebSocket connection
+  useEffect(() => {
+    if (!selectedChat?.chatBoxID) return;
+
+    const socket = new SockJS("http://localhost:8080/chat");
+    const client = Stomp.over(socket);
+    
+    // Disable console logging from Stomp
+    client.debug = null;
+    
+    setIsLoading(true);
+    
+    client.connect({}, (frame) => {
+      console.log("✅ WebSocket connection established:", frame);
+      setConnected(true);
+      setStompClient(client);
+      setIsLoading(false);
+
+      // Subscribe to topic for this chat
+      client.subscribe(`/topic/messages/${selectedChat.chatBoxID}`, handleWebSocketMessage);
+    }, (error) => {
+      console.error("WebSocket connection error:", error);
+      setIsLoading(false);
+    });
+
+    return () => {
+      if (client && client.connected) {
+        client.disconnect();
+        console.log("WebSocket disconnected");
+      }
+      setConnected(false);
+      setStompClient(null);
+    };
+  }, [selectedChat?.chatBoxID]);
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() && !media) return;
+    if ((!newMessage.trim() && !media) || !selectedChat) return;
 
     let mediaList = [];
 
-    // Nếu có file ảnh, upload lên /upload
+    // Upload image if selected
     if (media) {
+      setIsLoading(true);
       const formData = new FormData();
       formData.append("file", media);
     
@@ -24,138 +77,237 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage }) => {
           headers: { "Content-Type": "multipart/form-data" },
         });
     
-        const mediaUrl = uploadRes.data.url; // Đường dẫn ảnh từ server
-    
-        // Push vào mediaList
+        const mediaUrl = uploadRes.data.url;
         mediaList.push({
           mediaURL: mediaUrl,
-          mediaType: "image", // hoặc để trống để backend tự đoán
+          mediaType: "image",
         });
       } catch (error) {
-        console.error("Lỗi upload ảnh:", error);
+        console.error("Error uploading image:", error);
+        setIsLoading(false);
         return;
       }
     }
     
+    // Get current user from localStorage
     const storedUser = localStorage.getItem("currentUser");
     const user = storedUser ? JSON.parse(storedUser) : null;
     
+    // Create message object
     const messagePayload = {
-      senderId: user?.userID || 0, // fallback = 0 nếu không có user
-      receiverId: selectedChat?.chatBoxID,
-      chatBoxId: selectedChat?.chatBoxID,
+      senderId: user?.userID || currentUserId,
+      receiverId: selectedChat.chatBoxID,
+      chatBoxId: selectedChat.chatBoxID,
       text: newMessage,
       mediaList: mediaList,
+      timestamp: new Date().toISOString(),
+      // Add a temporary ID to help identify this message locally
+      tempId: `temp-${Date.now()}`
     };
-    
 
     try {
-      // Gửi qua WebSocket
-      if (stompClient) {
+      // Send via WebSocket if connected
+      if (stompClient && connected) {
         stompClient.send("/app/chat/send", {}, JSON.stringify(messagePayload));
+      } else {
+        // Fallback to HTTP if WebSocket not connected
+        await axios.post("http://localhost:8080/messages/send", messagePayload);
       }
 
-      // Gửi tin nhắn lên UI
-      onAddMessage(messagePayload);
-
+      // Reset input fields
       setNewMessage("");
       setMedia(null);
+      setIsLoading(false);
     } catch (err) {
-      console.error("Lỗi gửi tin nhắn:", err);
+      console.error("Error sending message:", err);
+      setIsLoading(false);
     }
   };
 
-  // Kết nối WebSocket
-  useEffect(() => {
-    if (!selectedChat?.chatBoxID) return;
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
 
-    const socket = new SockJS("http://localhost:8080/chat");
-    const client = Stomp.over(socket);
+  const handleFileClick = () => {
+    fileInputRef.current.click();
+  };
 
-    client.connect({}, (frame) => {
-      console.log("✅ Kết nối WebSocket thành công:", frame);
-      setConnected(true);
-      setStompClient(client);
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setMedia(e.target.files[0]);
+    }
+  };
 
-      // Subscribe tới topic chung
-      client.subscribe("/topic/messages/"+selectedChat.chatBoxID, (messageOutput) => {
-        const msg = JSON.parse(messageOutput.body);
-        console.log("Tin nhân:", msg);
-        // Chỉ xử lý nếu là tin nhắn của box đang chọn
-        if (msg.chatBoxId === selectedChat.chatBoxID) {
-          onAddMessage(msg);
-        }
+  // Group messages by sender for UI display
+  const groupedMessages = messages.reduce((acc, msg, index) => {
+    const prevMsg = index > 0 ? messages[index - 1] : null;
+    
+    // Check if this message is from the same sender as previous
+    const sameAsPrevious = prevMsg && prevMsg.senderId === msg.senderId;
+    
+    if (sameAsPrevious) {
+      // Add to the existing group
+      acc[acc.length - 1].messages.push(msg);
+    } else {
+      // Create a new group
+      acc.push({
+        senderId: msg.senderId,
+        senderName: msg.senderName,
+        messages: [msg]
       });
-    });
-
-    return () => {
-      if (client) client.disconnect();
-    };
-  }, [selectedChat?.chatBoxID]);
+    }
+    
+    return acc;
+  }, []);
 
   return (
-    <div className="w-1/2 bg-white p-4 flex flex-col">
+    <div className="flex-1 flex flex-col bg-white">
+      {/* Chat header */}
       {selectedChat ? (
         <>
-         <div className="bg-blue-100 text-blue-800 text-2xl font-bold px-6 py-3 rounded mb-4 shadow">
-            {selectedChat.chatBoxName || `Chatbox ID: ${selectedChat.chatBoxID}`}
+          <div className="flex items-center p-3 border-b border-gray-300">
+            <div className="flex items-center flex-1">
+              <img
+                src={selectedChat.chatBoxImage || "/assets/default-avatar.jpg"}
+                alt="Avatar"
+                className="w-10 h-10 rounded-full"
+              />
+              <div className="ml-3">
+                <h2 className="font-semibold">{selectedChat.chatBoxName || `Chat ${selectedChat.chatBoxID}`}</h2>
+                <p className="text-xs text-gray-500">Đang hoạt động</p>
+              </div>
+            </div>
+            <div className="flex space-x-2">
+              <button className="p-2 rounded-full hover:bg-gray-100">
+                <Info size={20} />
+              </button>
+            </div>
           </div>
 
-
-
-          <div className="flex-1 border p-2 h-[70vh] overflow-auto">
-            {messages.length > 0 ? (
-              messages.map((msg, idx) => (
-                <div key={idx} className="mb-2">
-                  <strong>{msg.senderName || "Bạn"}:</strong> {msg.text}
-                  {msg.mediaList && msg.mediaList.length > 0 && (
-                    <div className="mt-1">
-                      {msg.mediaList.map((media, i) => (
-                        
-                        <img
-        key={media.mediaURL || i}
-        src={media.mediaURL}
-        alt="Media"
-        className="max-w-xs mt-1 rounded"
-      />
+          {/* Messages area */}
+          <div className="flex-1 p-4 overflow-y-auto bg-gray-50">
+            {groupedMessages.length > 0 ? (
+              groupedMessages.map((group, groupIndex) => {
+                const isCurrentUser = group.senderId === currentUserId;
+                
+                return (
+                  <div 
+                    key={`${group.senderId}-${groupIndex}`} 
+                    className={`flex mb-4 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
+                  >
+                    {!isCurrentUser && (
+                      <img 
+                        src={selectedChat.chatBoxImage || "/assets/default-avatar.jpg"} 
+                        alt="Avatar" 
+                        className="w-8 h-8 rounded-full mt-1"
+                      />
+                    )}
+                    
+                    <div className={`flex flex-col max-w-[70%] ${isCurrentUser ? 'items-end' : 'ml-2 items-start'}`}>
+                      {group.messages.map((msg, msgIndex) => (
+                        <div 
+                          key={msg.messageId || msg.tempId || msgIndex}
+                          className={`p-3 rounded-2xl mb-1 ${
+                            isCurrentUser 
+                              ? 'bg-blue-500 text-white' 
+                              : 'bg-gray-200 text-gray-800'
+                          }`}
+                        >
+                          {msg.text}
+                          
+                          {msg.mediaList && msg.mediaList.length > 0 && msg.mediaList.map((media, i) => (
+                            <img
+                              key={media.mediaURL || i}
+                              src={media.mediaURL}
+                              alt="Media"
+                              className="mt-2 rounded-lg max-w-full"
+                            />
+                          ))}
+                        </div>
                       ))}
                     </div>
-                  )}
-                </div>
-              ))
+                  </div>
+                );
+              })
             ) : (
-              <p>Chưa có tin nhắn nào</p>
+              <div className="flex items-center justify-center h-full text-gray-500">
+                {isLoading ? 
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div> : 
+                  <p>Chưa có tin nhắn. Hãy bắt đầu cuộc trò chuyện!</p>
+                }
+              </div>
             )}
+            <div ref={messagesEndRef} />
           </div>
 
-          <div className="mt-2 border-t pt-2 flex items-center">
-            <input
-              type="text"
-              className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder={`Nhập tin nhắn tới ${selectedChat.chatBoxName || "Người dùng"}`}
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-            />
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setMedia(e.target.files[0])}
-              className="ml-2 p-2 border rounded-lg"
-            />
-            <button
-              className="ml-2 px-4 py-2 bg-blue-500 text-white rounded-lg"
-              onClick={handleSendMessage}
-              disabled={!connected}
-            >
-              Gửi
-            </button>
+          {/* Message input */}
+          <div className="p-3 border-t border-gray-300">
+            {media && (
+              <div className="mb-2 relative inline-block">
+                <img 
+                  src={URL.createObjectURL(media)} 
+                  alt="Preview" 
+                  className="h-20 rounded border border-gray-300" 
+                />
+                <button 
+                  className="absolute -top-2 -right-2 bg-gray-800 rounded-full p-1 text-white"
+                  onClick={() => setMedia(null)}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+            
+            <div className="flex items-center bg-gray-100 rounded-full p-1">
+              <button 
+                className="p-2 rounded-full hover:bg-gray-200 text-gray-600"
+                onClick={handleFileClick}
+              >
+                <Paperclip size={20} />
+              </button>
+              
+              <input
+                type="text"
+                className="flex-1 p-2 bg-transparent focus:outline-none"
+                placeholder={`Nhắn tin với ${selectedChat.chatBoxName || "người dùng"}`}
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+              />
+              
+              <button
+                className={`p-2 rounded-full ${
+                  newMessage.trim() || media ? 'bg-blue-500 text-white' : 'text-gray-400'
+                }`}
+                onClick={handleSendMessage}
+                disabled={(!newMessage.trim() && !media) || isLoading}
+              >
+                {isLoading ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                ) : (
+                  <Send size={20} />
+                )}
+              </button>
+              
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+            </div>
           </div>
         </>
       ) : (
-        <p>Chọn một cuộc trò chuyện để bắt đầu nhắn tin</p>
+        <div className="flex-1 flex items-center justify-center text-gray-500">
+          Chọn một cuộc trò chuyện để bắt đầu
+        </div>
       )}
     </div>
   );
 };
-
 export default ChatWindow;
