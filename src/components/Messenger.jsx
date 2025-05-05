@@ -91,12 +91,12 @@ const Messenger = () => {
 
   const handleAddMessage = (newMsg) => {
     // Check if message already exists to prevent duplicates
+    console.log(newMsg)
     setMessages(prev => {
       const msgId = newMsg.messageId || `${newMsg.senderId}-${newMsg.timestamp}`;
       const exists = prev.some(m => 
         (m.messageId && m.messageId === newMsg.messageId) || 
-        (m.senderId === newMsg.senderId && m.text === newMsg.text && 
-         m.timestamp === newMsg.timestamp)
+        (m.userId === newMsg.userId && m.text === newMsg.text && m.time === newMsg.time)
       );
       
       if (exists) return prev;

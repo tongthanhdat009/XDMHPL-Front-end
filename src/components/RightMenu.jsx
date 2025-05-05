@@ -202,7 +202,7 @@ const RightMenu = ({ selectedChat, onUpdateChat, currentUserId }) => {
             )}
             
             <img
-              src={chatInfo.image}
+              src={chatInfo.image || "http://localhost:8080/assets/default-avatar.jpg"}
               alt="Group Avatar"
               className="w-24 h-24 rounded-full border shadow-sm object-cover cursor-pointer"
               onClick={isEditMode ? handleImageClick : undefined}

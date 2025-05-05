@@ -76,9 +76,14 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
         });
     
         const mediaUrl = uploadRes.data.url;
+        
+        // Tạo đối tượng MediaModel phù hợp với backend
         mediaList.push({
-          mediaURL: mediaUrl,
+          // Không cần messageMediaID vì nó được tạo tự động từ backend
           mediaType: "image",
+          mediaURL: mediaUrl,
+          // Không cần message vì nó sẽ được liên kết từ backend
+          // chatBox sẽ được thiết lập từ backend
         });
       } catch (error) {
         console.error("Error uploading image:", error);
@@ -97,16 +102,18 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
       receiverId: selectedChat.chatBoxID,
       chatBoxId: selectedChat.chatBoxID,
       text: newMessage,
-      mediaList: mediaList,
-      timestamp: new Date().toISOString(),
-      // Add a temporary ID to help identify this message locally
-      tempId: `temp-${Date.now()}`
+      mediaList: mediaList,  // MediaModel array được định dạng phù hợp
     };
 
+    
+
+    console.log("Sending message:", messagePayload);
     try {
       // Send via WebSocket if connected
       if (stompClient && connected) {
-        stompClient.send("/app/chat/send", {}, JSON.stringify(messagePayload));
+        stompClient.send("/app/chat/send", {
+          "content-type": "application/json"
+        }, JSON.stringify(messagePayload));
       } else {
         // Fallback to HTTP if WebSocket not connected
         await axios.post("http://localhost:8080/messages/send", messagePayload);
@@ -169,7 +176,7 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
           <div className="flex items-center p-3 border-b border-gray-300">
             <div className="flex items-center flex-1">
               <img
-                src={selectedChat.chatBoxImage || "/assets/default-avatar.jpg"}
+                src={selectedChat.chatBoxImage || "http://localhost:8080/assets/default-avatar.jpg"}
                 alt="Avatar"
                 className="w-10 h-10 rounded-full"
               />
@@ -198,7 +205,7 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
                   >
                     {!isCurrentUser && (
                       <img 
-                        src={selectedChat.chatBoxImage || "/assets/default-avatar.jpg"} 
+                        src={selectedChat.chatBoxImage || "http://localhost:8080/assets/default-avatar.jpg"} 
                         alt="Avatar" 
                         className="w-8 h-8 rounded-full mt-1"
                       />
