@@ -250,7 +250,7 @@ const PostManagement = () => {
          </div>
       </form>
       {/* ... Bảng hiển thị ... */}
-       <table className="min-w-full bg-white border border-gray-200 text-sm">
+       <table className="min-w-full bg-white border border-gray-200 text-sm shadow-md">
             <thead className="bg-gray-100">
                 <tr>
                     <th className="px-4 py-2 border-b text-left font-semibold text-gray-600">ID</th>
