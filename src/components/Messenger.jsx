@@ -142,6 +142,7 @@ const Messenger = () => {
           selectedChat={selectedChat}
           onUpdateChat={handleUpdateChat}
           currentUserId={currentUserId}
+          updateChat={fetchChats}
         />
       </div>
     </div>

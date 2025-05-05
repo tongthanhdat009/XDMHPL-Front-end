@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import {Info, X, Edit } from 'lucide-react';
 
-const RightMenu = ({ selectedChat, onUpdateChat, currentUserId }) => {
+const RightMenu = ({ selectedChat, onUpdateChat, currentUserId, updateChat }) => {
   const [chatInfo, setChatInfo] = useState({
     name: "",
     image: "/assets/default-avatar.jpg" 
@@ -121,6 +121,8 @@ const RightMenu = ({ selectedChat, onUpdateChat, currentUserId }) => {
           chatBoxName: newName,
           chatBoxImage: chatInfo.image,
         });
+
+        updateChat();
         
         setIsEditMode(false);
       }
