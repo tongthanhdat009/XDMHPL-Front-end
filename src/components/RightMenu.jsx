@@ -1,19 +1,22 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import {Info, X, Edit } from 'lucide-react';
+import {Info, X, Edit, ChevronRight, ChevronLeft } from 'lucide-react';
 
 const RightMenu = ({ selectedChat, onUpdateChat, currentUserId, updateChat }) => {
   const [chatInfo, setChatInfo] = useState({
     name: "",
     image: "/assets/default-avatar.jpg" 
   });
-  console.log(currentUserId);
   const [sentImages, setSentImages] = useState([]);
   const [isEditMode, setIsEditMode] = useState(false);
   const [newName, setNewName] = useState("");
   const [isExpanded, setIsExpanded] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef(null);
+  
+  // Thêm state cho modal hiển thị ảnh
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   useEffect(() => {
     if (selectedChat?.chatBoxID && currentUserId) {
@@ -175,6 +178,48 @@ const RightMenu = ({ selectedChat, onUpdateChat, currentUserId, updateChat }) =>
     fileInputRef.current.click();
   };
 
+  // Xử lý khi click vào ảnh để mở modal
+  const openImageModal = (index) => {
+    setSelectedImageIndex(index);
+    setShowImageModal(true);
+  };
+
+  // Xử lý khi đóng modal
+  const closeImageModal = () => {
+    setShowImageModal(false);
+  };
+
+  // Xử lý khi chuyển đến ảnh trước đó
+  const goToPreviousImage = () => {
+    setSelectedImageIndex((prevIndex) => (prevIndex === 0 ? sentImages.length - 1 : prevIndex - 1));
+  };
+
+  // Xử lý khi chuyển đến ảnh tiếp theo
+  const goToNextImage = () => {
+    setSelectedImageIndex((prevIndex) => (prevIndex === sentImages.length - 1 ? 0 : prevIndex + 1));
+  };
+
+  // Xử lý khi nhấn phím mũi tên để điều hướng trong modal
+  const handleKeyDown = (e) => {
+    if (!showImageModal) return;
+    
+    if (e.key === 'ArrowLeft') {
+      goToPreviousImage();
+    } else if (e.key === 'ArrowRight') {
+      goToNextImage();
+    } else if (e.key === 'Escape') {
+      closeImageModal();
+    }
+  };
+
+  // Thêm event listener cho phím mũi tên
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showImageModal, selectedImageIndex]);
+
   if (!selectedChat) {
     return null;
   }
@@ -206,7 +251,7 @@ const RightMenu = ({ selectedChat, onUpdateChat, currentUserId, updateChat }) =>
             )}
             
             <img
-              src={chatInfo.image }
+              src={chatInfo.image}
               alt="Group Avatar"
               className="w-24 h-24 rounded-full border shadow-sm object-cover cursor-pointer"
               onClick={isEditMode ? handleImageClick : undefined}
@@ -267,9 +312,6 @@ const RightMenu = ({ selectedChat, onUpdateChat, currentUserId, updateChat }) =>
           <div className="p-4 border-b border-gray-200">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold text-gray-800">Ảnh đã chia sẻ</h3>
-              {sentImages.length > 0 && (
-                <button className="text-blue-500 text-sm">Xem tất cả</button>
-              )}
             </div>
             
             {isLoading ? (
@@ -277,13 +319,14 @@ const RightMenu = ({ selectedChat, onUpdateChat, currentUserId, updateChat }) =>
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
               </div>
             ) : sentImages.length > 0 ? (
-              <div className="grid grid-cols-3 gap-1">
-                {sentImages.slice(0, 9).map((img, index) => (
+              <div className="grid grid-cols-3 gap-1 max-h-64 overflow-y-auto">
+                {sentImages.map((img, index) => (
                   <div key={index} className="aspect-square overflow-hidden">
                     <img
                       src={img.mediaURL}
                       alt="Shared media"
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover cursor-pointer"
+                      onClick={() => openImageModal(index)}
                     />
                   </div>
                 ))}
@@ -297,6 +340,56 @@ const RightMenu = ({ selectedChat, onUpdateChat, currentUserId, updateChat }) =>
             <h3 className="font-semibold text-gray-800 mb-2">File và liên kết</h3>
             <div className="py-2 px-3 bg-gray-50 rounded-lg">
               <p className="text-gray-500 text-sm">Chưa có file nào được chia sẻ</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image Modal */}
+      {showImageModal && sentImages.length > 0 && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center">
+          <div className="relative w-full h-full flex flex-col">
+            {/* Header */}
+            <div className="p-4 flex justify-end">
+              <button 
+                onClick={closeImageModal}
+                className="text-white hover:bg-gray-800 p-2 rounded-full"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            
+            {/* Image Container */}
+            <div className="flex-1 flex items-center justify-center relative">
+              {/* Previous Button */}
+              <button 
+                onClick={goToPreviousImage}
+                className="absolute left-4 text-white hover:bg-gray-800 p-2 rounded-full"
+              >
+                <ChevronLeft size={32} />
+              </button>
+
+              {/* Image */}
+              <div className="max-w-4xl max-h-full px-10">
+                <img
+                  src={sentImages[selectedImageIndex].mediaURL}
+                  alt="Enlarged view"
+                  className="max-w-full max-h-[calc(100vh-120px)] object-contain"
+                />
+              </div>
+
+              {/* Next Button */}
+              <button 
+                onClick={goToNextImage}
+                className="absolute right-4 text-white hover:bg-gray-800 p-2 rounded-full"
+              >
+                <ChevronRight size={32} />
+              </button>
+            </div>
+            
+            {/* Footer - Image Counter */}
+            <div className="p-4 text-center text-white">
+              <span>{selectedImageIndex + 1} / {sentImages.length}</span>
             </div>
           </div>
         </div>
