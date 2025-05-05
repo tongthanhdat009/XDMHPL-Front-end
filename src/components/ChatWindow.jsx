@@ -41,7 +41,7 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage }) => {
     const user = storedUser ? JSON.parse(storedUser) : null;
     
     const messagePayload = {
-      senderId: user?.id || 0, // fallback = 0 nếu không có user
+      senderId: user?.userID || 0, // fallback = 0 nếu không có user
       receiverId: selectedChat?.chatBoxID,
       chatBoxId: selectedChat?.chatBoxID,
       text: newMessage,
@@ -78,7 +78,7 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage }) => {
       setStompClient(client);
 
       // Subscribe tới topic chung
-      client.subscribe("/topic/messages", (messageOutput) => {
+      client.subscribe("/topic/messages/"+selectedChat.chatBoxID, (messageOutput) => {
         const msg = JSON.parse(messageOutput.body);
 
         // Chỉ xử lý nếu là tin nhắn của box đang chọn
