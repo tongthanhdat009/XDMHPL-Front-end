@@ -4,6 +4,7 @@ import SockJS from "sockjs-client";
 import { Stomp } from "@stomp/stompjs";
 import {Send, Paperclip, Info, X } from 'lucide-react';
 const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messagesEndRef }) => {
+  console.log(messages);
   const [newMessage, setNewMessage] = useState("");
   const [media, setMedia] = useState(null);
   const [stompClient, setStompClient] = useState(null);
@@ -147,27 +148,23 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
   };
 
   // Group messages by sender for UI display
-  const groupedMessages = messages.reduce((acc, msg, index) => {
-    const prevMsg = index > 0 ? messages[index - 1] : null;
-    
-    // Check if this message is from the same sender as previous
-    const sameAsPrevious = prevMsg && prevMsg.senderId === msg.senderId;
-    
-    if (sameAsPrevious) {
-      // Add to the existing group
-      acc[acc.length - 1].messages.push(msg);
+  const groupedMessages = messages.reduce((acc, msg) => {
+    const lastGroup = acc[acc.length - 1];
+  
+    if (lastGroup && lastGroup.userId === msg.userId) {
+      lastGroup.messages.push(msg);
     } else {
-      // Create a new group
       acc.push({
-        senderId: msg.senderId,
-        senderName: msg.senderName,
+        userId: msg.userId,
         messages: [msg]
       });
     }
-    
+  
     return acc;
   }, []);
+  
 
+  console.log(groupedMessages);
   return (
     <div className="flex-1 flex flex-col bg-white">
       {/* Chat header */}
@@ -196,39 +193,31 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
           <div className="flex-1 p-4 overflow-y-auto bg-gray-50">
             {groupedMessages.length > 0 ? (
               groupedMessages.map((group, groupIndex) => {
-                const isCurrentUser = group.senderId === currentUserId;
-                
+                const isCurrentUser = group.userId === currentUserId;
+              
                 return (
-                  <div 
-                    key={`${group.senderId}-${groupIndex}`} 
-                    className={`flex mb-4 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
-                  >
+                  <div key={groupIndex} className={`flex mb-4 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
                     {!isCurrentUser && (
-                      <img 
-                        src={selectedChat.chatBoxImage || "http://localhost:8080/assets/default-avatar.jpg"} 
-                        alt="Avatar" 
+                      <img
+                        src={"http://localhost:8080/assets/default-avatar.jpg"}
                         className="w-8 h-8 rounded-full mt-1"
                       />
                     )}
-                    
-                    <div className={`flex flex-col max-w-[70%] ${isCurrentUser ? 'items-end' : 'ml-2 items-start'}`}>
-                      {group.messages.map((msg, msgIndex) => (
-                        <div 
-                          key={msg.messageId || msg.tempId || msgIndex}
-                          className={`p-3 rounded-2xl mb-1 ${
-                            isCurrentUser 
-                              ? 'bg-blue-500 text-white' 
-                              : 'bg-gray-200 text-gray-800'
+                    <div className={`flex flex-col max-w-[70%] ${isCurrentUser ? 'items-end' : 'items-start ml-2'}`}>
+                      {group.messages.map((msg, i) => (
+                        <div
+                          key={msg.messageId}
+                          className={`p-3 mb-1 rounded-2xl ${
+                            isCurrentUser ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'
                           }`}
                         >
-                          {msg.text}
-                          
-                          {msg.mediaList && msg.mediaList.length > 0 && msg.mediaList.map((media, i) => (
+                          <div>{msg.text}</div>
+                          {msg.mediaList?.length > 0 && msg.mediaList.map((media, j) => (
                             <img
-                              key={media.mediaURL || i}
+                              key={media.messageMediaID}
                               src={media.mediaURL}
-                              alt="Media"
-                              className="mt-2 rounded-lg max-w-full"
+                              alt="media"
+                              className="mt-2 rounded max-w-xs"
                             />
                           ))}
                         </div>
