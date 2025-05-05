@@ -5,6 +5,7 @@ import { useAuth } from '../LoginPage/LoginProcess/AuthProvider';
 const Contact = ({ contact, onClick }) => {
   const { onlineUsers } = useAuth();
   const isOnline = onlineUsers.includes(contact.userID);
+  console.log(contact)
   return (
     <div className='flex items-center space-x-3 mb-2 relative hover:bg-gray-200 cursor-pointer p-2 rounded-xl' onClick={onClick}>
       <Avatar

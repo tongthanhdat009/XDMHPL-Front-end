@@ -1,9 +1,26 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Search, Settings, Send, Paperclip, Info, X, Edit, Image } from 'lucide-react';
+import { useSearchParams } from "react-router-dom";
+
 const ChatList = ({ chats, selectedChat, onSelectChat, loading }) => {
+  // const [searchParams] = useSearchParams();
+  // const q = Number(searchParams.get("chatboxId")); // Lấy giá trị q từ URL
+  // console.log(q);
+  console.log(chats);
   const [searchTerm, setSearchTerm] = useState('');
-  
+  // useEffect(() => {
+  //   if (q && chats && chats.length > 0) {
+  //     console.log("Searching for chat with ID:", q);
+  //     const chatBox = chats.find(chat => Number(chat.chatBoxID) === q);
+  //     if (chatBox) {
+  //       console.log("Found matching chat:", chatBox);
+  //       onSelectChat(chatBox);
+  //     } else {
+  //       console.log("No matching chat found for ID:", q);
+  //     }
+  //   }
+  // }, [q, chats]);
   const filteredChats = chats.filter(chat => 
     (chat.chatBoxName || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -54,7 +71,7 @@ const ChatList = ({ chats, selectedChat, onSelectChat, loading }) => {
             >
               <div className="relative">
                 <img
-                  src={chat.chatBoxImage || "http://localhost:8080/assets/default-avatar.jpg"}
+                  src={chat.imageURL ? chat.imageURL :"http://localhost:8080/uploads/avatars/default.jpg"}
                   alt="Avatar"
                   className="w-12 h-12 rounded-full object-cover"
                 />

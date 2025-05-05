@@ -34,7 +34,7 @@ const RightMenu = ({ selectedChat, onUpdateChat, currentUserId }) => {
       
       setChatInfo({
         name: chatData.chatBoxName || "Nhóm đã bị khóa",
-        image: chatData.chatBoxImage || "/assets/default-avatar.jpg"
+        image: chatData.imageURL ? `${chatData.imageURL}` : "http://localhost:8080/assets/default-avatar.jpg"
       });
       
       setNewName(chatData.chatBoxName || "");
@@ -150,9 +150,11 @@ const RightMenu = ({ selectedChat, onUpdateChat, currentUserId }) => {
       const imageName = response.data.fileName;
       const imageUrl = `/assets/${imageName}`;
       
+      // Cập nhật đường dẫn đầy đủ
+      const fullImageUrl = `http://localhost:8080/public${imageUrl}`;
       setChatInfo({
         ...chatInfo,
-        image: imageUrl
+        image: fullImageUrl
       });
     } catch (error) {
       console.error("Error uploading image:", error);
@@ -202,7 +204,7 @@ const RightMenu = ({ selectedChat, onUpdateChat, currentUserId }) => {
             )}
             
             <img
-              src={chatInfo.image || "http://localhost:8080/assets/default-avatar.jpg"}
+              src={chatInfo.image }
               alt="Group Avatar"
               className="w-24 h-24 rounded-full border shadow-sm object-cover cursor-pointer"
               onClick={isEditMode ? handleImageClick : undefined}

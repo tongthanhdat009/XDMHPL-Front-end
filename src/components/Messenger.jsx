@@ -12,10 +12,26 @@ const Messenger = () => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
-
   const storedUser = localStorage.getItem("currentUser");
   const user = storedUser ? JSON.parse(storedUser) : null;
   const currentUserId = user.userID;
+
+  useEffect(() => {
+    const fetchDatas = async () => {
+      try {
+        await authService.getAllPostsFormDB();
+        await authService.getAllUsersFormDB();
+        await authService.getCurrentUserFormDB(user.userID);
+      } catch (error) {
+        console.error("Error fetching:", error);
+      }
+    };
+
+    fetchDatas();
+  }, []);
+
+
+
 
   // Fetch chat list
   const fetchChats = async () => {
