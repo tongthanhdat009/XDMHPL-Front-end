@@ -22,23 +22,40 @@ const authService = {
   login: async (userIdentifier, password, role) => {
     try {
       const deviceInfo = navigator.userAgent; // Lấy thông tin thiết bị
-      let sessionId = authService.getSessionId(); // Lấy sessionID từ localStorage hoặc sessionStorage
-  
       // 1. Kiểm tra session hiện tại
-      if (sessionId) {
-        const currentUser = authService.getCurrentUser();
-        if (currentUser) {
-          // Gọi API để kiểm tra xem session có hợp lệ không
-          const checkSessionResponse = await api.get(`/auth/check-session/${currentUser.userID}`);
-          if (checkSessionResponse.status === 200) {
-            console.log("Session hiện tại hợp lệ:", checkSessionResponse.data);
-            return { success: true, data: { sessionId, user: currentUser } };
-          } else {
-            console.log("Session không còn hợp lệ. Tiến hành đăng nhập lại.");
+      if (role === "admin") {
+        let sessionIdAdmin = authService.getSessionId("admin"); // Lấy sessionID từ localStorage hoặc sessionStorage
+        if (sessionIdAdmin) {
+          const currentAdmin = authService.getAdminCurrentUser();
+          if (currentAdmin) {
+            // Gọi API để kiểm tra xem session có hợp lệ không
+            const checkSessionResponse = await api.get(`/auth/check-session/${currentAdmin.userID}`);
+            if (checkSessionResponse.status === 200) {
+              console.log("Session hiện tại hợp lệ:", checkSessionResponse.data);
+              return { success: true, data: { sessionId: sessionIdAdmin, user: currentAdmin } };
+            } else {
+              console.log("Session không còn hợp lệ. Tiến hành đăng nhập lại.");
+            }
           }
         }
       }
-  
+      else{
+        let sessionId = authService.getSessionId("user");
+        if (sessionId) {
+          const currentUser = authService.getCurrentUser();
+          if (currentUser) {
+            // Gọi API để kiểm tra xem session có hợp lệ không
+            const checkSessionResponse = await api.get(`/auth/check-session/${currentUser.userID}`);
+            if (checkSessionResponse.status === 200) {
+              console.log("Session hiện tại hợp lệ:", checkSessionResponse.data);
+              return { success: true, data: { sessionId, user: currentUser } };
+            } else {
+              console.log("Session không còn hợp lệ. Tiến hành đăng nhập lại.");
+            }
+          }
+        }
+      }
+      
       // 2. Tiến hành đăng nhập
       const loginResponse = await api.post("/auth/login", {
         userIdentifier,
@@ -47,6 +64,7 @@ const authService = {
         deviceInfo,
       });
       // Xử lý dữ liệu trả về
+      console.log("Login response:", loginResponse.data);
       const { sessionId: newSessionId, user } = loginResponse.data;
       
       await authService.getAllPostsFormDB();
@@ -65,7 +83,7 @@ const authService = {
         sessionStorage.removeItem("sessionID");
         sessionStorage.removeItem("currentUser");
       }
-      
+      console.log(localStorage.getItem("adminCurrentUser"));
   
       return { success: true, data: loginResponse.data };
     } catch (error) {
@@ -104,7 +122,10 @@ const authService = {
     return str ? JSON.parse(str) : null;
   },
 
-  getSessionId: () => {
+  getSessionId: (role = "user") => {
+    if (role === "admin") {
+      return localStorage.getItem("adminSessionID") || sessionStorage.getItem("adminSessionID");
+    }
     return localStorage.getItem("sessionID") || sessionStorage.getItem("sessionID");
   },
 
@@ -115,7 +136,7 @@ const authService = {
     return u?.userRole === "admin";
   },
 
-  logout: async () => {
+  logout: async (role="user") => {
     console.log("Logout called");
     const sid = authService.getSessionId();
 
@@ -137,18 +158,21 @@ const authService = {
       }
     }
 
-    localStorage.removeItem("sessionID");
-    localStorage.removeItem("currentUser");
-    localStorage.removeItem("posts");
-    localStorage.removeItem("users");
-    
-    localStorage.removeItem("adminSessionID");
-    localStorage.removeItem("adminCurrentUser");
-    sessionStorage.removeItem("adminSessionID");
-    sessionStorage.removeItem("adminCurrentUser");
-
-    sessionStorage.removeItem("sessionID");
-    sessionStorage.removeItem("currentUser");
+    if (role === "admin") {
+      localStorage.removeItem("adminSessionID");
+      localStorage.removeItem("adminCurrentUser");
+      sessionStorage.removeItem("adminSessionID");
+      sessionStorage.removeItem("adminCurrentUser");
+    }
+    else{
+      localStorage.removeItem("sessionID");
+      localStorage.removeItem("currentUser");
+      localStorage.removeItem("posts");
+      localStorage.removeItem("users");
+  
+      sessionStorage.removeItem("sessionID");
+      sessionStorage.removeItem("currentUser");
+    }
   },
 
 

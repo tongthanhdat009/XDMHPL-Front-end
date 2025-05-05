@@ -16,7 +16,7 @@ const AdminLogin = () => {
     const admin = authService.getAdminCurrentUser(); // Lấy thông tin admin
     if (admin) {
       console.log("Admin đã đăng nhập, điều hướng đến /admin");
-      navigate('/admin', { replace: true }); // Nếu đã đăng nhập, chuyển đến trang admin
+      navigate('/admin/user', { replace: true }); // Nếu đã đăng nhập, chuyển đến trang admin
     }
   }, [navigate]); 
   
@@ -29,16 +29,17 @@ const AdminLogin = () => {
       
       console.log('Thông tin đăng nhập Admin:', { username, password }); // Bỏ remember
       if (!username || !password) {
-      setError('Vui lòng nhập tên đăng nhập và mật khẩu.');
-      setLoading(false);
-      return;
-    }
+        setError('Vui lòng nhập tên đăng nhập và mật khẩu.');
+        setLoading(false);
+        return;
+      }
 
     try {
       // --- SỬ DỤNG authService.login VỚI role="admin" ---
-      const result = await authService.login(username, password, "admin");
+      const role = "admin"; 
+      const result = await authService.login(username, password, role);
       console.log("Kết quả đăng nhập Admin:", result);
-
+      console.log("Thông tin admin sau khi đăng nhập:", authService.getAdminCurrentUser()); // Kiểm tra thông tin admin sau khi đăng nhập
       if (result.success) {
         navigate('/admin/user');
       } else {
