@@ -242,7 +242,7 @@ const MainContent = ({ activeSection, setActiveSection }) => {
                   isAvatar={friend.isAvatar}
                   type={friend.type}
                   onClick1={() => acceptFriend(friend.id, currentUser.userID)}
-                  onClick2={handleCancelRequest}
+                  onClick2={() => deleteFriend(friend.id)}
                 />
               )
             })}
