@@ -12,8 +12,9 @@ const Messenger = () => {
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
-  const currentUser = authService.getCurrentUser();
-  const currentUserId = currentUser.userID;
+  const storedUser = localStorage.getItem("currentUser");
+  const user = storedUser ? JSON.parse(storedUser) : null;
+  const currentUserId = user.userID;
 
   // Fetch chat list
   const fetchChats = async () => {

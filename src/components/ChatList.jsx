@@ -36,9 +36,6 @@ const ChatList = ({ chats, selectedChat, onSelectChat, loading }) => {
         <button className="flex-1 py-2 font-medium text-blue-600 border-b-2 border-blue-600">
           Hộp thư
         </button>
-        <button className="flex-1 py-2 text-gray-600">
-          Cộng đồng
-        </button>
       </div>
       
       <div className="flex-1 overflow-y-auto">
@@ -57,7 +54,7 @@ const ChatList = ({ chats, selectedChat, onSelectChat, loading }) => {
             >
               <div className="relative">
                 <img
-                  src={chat.chatBoxImage || "/assets/default-avatar.jpg"}
+                  src={chat.chatBoxImage || "http://localhost:8080/assets/default-avatar.jpg"}
                   alt="Avatar"
                   className="w-12 h-12 rounded-full object-cover"
                 />

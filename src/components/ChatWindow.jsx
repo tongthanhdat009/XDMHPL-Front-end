@@ -29,32 +29,30 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
   // Setup WebSocket connection
   useEffect(() => {
     if (!selectedChat?.chatBoxID) return;
-
-    const socket = new SockJS("http://localhost:8080/chat");
-    const client = Stomp.over(socket);
-    
-    // Disable console logging from Stomp
-    client.debug = null;
-    
+  
+    const client = Stomp.over(() => new SockJS("http://localhost:8080/chat"));
+    client.debug = () => {};
+  
     setIsLoading(true);
-    
+  
     client.connect({}, (frame) => {
       console.log("✅ WebSocket connection established:", frame);
       setConnected(true);
       setStompClient(client);
       setIsLoading(false);
-
+  
       // Subscribe to topic for this chat
       client.subscribe(`/topic/messages/${selectedChat.chatBoxID}`, handleWebSocketMessage);
     }, (error) => {
       console.error("WebSocket connection error:", error);
       setIsLoading(false);
     });
-
+  
     return () => {
       if (client && client.connected) {
-        client.disconnect();
-        console.log("WebSocket disconnected");
+        client.disconnect(() => {
+          console.log("WebSocket disconnected");
+        });
       }
       setConnected(false);
       setStompClient(null);
