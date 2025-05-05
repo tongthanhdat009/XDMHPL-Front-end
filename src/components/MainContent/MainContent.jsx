@@ -2,10 +2,11 @@ import React, { useEffect, useState } from 'react'
 import FriendCard from "../ResultFriend/FriendCard";
 import authService from '../LoginPage/LoginProcess/ValidateLogin';
 import { useAuth } from '../LoginPage/LoginProcess/AuthProvider';
+import { useNavigate } from 'react-router-dom';
 
 const MainContent = ({ activeSection, setActiveSection }) => {
   const {stompClient } = useAuth();
-
+  const navigate = useNavigate();
   // State for loading more items
   const [requestsVisible, setRequestsVisible] = useState(14);
   const [suggestionsVisible, setSuggestionsVisible] = useState(14);
@@ -317,7 +318,7 @@ const MainContent = ({ activeSection, setActiveSection }) => {
                 mutualFriends={friend.mutualFriends}
                 isAvatar={friend.isAvatar}
                 type="friend"
-                onClick1={() => console.log("Nhắn tin")}
+                onClick1={() => navigate(`/messages`)}
                 onClick2={() => deleteFriend(friend.id)}
               />
             ))}

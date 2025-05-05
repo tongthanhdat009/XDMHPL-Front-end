@@ -53,9 +53,9 @@ const ChatList = ({ chats, selectedChat, onSelectChat, loading }) => {
       <div className="p-4 border-b border-gray-300 flex justify-between items-center">
         <h1 className="text-xl font-bold">Đoạn chat</h1>
         <div className="flex space-x-2">
-          <button className="p-2 rounded-full hover:bg-gray-200">
+          {/* <button className="p-2 rounded-full hover:bg-gray-200">
             <Settings size={20} />
-          </button>
+          </button> */}
         </div>
       </div>
       

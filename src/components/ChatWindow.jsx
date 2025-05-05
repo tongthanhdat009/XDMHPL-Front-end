@@ -2,10 +2,12 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import SockJS from "sockjs-client";
 import { Stomp } from "@stomp/stompjs";
-import {Send, Paperclip, Info, X } from 'lucide-react';
+import { Send, Paperclip, Info, X } from 'lucide-react';
 import { useNavigate } from "react-router-dom";
 import authService from "./LoginPage/LoginProcess/ValidateLogin";
-const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messagesEndRef,updateChat }) => {
+import { useAuth } from "./LoginPage/LoginProcess/AuthProvider";
+import { Avatar } from "@mui/material";
+const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messagesEndRef, updateChat }) => {
   console.log(messages);
   const [newMessage, setNewMessage] = useState("");
   const [media, setMedia] = useState(null);
@@ -14,7 +16,7 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef(null);
   const [allUsers, setAllUsers] = useState([]);
-
+  const { onlineUsers } = useAuth();
   useEffect(() => {
     const fetchDatas = async () => {
       try {
@@ -28,14 +30,14 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
     fetchDatas();
   }, []);
 
-  
+
   const navigate = useNavigate();
   // Process messages received via WebSocket
   const handleWebSocketMessage = (messageOutput) => {
     try {
       const msg = JSON.parse(messageOutput.body);
       console.log("Received message:", msg);
-      
+
       // Check if this is related to current chat
       if (msg.chatBoxId === selectedChat?.chatBoxID) {
         onAddMessage(msg);
@@ -49,25 +51,25 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
   // Setup WebSocket connection
   useEffect(() => {
     if (!selectedChat?.chatBoxID) return;
-  
+
     const client = Stomp.over(() => new SockJS("http://localhost:8080/chat"));
-    client.debug = () => {};
-  
+    client.debug = () => { };
+
     setIsLoading(true);
-  
+
     client.connect({}, (frame) => {
       console.log("✅ WebSocket connection established:", frame);
       setConnected(true);
       setStompClient(client);
       setIsLoading(false);
-  
+
       // Subscribe to topic for this chat
       client.subscribe(`/topic/messages/${selectedChat.chatBoxID}`, handleWebSocketMessage);
     }, (error) => {
       console.error("WebSocket connection error:", error);
       setIsLoading(false);
     });
-  
+
     return () => {
       if (client && client.connected) {
         client.disconnect(() => {
@@ -89,14 +91,14 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
       setIsLoading(true);
       const formData = new FormData();
       formData.append("file", media);
-    
+
       try {
         const uploadRes = await axios.post("http://localhost:8080/upload", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-    
+
         const mediaUrl = uploadRes.data.url;
-        
+
         // Tạo đối tượng MediaModel phù hợp với backend
         mediaList.push({
           // Không cần messageMediaID vì nó được tạo tự động từ backend
@@ -111,11 +113,11 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
         return;
       }
     }
-    
+
     // Get current user from localStorage
     const storedUser = localStorage.getItem("currentUser");
     const user = storedUser ? JSON.parse(storedUser) : null;
-    
+
     // Create message object
     const messagePayload = {
       senderId: user?.userID || currentUserId,
@@ -125,7 +127,7 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
       mediaList: mediaList,  // MediaModel array được định dạng phù hợp
     };
 
-    
+
 
     console.log("Sending message:", messagePayload);
     try {
@@ -169,7 +171,7 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
   // Group messages by sender for UI display
   const groupedMessages = messages.reduce((acc, msg) => {
     const lastGroup = acc[acc.length - 1];
-  
+
     if (lastGroup && lastGroup.userId === msg.userId) {
       lastGroup.messages.push(msg);
     } else {
@@ -178,10 +180,10 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
         messages: [msg]
       });
     }
-  
+
     return acc;
   }, []);
-  
+
 
   console.log(groupedMessages);
   return (
@@ -212,24 +214,30 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
             {groupedMessages.length > 0 ? (
               groupedMessages.map((group, groupIndex) => {
                 const isCurrentUser = group.userId === currentUserId;
-              
+
                 const user = allUsers.find(user => user.userID === group.userId);
+                const isOnline = onlineUsers.includes(user.userID);
                 return (
                   <div key={groupIndex} className={`flex mb-4 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
                     {!isCurrentUser && (
+                      <div className="relative mr-2">
                       <img
-                        src={user.avatarURL ? 'http://localhost:8080/uploads' + user.avatarURL :"http://localhost:8080/uploads/avatars/default.jpg"}
-                        className="w-8 h-8 rounded-full mt-1 cursor-pointer"
-                        onClick={()=> navigate(`/profile/${group.userId}`)}
+                        src={user.avatarURL ? 'http://localhost:8080/uploads' + user.avatarURL : "http://localhost:8080/uploads/avatars/default.jpg"}
+                        alt={user.fullName || "User"}
+                        className="w-8 h-8 rounded-full cursor-pointer"
+                        onClick={() => navigate(`/profile/${user.userID}`)}
                       />
+                      {isOnline && (
+                        <div className="absolute right-0 bg-green-400 h-2 w-2 rounded-full border border-white p-1" />
+                      )}
+                    </div>
                     )}
                     <div className={`flex flex-col max-w-[70%] ${isCurrentUser ? 'items-end' : 'items-start ml-2'}`}>
                       {group.messages.map((msg, i) => (
                         <div
                           key={msg.messageId}
-                          className={`p-3 mb-1 rounded-2xl ${
-                            isCurrentUser ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'
-                          }`}
+                          className={`p-3 mb-1 rounded-2xl ${isCurrentUser ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'
+                            }`}
                         >
                           <div>{msg.text}</div>
                           {msg.mediaList?.length > 0 && msg.mediaList.map((media, j) => (
@@ -248,8 +256,8 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
               })
             ) : (
               <div className="flex items-center justify-center h-full text-gray-500">
-                {isLoading ? 
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div> : 
+                {isLoading ?
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div> :
                   <p>Chưa có tin nhắn. Hãy bắt đầu cuộc trò chuyện!</p>
                 }
               </div>
@@ -261,12 +269,12 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
           <div className="p-3 border-t border-gray-300">
             {media && (
               <div className="mb-2 relative inline-block">
-                <img 
-                  src={URL.createObjectURL(media)} 
-                  alt="Preview" 
-                  className="h-20 rounded border border-gray-300" 
+                <img
+                  src={URL.createObjectURL(media)}
+                  alt="Preview"
+                  className="h-20 rounded border border-gray-300"
                 />
-                <button 
+                <button
                   className="absolute -top-2 -right-2 bg-gray-800 rounded-full p-1 text-white"
                   onClick={() => setMedia(null)}
                 >
@@ -274,15 +282,15 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
                 </button>
               </div>
             )}
-            
+
             <div className="flex items-center bg-gray-100 rounded-full p-1">
-              <button 
+              <button
                 className="p-2 rounded-full hover:bg-gray-200 text-gray-600"
                 onClick={handleFileClick}
               >
                 <Paperclip size={20} />
               </button>
-              
+
               <input
                 type="text"
                 className="flex-1 p-2 bg-transparent focus:outline-none"
@@ -291,11 +299,10 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
               />
-              
+
               <button
-                className={`p-2 rounded-full ${
-                  newMessage.trim() || media ? 'bg-blue-500 text-white' : 'text-gray-400'
-                }`}
+                className={`p-2 rounded-full ${newMessage.trim() || media ? 'bg-blue-500 text-white' : 'text-gray-400'
+                  }`}
                 onClick={handleSendMessage}
                 disabled={(!newMessage.trim() && !media) || isLoading}
               >
@@ -305,7 +312,7 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
                   <Send size={20} />
                 )}
               </button>
-              
+
               <input
                 ref={fileInputRef}
                 type="file"
