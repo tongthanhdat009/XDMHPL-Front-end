@@ -21,8 +21,8 @@ const AdminSlideMenu = ({ isOpen, setIsOpen, navigate }) => {
     return (
         <motion.div
             animate={{ width: isOpen ? "250px" : "60px" }}
-            className="bg-gray-200 h-screen p-4 overflow-hidden relative transition-all duration-300 flex flex-col justify-between
-                      sm:w-[200px] md:w-[250px] fixed top-0 left-0 z-20" // Đảm bảo h-screen để chiếm toàn bộ chiều cao
+            className="bg-gray-200 h-sreen p-4 overflow-hidden relative transition-all duration-300 flex flex-col justify-between
+                      sm:w-[200px] md:w-[250px] fixed top-0 left-0 z-20 min-vh-100" // Đảm bảo h-screen để chiếm toàn bộ chiều cao
         >
             {/* Phần trên (Header và Menu) */}
             <div className='flex-grow'>

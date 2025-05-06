@@ -80,7 +80,7 @@ const MiddlePart = () => {
             <input
               onClick={handleOpenCreatePostModal}
               type="text"
-              placeholder="Tuan ơi, bạn đang nghĩ gì thế?"
+              placeholder="Bạn đang nghĩ gì thế?"
               className="flex-grow outline-none text-gray-600 text-sm cursor-pointer"
               readOnly
             />

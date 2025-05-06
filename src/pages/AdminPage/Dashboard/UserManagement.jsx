@@ -6,7 +6,7 @@ import { FaUserCircle, FaEye, FaEyeSlash } from 'react-icons/fa'; // Import icon
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
   const navigate = useNavigate();
-  const avatarBasePath = "http://localhost:8080/avatars"; // Đường dẫn cơ sở cho avatar
+  const avatarBasePath = "http://localhost:8080/posts-management/media"; // Đường dẫn cơ sở cho avatar
 
   // Lấy danh sách người dùng
   const fetchUsers = () => {
@@ -16,16 +16,17 @@ const UserManagement = () => {
         // Xử lý URL avatar trước khi set state
         const processedUsers = response.data.map(user => {
           let finalAvatarUrl = null;
-          if (user.avatar && typeof user.avatar === 'string') {
-            if (user.avatar.startsWith('http')) {
-              finalAvatarUrl = user.avatar; // Đã là URL đầy đủ
-            } else if (user.avatar !== 'default.jpg') {
-              finalAvatarUrl = `${avatarBasePath}/${user.avatar}`; // Nối với base path
+          if (user.avatarURL && typeof user.avatarURL === 'string') {
+            if (user.avatarURL.startsWith('http')) {
+              finalAvatarUrl = user.avatarURL; // Đã là URL đầy đủ
+            } else if (user.avatarURL !== 'default.jpg') {
+              finalAvatarUrl = `${avatarBasePath}${user.avatarURL}`; // Nối với base path
             }
           }
+          console.log(`User ID: ${user.userID}, Avatar URL: ${finalAvatarUrl}`); // Kiểm tra URL avatar
           // Đảm bảo trường 'hide' tồn tại và là boolean
           const hideStatus = typeof user.hide === 'boolean' ? user.hide : true; // Mặc định là hiển thị (true) nếu không có hoặc sai kiểu
-          return { ...user, avatarUrl: finalAvatarUrl, hide: hideStatus }; // Lưu URL và trạng thái hide
+          return { ...user, avatarURL: finalAvatarUrl, hide: hideStatus }; // Lưu URL và trạng thái hide
         });
         setUsers(processedUsers);
       })
@@ -109,7 +110,7 @@ const UserManagement = () => {
 
   return (
     // Giữ nguyên container chính
-    <div className="p-4 md:p-8 min-h-screen bg-gray-50">
+    <div className="p-4 md:p-8 min-h-screen rounded-lg bg-gray-50">
       <h1 className="text-2xl font-semibold mb-4 text-black text-center">Quản lý người dùng</h1>
 
       {/* Container cho bảng với shadow và bo góc */}
@@ -142,7 +143,7 @@ const UserManagement = () => {
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10">
                         <AvatarDisplay
-                          src={user.avatarUrl}
+                          src={user.avatarURL}
                           alt="avatar"
                           className="h-10 w-10 rounded-full object-cover"
                         />

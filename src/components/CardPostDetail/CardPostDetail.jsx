@@ -138,7 +138,7 @@ const CardPostDetail = ({ post, onClose, onDelete, onToggleVisibility, onDeleteC
         if (typeof url.avatarUrl === "string" && url.avatarUrl) {
             // Loại bỏ phần '/avatars/' và nối URL
             const updatedUrl = url.avatarUrl.replace('/avatars/', '');
-            const fullUrl = `http://localhost:8080/posts-management/media/avatar/${updatedUrl}`;
+            const fullUrl = `http://localhost:8080/posts-management/media/avatars/${updatedUrl}`;
             return <img src={fullUrl} alt="Avatar" className="w-10 h-10" />;
         } else {
             // Hiển thị placeholder nếu URL không hợp lệ
