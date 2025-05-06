@@ -14,7 +14,7 @@ import { useAuth } from "../LoginPage/LoginProcess/AuthProvider";
 import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
 import PersonIcon from '@mui/icons-material/Person';
 const Header = () => {
-  const { notifications, markNotificationAsRead} = useAuth();
+  const { notifications, markNotificationAsRead } = useAuth();
   const currentUser = authService.getCurrentUser();
 
   console.log(notifications);
@@ -49,7 +49,7 @@ const Header = () => {
 
     return notifications.filter(notification => {
       const creationDate = new Date(notification.creationDate);
-      return creationDate >= oneDayAgo && notification.type!=="MESSAGE";
+      return creationDate >= oneDayAgo && notification.type !== "MESSAGE";
     });
   };
 
@@ -59,13 +59,13 @@ const Header = () => {
 
     return notifications.filter(notification => {
       const creationDate = new Date(notification.creationDate);
-      return creationDate < oneDayAgo && notification.type!=="MESSAGE";
+      return creationDate < oneDayAgo && notification.type !== "MESSAGE";
     });
   };
 
   // Lọc tất cả thông báo chưa đọc
   const filterUnreadNotifications = (notifications) => {
-    return notifications.filter(notification => 
+    return notifications.filter(notification =>
       notification.isReadFlag === 0 && notification.type !== "MESSAGE"
     );
   };
@@ -77,7 +77,7 @@ const Header = () => {
       case "LIKE":
         return <ThumbUpAltIcon className="text-white" fontSize="small" />;
       case "COMMENT":
-        return <ChatBubbleIcon className="text-white"  fontSize="small"/>;
+        return <ChatBubbleIcon className="text-white" fontSize="small" />;
       default:
         return null;
     }
@@ -86,7 +86,7 @@ const Header = () => {
   const recentNotifications = filterRecentNotifications(notifications);
   const previousNotifications = filterPreviousotifications(notifications);
   const handleNotificationItemClick = (notification) => {
-    if(notification.isReadFlag===0){
+    if (notification.isReadFlag === 0) {
       markNotificationAsRead(notification.notificationID);
     }
     switch (notification.type) {
@@ -174,22 +174,47 @@ const Header = () => {
   const [recentSearches, setRecentSearches] = useState([]);
   const [isSearchActive, setIsSearchActive] = useState(false);
 
-  const handleRemoveSearch = (searchToRemove) => {
-    console.log(searchToRemove);
-    setRecentSearches(recentSearches.filter(search => search !== searchToRemove));
+  const handleRemoveSearch = (searchToRemove, e) => {
+    // Stop event propagation to prevent navigation when clicking remove button
+    e.stopPropagation();
+    setRecentSearches(recentSearches.filter(item => 
+      typeof item === 'string' ? item !== searchToRemove : item.fullName !== searchToRemove
+    ));
   };
 
   const handleSearchTermChange = (value) => {
     setSearchTerm(value);
-    const filteredUsers = allUsers.filter(user => user.fullName.toLowerCase().includes(value.toLowerCase()));
-
+    
+    if (value.trim() === '') {
+      setRecentSearches([]);
+      return;
+    }
+    
+    const filteredUsers = allUsers.filter(user => 
+      user.fullName.toLowerCase().includes(value.toLowerCase())
+    );
+    
     if (filteredUsers.length > 0) {
-      // Lấy danh sách fullName từ các user đã lọc
-      setRecentSearches(filteredUsers.map(user => user.fullName));
+      // Return user objects with avatar information
+      setRecentSearches(filteredUsers);
     } else {
-      setRecentSearches([value]); // Đặt recentSearches thành mảng rỗng nếu không có kết quả
+      // If no matching users, just use the search term with no avatar
+      setRecentSearches([value]);
+    }
+    
+    setIsSearchActive(true);
+  };
+
+
+  const handleSearchSubmit = (value) => {
+    const isUserObject = typeof value !== 'string';
+    if(isUserObject) {
+      navigate(`/profile/${value.userID}`);
+    } else {
+      navigate(`/search/top?q=${value}`);
     }
   }
+
 
   //Thông báo
   // Thêm state để theo dõi việc click
@@ -227,7 +252,8 @@ const Header = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-  
+
+  console.log(recentSearches);
   return (
     <div className="sticky top-0 z-50 bg-white flex items-center p-2 lg:px-5 shadow-md justify-between">
       {/* Left */}
@@ -258,33 +284,49 @@ const Header = () => {
         </div>
 
         {isSearchActive && (
-          <div className="absolute top-full left-0 w-full bg-white shadow-lg rounded-lg mt-2 border">
-            <div className="p-4">
-              {recentSearches.length === 0 ? (
-                <div className="text-gray-500">Xin mời nhập tìm kiếm</div>
-              ) : (
-                recentSearches.map((search) => (
+        <div className="absolute top-full left-0 w-full bg-white shadow-lg rounded-lg mt-2 border z-10">
+          <div className="p-4">
+            {recentSearches.length === 0 ? (
+              <div className="text-gray-500">Xin mời nhập tìm kiếm</div>
+            ) : (
+              recentSearches.map((item, index) => {
+                // Check if item is a user object or just a string
+                const isUserObject = typeof item !== 'string';
+                const displayText = isUserObject ? item.fullName : item;
+                
+                const displayTextforSubmit=item;
+                return (
                   <div
-                    key={search}
+                    key={isUserObject ? item.id : `search-${index}`}
                     className="flex items-center justify-between hover:bg-gray-100 p-2 rounded-md cursor-pointer"
-                    onClick={() => {
-                      navigate(`/search/top?q=${search}`);
-                      setIsSearchActive(false);
-                    }}
+                    onClick={() => handleSearchSubmit(displayTextforSubmit)}
                   >
                     <div className="flex items-center space-x-3">
-                      <AccessTimeIcon className="text-gray-500 w-5 h-5" />
-                      <span>{search}</span>
+                      {isUserObject ? (
+                        // Display user avatar for user objects
+                        <Avatar 
+                          src={item.avatarURL ? 'http://localhost:8080/uploads' + item.avatarURL : "http://localhost:8080/uploads/avatars/default.jpg"} 
+                          alt={item.fullName}
+                          className="w-8 h-8"
+                        >
+                          {item.fullName.charAt(0)}
+                        </Avatar>
+                      ) : (
+                        // Display search icon for non-user searches
+                        <SearchIcon className="text-gray-500 w-5 h-5" />
+                      )}
+                      <span>{displayText}</span>
                     </div>
-                    <button onClick={() => handleRemoveSearch(search)}>
+                    <button onClick={(e) => handleRemoveSearch(displayText, e)}>
                       <CloseIcon className="text-gray-500 w-5 h-5 cursor-pointer" />
                     </button>
                   </div>
-                ))
-              )}
-            </div>
+                );
+              })
+            )}
           </div>
-        )}
+        </div>
+      )}
       </div>
 
       {/* Right */}
@@ -325,13 +367,13 @@ const Header = () => {
               </div>
 
               <div className="flex space-x-2 px-4 pb-2">
-                <button 
+                <button
                   className={`${filterType === "all" ? "bg-blue-100 text-blue-600" : "hover:bg-gray-100"} px-3 py-1 rounded-full text-sm font-medium`}
                   onClick={() => handleFilterChange("all")}
                 >
                   Tất cả
                 </button>
-                <button 
+                <button
                   className={`${filterType === "unread" ? "bg-blue-100 text-blue-600" : "hover:bg-gray-100"} px-3 py-1 rounded-full text-sm font-medium`}
                   onClick={() => handleFilterChange("unread")}
                 >
@@ -360,7 +402,7 @@ const Header = () => {
                           <div key={notification.notificationID} className="flex items-start space-x-2 mb-3 p-2 relative cursor-pointer hover:bg-gray-200 hover:rounded-2xl" onClick={() => handleNotificationItemClick(notification)}>
                             <div className="relative">
                               <Avatar src={sender?.avatarURL ? `http://localhost:8080/uploads${sender.avatarURL}` : "http://localhost:8080/uploads/avatars/default.jpg"} className="w-10 h-10" />
-                              <div className={`absolute -bottom-1 -right-1 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs p-3 ${ notification.type === "COMMENT" ? "bg-green-500" : "bg-blue-500"}`}>
+                              <div className={`absolute -bottom-1 -right-1 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs p-3 ${notification.type === "COMMENT" ? "bg-green-500" : "bg-blue-500"}`}>
                                 {getNotificationIcon(notification.type)}
                               </div>
                             </div>
@@ -402,7 +444,7 @@ const Header = () => {
                           <div key={notification.notificationID} className="flex items-start space-x-2 mb-3 relative cursor-pointer p-2 hover:bg-gray-200 hover:rounded-2xl" onClick={() => handleNotificationItemClick(notification)}>
                             <div className="relative">
                               <Avatar src={sender?.avatarURL ? `http://localhost:8080/uploads${sender.avatarURL}` : "http://localhost:8080/uploads/avatars/default.jpg"} className="w-10 h-10" />
-                              <div className={`absolute -bottom-1 -right-1 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs p-3 ${ notification.type === "COMMENT" ? "bg-green-500" : "bg-blue-500"}`}>
+                              <div className={`absolute -bottom-1 -right-1 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs p-3 ${notification.type === "COMMENT" ? "bg-green-500" : "bg-blue-500"}`}>
                                 {getNotificationIcon(notification.type)}
                               </div>
                             </div>
@@ -440,7 +482,7 @@ const Header = () => {
                           <div key={notification.notificationID} className="flex items-start space-x-2 mb-3 p-2 relative cursor-pointer hover:bg-gray-200 hover:rounded-2xl" onClick={() => handleNotificationItemClick(notification)}>
                             <div className="relative">
                               <Avatar src={sender?.avatarURL ? `http://localhost:8080/uploads${sender.avatarURL}` : "http://localhost:8080/uploads/avatars/default.jpg"} className="w-10 h-10" />
-                              <div className={`absolute -bottom-1 -right-1 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs p-3 ${ notification.type === "COMMENT" ? "bg-green-500" : "bg-blue-500"}`}>
+                              <div className={`absolute -bottom-1 -right-1 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs p-3 ${notification.type === "COMMENT" ? "bg-green-500" : "bg-blue-500"}`}>
                                 {getNotificationIcon(notification.type)}
                               </div>
                             </div>
