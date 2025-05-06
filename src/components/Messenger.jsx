@@ -134,6 +134,7 @@ const Messenger = () => {
           selectedChat={selectedChat}
           onSelectChat={handleSelectChat}
           loading={loading}
+          currentUserId={currentUserId}
         />
         <ChatWindow
           selectedChat={selectedChat}
