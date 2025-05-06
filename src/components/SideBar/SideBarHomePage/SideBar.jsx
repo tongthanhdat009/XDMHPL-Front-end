@@ -26,7 +26,7 @@ const SideBar = () => {
       <SideBarRow src={'http://localhost:8080/uploads' + currentUser?.avatarURL} title={currentUser.fullName} onClick={() => handleNavigate({ title: "Profile" })}/>
 
       <SideBarRow Icon={PeopleIcon} title="Friends" onClick={() => handleNavigate({title:"Friends"})}/>
-      <SideBarRow Icon={GroupIcon} title="Groups" onClick={() => handleNavigate({title:"Groups"})}/>
+      {/* <SideBarRow Icon={GroupIcon} title="Groups" onClick={() => handleNavigate({title:"Groups"})}/> */}
       <SideBarRow Icon={StorefrontIcon} title="Marketplace" onClick={() => handleNavigate({title:"Marketplace"})}/>
       <SideBarRow Icon={OndemandVideoIcon} title="Watch" onClick={() => handleNavigate({title:"Watch"})}/>
       <SideBarRow Icon={CalendarMonthIcon} title="Events" onClick={() => handleNavigate({title:"Events"})}/>
