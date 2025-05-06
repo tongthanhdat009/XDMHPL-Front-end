@@ -131,23 +131,35 @@ export const registerUser = async (userData) => {
     if (userData.phoneNumber && !isValidPhoneNumber(userData.phoneNumber)) {
       throw new Error("Số điện thoại không hợp lệ");
     }
-    
+    const formattedDateOfBirth = userData.dateOfBirth ? userData.dateOfBirth.format('YYYY-MM-DD') : null;
+
     const userJson =
       {
         "fullName": userData.firstName + userData.lastName,
-        "userName": userData.username,
+        "username": userData.username,
         "email": userData.email,
         "password": userData.password,
         "avatar": null,
         "phoneNumber": userData.phoneNumber,
-        "dateOfBirth": userData.dateOfBirth,
+        "dateOfBirth": formattedDateOfBirth,
         "gender": userData.gender,
         "coverPhotoURL": null,
         "sessionID": null,
         "role": "user",
+        "token": "",
     };
+    console.log("Sending userJson:", userJson); // Đổi console.log để rõ ràng hơn
 
-    const response = await axios.post("http://localhost:8080/users/create-user", userJson);
+    const response = await axios.post(
+      "http://localhost:8080/users/create-user",
+      userJson, // <-- Sử dụng biến userJson đã tạo
+      {
+        headers: {
+          // Đặt Content-Type tường minh để chỉ là 'application/json'
+          'Content-Type': 'application/json'
+        }
+      }
+    );
     
     // Trả về kết quả từ server với flag success
     return {
