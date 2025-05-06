@@ -22,7 +22,7 @@ const NotificationPage = () => {
     <div className="h-screen bg-gray-100 overflow-hidden">
       <Header />
       <main className="flex h-full">
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1  overflow-y-scroll">
           <NotificationOverlay />
         </div>
       </main>

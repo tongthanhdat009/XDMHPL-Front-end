@@ -66,7 +66,7 @@ const NotificationOverlay = () => {
     return notifications.filter(notification => {
       const creationDate = new Date(notification.creationDate);
       return creationDate >= oneDayAgo && notification.type !== "MESSAGE";
-    });
+    }).sort((a, b) => new Date(b.creationDate) - new Date(a.creationDate)); // Sắp xếp mới nhất lên đầu;;
   };
 
   const filterPreviousotifications = (notifications) => {
@@ -76,14 +76,14 @@ const NotificationOverlay = () => {
     return notifications.filter(notification => {
       const creationDate = new Date(notification.creationDate);
       return creationDate < oneDayAgo && notification.type !== "MESSAGE";
-    });
+    }).sort((a, b) => new Date(b.creationDate) - new Date(a.creationDate)); // Sắp xếp mới nhất lên đầu;;
   };
 
   // Lọc tất cả thông báo chưa đọc
   const filterUnreadNotifications = (notifications) => {
     return notifications.filter(notification =>
       notification.isReadFlag === 0 && notification.type !== "MESSAGE"
-    );
+    ).sort((a, b) => new Date(b.creationDate) - new Date(a.creationDate)); // Sắp xếp mới nhất lên đầu;;
   };
 
   const getNotificationIcon = (type) => {
@@ -121,7 +121,7 @@ const NotificationOverlay = () => {
   }
 
   return (
-    <div className="w-full max-w-3xl mx-auto p-4 bg-white rounded shadow">
+    <div className="w-full max-w-3xl mx-auto p-4 bg-white rounded shadow mb-16">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Thông báo</h1>
         {/* <button
@@ -283,13 +283,13 @@ const NotificationOverlay = () => {
         </div>
       )}
 
-      {filterType === "all" && previousNotifications.length > 0 && (
+      {/* {filterType === "all" && previousNotifications.length > 0 && (
         <div className="p-3">
           <button className="w-full bg-gray-200 hover:bg-gray-300 py-2 rounded text-sm font-medium">
             Xem thông báo trước đó
           </button>
         </div>
-      )}
+      )} */}
     </div>
 
   );
