@@ -105,7 +105,7 @@ const CreatePostModal = ({ open, handleClose, updatePosts }) => {
             <div className='flex space-x-4 items-center'>
               <Avatar src={user?.avatarURL ? 'http://localhost:8080/uploads' + user?.avatarURL :"http://localhost:8080/uploads/avatars/default.jpg"} />
               <div>
-                <p className='font-bold text-lg'>{"Huỳnh Tuấn"}</p>
+                <p className='font-bold text-lg'>{user?.fullName}</p>
               </div>
             </div>
             <textarea
