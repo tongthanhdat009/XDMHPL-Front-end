@@ -116,7 +116,12 @@ const Messenger = () => {
         (m.userId === newMsg.userId && m.text === newMsg.text && m.time === newMsg.time)
       );
       
-      if (exists) return prev;
+      if (exists) {
+        return prev.map(m => 
+          m.messageId === newMsg.messageId ? newMsg : m
+        );
+      }
+  
       return [...prev, newMsg];
     });
   };

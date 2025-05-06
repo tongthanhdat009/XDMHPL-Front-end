@@ -6,7 +6,7 @@ import { Send, Paperclip, Info, X } from 'lucide-react';
 import { useNavigate } from "react-router-dom";
 import authService from "./LoginPage/LoginProcess/ValidateLogin";
 import { useAuth } from "./LoginPage/LoginProcess/AuthProvider";
-import { Avatar } from "@mui/material";
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messagesEndRef, updateChat }) => {
   console.log(messages);
   const [newMessage, setNewMessage] = useState("");
@@ -17,6 +17,11 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
   const fileInputRef = useRef(null);
   const [allUsers, setAllUsers] = useState([]);
   const { onlineUsers } = useAuth();
+  // State để quản lý menu tùy chọn tin nhắn
+  const [showOptionsMenu, setShowOptionsMenu] = useState(null);
+  // State để quản lý tin nhắn đang chỉnh sửa
+  const [editingMessage, setEditingMessage] = useState(null);
+
   useEffect(() => {
     const fetchDatas = async () => {
       try {
@@ -30,8 +35,15 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
     fetchDatas();
   }, []);
 
+  // Xử lý click bên ngoài để đóng menu
+  useEffect(() => {
+    const handleClickOutside = () => setShowOptionsMenu(null);
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
 
   const navigate = useNavigate();
+
   // Process messages received via WebSocket
   const handleWebSocketMessage = (messageOutput) => {
     try {
@@ -86,8 +98,8 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
 
     let mediaList = [];
 
-    // Upload image if selected
-    if (media) {
+    // Khi đang ở chế độ chỉnh sửa tin nhắn, không xử lý media
+    if (media && !editingMessage) {
       setIsLoading(true);
       const formData = new FormData();
       formData.append("file", media);
@@ -118,6 +130,36 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
     const storedUser = localStorage.getItem("currentUser");
     const user = storedUser ? JSON.parse(storedUser) : null;
 
+    // Kiểm tra xem đang chỉnh sửa tin nhắn hay tạo tin nhắn mới
+    if (editingMessage) {
+      // Gửi yêu cầu cập nhật tin nhắn
+      try {
+        const updatePayload = {
+          messageId: editingMessage.messageId,
+          text: newMessage,
+          // Các thông tin khác cần thiết
+        };
+
+        await axios.put(`http://localhost:8080/messages/update`, updatePayload);
+
+        // Cập nhật tin nhắn trong state hiện tại
+        // const updatedMessages = messages.map(msg => 
+        //   msg.messageId === editingMessage.messageId ? {...msg, text: newMessage} : msg
+        // );
+
+        // Cập nhật state
+
+        // Reset trạng thái chỉnh sửa
+        setEditingMessage(null);
+        setNewMessage("");
+        setMedia(null);
+      } catch (error) {
+        console.error("Error updating message:", error);
+      }
+
+      return;
+    }
+
     // Create message object
     const messagePayload = {
       senderId: user?.userID || currentUserId,
@@ -126,8 +168,6 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
       text: newMessage,
       mediaList: mediaList,  // MediaModel array được định dạng phù hợp
     };
-
-
 
     console.log("Sending message:", messagePayload);
     try {
@@ -149,6 +189,31 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
       console.error("Error sending message:", err);
       setIsLoading(false);
     }
+  };
+
+  // Xử lý hiển thị menu tùy chọn
+  const handleShowOptions = (e, messageId) => {
+    e.stopPropagation(); // Ngăn sự kiện lan truyền để không đóng menu ngay lập tức
+    setShowOptionsMenu(prevId => prevId === messageId ? null : messageId);
+  };
+
+  // Xử lý thu hồi tin nhắn
+  const handleRecallMessage = async (messageId) => {
+    try {
+      await axios.put(`http://localhost:8080/messages/recall/${messageId}`);
+      // Cập nhật UI sau khi thu hồi tin nhắn thành công
+
+      setShowOptionsMenu(null);
+    } catch (error) {
+      console.error("Error recalling message:", error);
+    }
+  };
+
+  // Xử lý chỉnh sửa tin nhắn
+  const handleEditMessage = (message) => {
+    setEditingMessage(message);
+    setNewMessage(message.text);
+    setShowOptionsMenu(null);
   };
 
   const handleKeyPress = (e) => {
@@ -184,8 +249,13 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
     return acc;
   }, []);
 
+  // Tắt chế độ chỉnh sửa
+  const cancelEdit = () => {
+    setEditingMessage(null);
+    setNewMessage("");
+    setMedia(null); // Đảm bảo xóa media nếu có khi hủy chỉnh sửa
+  };
 
-  console.log(groupedMessages);
   return (
     <div className="flex-1 flex flex-col bg-white">
       {/* Chat header */}
@@ -216,40 +286,90 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
                 const isCurrentUser = group.userId === currentUserId;
 
                 const user = allUsers.find(user => user.userID === group.userId);
-                const isOnline = onlineUsers.includes(user.userID);
+                const isOnline = onlineUsers.includes(user?.userID);
+
                 return (
                   <div key={groupIndex} className={`flex mb-4 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
                     {!isCurrentUser && (
                       <div className="relative mr-2">
-                      <img
-                        src={user.avatarURL ? 'http://localhost:8080/uploads' + user.avatarURL : "http://localhost:8080/uploads/avatars/default.jpg"}
-                        alt={user.fullName || "User"}
-                        className="w-8 h-8 rounded-full cursor-pointer"
-                        onClick={() => navigate(`/profile/${user.userID}`)}
-                      />
-                      {isOnline && (
-                        <div className="absolute right-0 bg-green-400 h-2 w-2 rounded-full border border-white p-1" />
-                      )}
-                    </div>
+                        <img
+                          src={user?.avatarURL ? 'http://localhost:8080/uploads' + user.avatarURL : "http://localhost:8080/uploads/avatars/default.jpg"}
+                          alt={user?.fullName || "User"}
+                          className="w-8 h-8 rounded-full cursor-pointer"
+                          onClick={() => navigate(`/profile/${user?.userID}`)}
+                        />
+                        {isOnline && (
+                          <div className="absolute right-0 bg-green-400 h-2 w-2 rounded-full border border-white p-1" />
+                        )}
+                      </div>
                     )}
+
                     <div className={`flex flex-col max-w-[70%] ${isCurrentUser ? 'items-end' : 'items-start ml-2'}`}>
-                      {group.messages.map((msg, i) => (
-                        <div
-                          key={msg.messageId}
-                          className={`p-3 mb-1 rounded-2xl ${isCurrentUser ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'
-                            }`}
-                        >
-                          <div>{msg.text}</div>
-                          {msg.mediaList?.length > 0 && msg.mediaList.map((media, j) => (
-                            <img
-                              key={media.messageMediaID}
-                              src={media.mediaURL}
-                              alt="media"
-                              className="mt-2 rounded max-w-xs"
-                            />
-                          ))}
-                        </div>
-                      ))}
+                      {group.messages.map((msg, i) => {
+                        const isRecalled = msg.display === false;
+                        const isOwn = isCurrentUser;
+
+                        return (
+                          <div
+                            key={msg.messageId}
+                            className={`relative p-3 mb-1 rounded-2xl ${isRecalled
+                                ? 'bg-white text-gray-500 italic'
+                                : isOwn
+                                  ? 'bg-blue-500 text-white group'
+                                  : 'bg-gray-200 text-gray-800'
+                              }`}
+                          >
+                            {isRecalled ? (
+                              <div>Đã thu hồi một tin nhắn</div>
+                            ) : (
+                              <>
+                                {isOwn && (
+                                  <div className="absolute top-1 left-[-40px] -mt-1 -mr-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                      className="p-1 bg-white rounded-full shadow hover:bg-gray-100"
+                                      onClick={(e) => handleShowOptions(e, msg.messageId)}
+                                    >
+                                      <MoreVertIcon size={16} className="text-gray-500" />
+                                    </button>
+
+                                    {showOptionsMenu === msg.messageId && (
+                                      <div className="absolute right-0 mt-1 w-32 bg-white rounded-md shadow-lg z-10">
+                                        <div className="py-1">
+                                          {(!msg.mediaList || msg.mediaList.length === 0) && (
+                                            <button
+                                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                              onClick={() => handleEditMessage(msg)}
+                                            >
+                                              Chỉnh sửa
+                                            </button>
+                                          )}
+                                          <button
+                                            className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                                            onClick={() => handleRecallMessage(msg.messageId)}
+                                          >
+                                            Thu hồi
+                                          </button>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                                <div>{msg.text}</div>
+                                {msg.mediaList?.length > 0 &&
+                                  msg.mediaList.map((media) => (
+                                    <img
+                                      key={media.messageMediaID}
+                                      src={media.mediaURL}
+                                      alt="media"
+                                      className="mt-2 rounded max-w-xs"
+                                    />
+                                  ))}
+                              </>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 );
@@ -267,7 +387,21 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
 
           {/* Message input */}
           <div className="p-3 border-t border-gray-300">
-            {media && (
+            {/* Hiển thị trạng thái chỉnh sửa nếu có */}
+            {editingMessage && (
+              <div className="flex justify-between items-center mb-2 px-3 py-1 bg-blue-50 rounded">
+                <span className="text-sm text-blue-600">Đang chỉnh sửa tin nhắn</span>
+                <button
+                  className="text-gray-500 hover:text-gray-700"
+                  onClick={cancelEdit}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            )}
+
+            {/* Chỉ hiển thị preview hình ảnh khi không ở chế độ chỉnh sửa */}
+            {media && !editingMessage && (
               <div className="mb-2 relative inline-block">
                 <img
                   src={URL.createObjectURL(media)}
@@ -284,17 +418,22 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
             )}
 
             <div className="flex items-center bg-gray-100 rounded-full p-1">
-              <button
-                className="p-2 rounded-full hover:bg-gray-200 text-gray-600"
-                onClick={handleFileClick}
-              >
-                <Paperclip size={20} />
-              </button>
+              {/* Chỉ hiển thị nút Paperclip khi không ở chế độ chỉnh sửa */}
+              {!editingMessage && (
+                <button
+                  className="p-2 rounded-full hover:bg-gray-200 text-gray-600"
+                  onClick={handleFileClick}
+                >
+                  <Paperclip size={20} />
+                </button>
+              )}
 
               <input
                 type="text"
                 className="flex-1 p-2 bg-transparent focus:outline-none"
-                placeholder={`Nhắn tin với ${selectedChat.chatBoxName || "người dùng"}`}
+                placeholder={editingMessage
+                  ? "Chỉnh sửa tin nhắn..."
+                  : `Nhắn tin với ${selectedChat.chatBoxName || "người dùng"}`}
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
@@ -327,8 +466,9 @@ const ChatWindow = ({ selectedChat, messages, onAddMessage, currentUserId, messa
         <div className="flex-1 flex items-center justify-center text-gray-500">
           Chọn một cuộc trò chuyện để bắt đầu
         </div>
-      )}
-    </div>
+      )
+      }
+    </div >
   );
 };
 export default ChatWindow;

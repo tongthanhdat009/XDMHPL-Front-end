@@ -111,7 +111,7 @@ const ChatList = ({ chats, selectedChat, onSelectChat, loading }) => {
                 </div>
                 <div className="flex items-center text-sm">
                   <span className={`truncate ${chat.unread ? 'font-medium text-black' : 'text-gray-500'}`}>
-                    {chat.lastMessage ? chat.lastMessage.text : 'Bắt đầu cuộc trò chuyện'}
+                    {chat.lastMessage ? (chat.lastMessage.display===false ? 'Đã thu hồi tin nhắn' : chat.lastMessage.text) : 'Bắt đầu cuộc trò chuyện'}
                   </span>
                 </div>
               </div>
