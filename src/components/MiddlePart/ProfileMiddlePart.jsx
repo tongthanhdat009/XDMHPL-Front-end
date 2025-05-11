@@ -22,6 +22,7 @@ const MiddlePart = () => {
     const fetchDatas = async () => {
       try {
         const fetchedPosts = await authService.getAllPosts();
+        fetchedPosts.sort((a, b) => new Date(b.creationDate) - new Date(a.creationDate));
         const users = await authService.getAllUsers();
         setAllUsers(users);
         setPosts(fetchedPosts); // Cập nhật state với dữ liệu bài viết
@@ -36,6 +37,7 @@ const MiddlePart = () => {
   const updatePosts = async () => {
     try {
       const result = await authService.getAllPostsFormDB();
+      result.data.sort((a, b) => new Date(b.creationDate) - new Date(a.creationDate));
       if (result.success) {
         setPosts(result.data); // Cập nhật danh sách bài viết
       }
